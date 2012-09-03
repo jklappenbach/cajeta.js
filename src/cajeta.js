@@ -36,25 +36,12 @@ define([
     };
 
 
-    // Java inheritance that doesn't suck.
+    // JavaScript object model, based on prototype, but using some additional
+    // strategies to enable polymorphism.
     Cajeta.Class = function() { };
 
-    Cajeta.Class.visitor = function(fn, args, that, self) {
-        if (that === undefined) {
-            that = this;
-        }
-        if (self === undefined) {
-            self = this.self;
-        }
-        var result = undefined;
-        if (this.super !== undefined)
-            result = Cajeta.Class.visitor(that, this.super, fn, args);
-
-
-        if (self[fn] !== undefined)
-            result = self[fn].apply(that, args);
-    }
-
+    // A global flag to prevent the execution of constructors when defining
+    // the object.
     Cajeta.Class.defining = new Boolean();
 
     /**
@@ -65,18 +52,20 @@ define([
     Cajeta.Class.extend = function(definition) {
         Cajeta.Class.defining = true;
 
+        // A proxy constructor for objects, avoids calling constructors (initialize)
+        // when object definition logic is executed.
         var child = function() {
             if (Cajeta.Class.defining != true)
                 if (this.initialize !== undefined)
                     this.initialize.apply(this, arguments);
         }
 
+        // Create the prototype for the new class, and populate it...
         child.prototype = new this();
         child.prototype.super = this;
         $.extend(true, child.prototype.super, this.prototype);
         $.extend(true, child.prototype, definition);
 
-        // Establish 'self' this over all levels of the hierarchy
         child.extend = this.extend;
         Cajeta.Class.defining = false;
         return child;
@@ -173,10 +162,10 @@ define([
          * 1.  The changes to the model are committed
          * 2.  A new version ID is computed for the Model state.
          * 3.  After which, the udpated model is exported to JSON.
-         * 3.  The delta between models is computed, and the delta to the previous version is stored on the history stack
-         * 4.  The object will be recursively iterated to evaluate all children.
-         * 5.  For each child, a check will be made to see if the entry for that node exists in the bindMap
-         * 6.  If the entry exists, the reference to the current object is updated, and the bindMap
+         * 4.  The delta between models is computed, and the delta to the previous version is stored on the history stack
+         * 5.  The object will be recursively iterated to evaluate all children.
+         * 6.  For each child, a check will be made to see if the entry for that node exists in the bindMap
+         * 7.  If the entry exists, the reference to the current object is updated, and the bindMap
          *
          * @param key The key used to store and reference the data
          * @param value The data to store
@@ -222,6 +211,7 @@ define([
         },
 
         /**
+         * Return an object node in a data tree using a path address.
          *
          * @param modelPath
          */
@@ -317,9 +307,8 @@ define([
          * Called in response to putValue to update the component model entries that are bound to values
          * in the provided object graph
          *
-         * @param path The current (history) of the parse path
-         * @param obj The object to use for updating, as well as for recursive child processing
-         * @param committor Optional, passed in to avoid circular call graphs when changes are authored by components
+         * @param modelPath The path that was changed
+         * @param committor Optional, passed in to avoid circular calls when changes are authored by components
          */
         updateBoundComponents: function(modelPath, committor) {
             if (modelPath !== undefined) {
@@ -371,7 +360,7 @@ define([
         /**
          * Change the model to the history state indicated by stateId
          *
-         * @param stateId
+         * @param stateId The id of the history snapshot to restore and make current
          */
         loadState: function(stateId) {
             // First, check to see that the session ID matches our current...
@@ -401,7 +390,7 @@ define([
                     // Save state as a copy, not a delta, if it's not already in our map...
                     if (this.cacheStrategy.getValue(this.stateId) == undefined)
                         this.cacheStrategy.putValue(this.stateId, new Cajeta.Cache.ModelHistoryEntry(this.stateId,
-                                null, $.extend(true, {}, this.dataMap)));
+                            null, $.extend(true, {}, this.dataMap)));
                     if (entryToRestore.modelCopy != null) {
                         this.dataMap = entryToRestore.modelCopy;
                     } else {
@@ -437,9 +426,7 @@ define([
             this.modelPath = modelPath === undefined ? this.componentId : modelPath;
             this.parent = null;
             this.children = new Object();
-            this.autoPersist = false;
             this.html = null;
-            this.htmlEventMap = new Object();
             this.visible = true;
             this.viewStateId = '';
             this.hotKeys = new Object();
@@ -499,7 +486,7 @@ define([
             }
             if (this.html == null) {
                 throw 'Invalid template for ' + this.getComponentId() +
-                        ', must contain an element with a "cajeta:templateId" attribute.';
+                    ', must contain an element with a "cajeta:templateId" attribute.';
             }
         },
         getHtml: function() {
@@ -535,6 +522,8 @@ define([
             var type = this.getElementType();
             var domElement = $(type + '[cajeta\\:componentId = "' + this.componentId + '"]');
             if (domElement.length == 0) {
+                // Try again, without namespace
+                domElement = $(type + '[componentId = "' + this.componentId + '"]');
                 throw 'A component was not found with componentId "' + this.componentId + '"!';
             } else if (domElement.length > 1) {
                 throw 'More than one component was found with componentId "' + this.componentId + '"!';
@@ -556,6 +545,24 @@ define([
             // Update the component from the model (we may not have used our default value
             this.onModelUpdate();
         },
+
+        /**
+         * Remove a component from the window's DOM.  This method will recursively undock all children of the
+         * component.  Furthermore, the component will be unbound from the Model, to prevent unnecessary
+         * update calls for undisplayed elements.
+         */
+        undock: function() {
+            for (var componentId in this.children)
+                this.children[componentId].undock();
+
+            if (this.html !== undefined && this.html[0] !== undefined &&
+                this.html[0].parentNode !== undefined)
+                this.html[0].parentNode = undefined;
+
+            Cajeta.theApplication.getModel().releaseComponent(this);
+
+        },
+
         /**
          * Binds the events generated by the html managed by this component to it's event handlers.
          * The logic follows a naming convention where methods named onHtml* will be bound to their corresponding
@@ -573,22 +580,6 @@ define([
             }
         },
 
-        /**
-         * Remove a component from the window's DOM.  This method will recursively undock all children of the
-         * component.  Furthermore, the component will be unbound from the Model, to prevent unnecessary
-         * update calls for undisplayed elements.
-         */
-        undock: function() {
-            for (var componentId in this.children)
-                this.children[componentId].undock();
-
-            if (this.html !== undefined && this.html[0] !== undefined &&
-                this.html[0].parentNode !== undefined)
-                this.html[0].parentNode = null;
-
-            Cajeta.theApplication.getModel().releaseComponent(this);
-
-        },
         getHotKeys: function() {
             return this.hotKeys;
         },
@@ -769,7 +760,6 @@ define([
         initialize: function(componentId, modelPath, defaultValue) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
-            this.setElementType('input');
         },
         setValue: function(value) {
             this.html.attr('value', value);
@@ -790,7 +780,6 @@ define([
         initialize: function(componentId, modelPath, defaultValue) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
-            this.setElementType('input');
         },
         onModelUpdate: function() {
             this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
@@ -830,7 +819,6 @@ define([
             this.componentMap = new Object();
             this.stringResourceMap = new Object();
             this.currentPage = null;
-            this.anchorPing = 200;
             this.executing = false;
         },
 
@@ -858,13 +846,13 @@ define([
                 if (("onhashchange" in window) && !($.browser.msie)) {
                     window.onhashchange = Cajeta.Application.onAnchorChanged;
                 } else {
+                    // Quick and dirty to detect anchor hash change for primitive browsers
                     var prevHash = window.location.hash;
                     window.setInterval(function () {
                         if (window.location.hash != prevHash) {
-                            storedHash = window.location.hash;
-                            alert(window.location.hash);
+                            Cajeta.Application.onAnchorChanged;
                         }
-                    }, 100);
+                    }, 200);
                 }
                 this.executing = true;
                 this.anchor = this.getUrlAnchor();
