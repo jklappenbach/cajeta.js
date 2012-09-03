@@ -1,5 +1,8 @@
 /**
- * Copyright (c) 2010-2012 Julian Bach
+ * cajeta.js
+ *
+ * Copyright (c) 2012 Julian Bach
+ *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
  * files (the "Software"), to deal in the Software without
@@ -24,9 +27,9 @@
 
 define([
     'jquery',
-    'vcdiff'
-    //'cookies'
-], function($, vcdiff) {
+    'vcdiff',
+    'cookies'
+], function($, vcDiff, jCookie) {
 
     var Cajeta = {
         author: 'Julian Bach',
@@ -656,6 +659,7 @@ define([
         updateBrowserTitle: function() {
             document.title = this.title;
         },
+
         dock: function() {
             var body = $('body');
 
@@ -663,143 +667,13 @@ define([
             body.empty();
             body.append(this.html);
         },
+
         /**
          * See Cajeta.Component.render for documentation on this method.
          */
         render: function() {
             this.super.render.call(this, this.super);
             this.updateBrowserTitle();
-        }
-    });
-
-    Cajeta.View.Link = Cajeta.View.Component.extend({
-        initialize: function(componentId) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
-        },
-        onHtmlClicked: function(event) {
-
-        }
-    });
-
-    Cajeta.View.Span = Cajeta.View.Component.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
-            this.elementType = 'span';
-        },
-        onModelUpdate: function() {
-            if (this.html === undefined)
-                throw 'html was undefined for componentId ' + this.componentId;
-
-            this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
-        }
-    });
-
-    Cajeta.View.Label = Cajeta.View.Component.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
-            this.elementType = 'label';
-            this.attrFor = '';
-        },
-        setAttrFor: function(attrFor) {
-            this.attrFor = attrFor;
-            if (this.html !== undefined)
-                this.html.attr('for', attrFor);
-        },
-        getAttrFor: function() {
-            if (this.html === undefined)
-                throw 'html was undefined for componentId ' + this.componentId;
-            return this.html.attr('for');
-        },
-        setElementValue: function(value) {
-
-        },
-        getElementValue: function() {
-            if (this.html === undefined)
-                throw 'html was undefined for componentId ' + this.componentId;
-            return this.html.val();
-        },
-        onModelUpdate: function() {
-            if (this.html === undefined)
-                throw 'html was undefined for componentId ' + this.componentId;
-
-            this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
-        }
-    });
-
-    /**
-     *
-     */
-    Cajeta.View.AbstractInput = Cajeta.View.Component.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
-            this.elementType = 'input';
-            this.attrName = 'default';
-            this.attrType = 'default';
-        },
-        setAttrName: function(name) {
-            this.attrName = name;
-            if (this.html !== undefined)
-                this.html.attr('name', name);
-        },
-        getAttrName: function() {
-            if (this.html === undefined)
-                throw 'html was undefined for componentId ' + this.componentId;
-
-            return this.html.attr('name');
-        }
-    });
-
-    /**
-     *
-     */
-    Cajeta.View.TextInput = Cajeta.View.AbstractInput.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
-        },
-        setValue: function(value) {
-            this.html.attr('value', value);
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
-        },
-        onModelUpdate: function() {
-            this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
-        },
-        onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
-        }
-    });
-
-    /**
-     *
-     */
-    Cajeta.View.RadioInput = Cajeta.View.AbstractInput.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
-        },
-        onModelUpdate: function() {
-            this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
-        },
-        onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
-        }
-    });
-
-    /**
-     *
-     */
-    Cajeta.View.Form = Cajeta.View.Component.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
-            this.setElementType('form');
-        },
-        onHtmlSubmit: function() {
-            alert('Got a submit!');
         }
     });
 
@@ -960,6 +834,11 @@ define([
             }
         },
 
+        /**
+         *
+         * @param page
+         * @param fromUrl
+         */
         setCurrentPage: function(page, fromUrl) {
             var component;
             if (page instanceof Cajeta.View.Component) {
@@ -989,6 +868,11 @@ define([
             }
         },
 
+        /**
+         *
+         * @param viewStateId
+         * @param fromUrl
+         */
         setViewStateId: function(viewStateId, fromUrl) {
             // If the sequence was URL driven, we communicate the state to the view...
             this.viewStateId = viewStateId;
@@ -1026,6 +910,10 @@ define([
             }
         },
 
+        /**
+         *
+         * @param modelState
+         */
         setModelStateId: function(modelState) {
             this.modelStateId = modelState;
             this.model.loadState(this.modelStateId);
@@ -1041,18 +929,38 @@ define([
         addViewStateAlias: function(alias, viewState) {
             this.viewStateAliasMap[alias] = viewState;
         },
+
+        /**
+         *
+         * @param resourceId
+         * @return {*}
+         */
         getStringResource: function(resourceId) {
             return this.stringResourceMap[resourceId];
         },
+
+        /**
+         *
+         * @param stringResourceMap
+         */
         setStringResourceMap: function(stringResourceMap) {
             this.stringResourceMap = stringResourceMap;
         },
+
+        /**
+         *
+         * @param locale
+         * @param url
+         */
         setStringResourceLocale: function(locale, url) {
             // Default behavior: execute XHR to retrieve the string resource map JSON from the server
             // at the provided url.  The returned result will be assumed to be in the proper format.
         }
     });
 
+    /**
+     *
+     */
     Cajeta.Application.onAnchorChanged = function() {
         Cajeta.theApplication.onAnchorChanged();
     }

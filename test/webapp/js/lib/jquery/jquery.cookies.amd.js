@@ -1,25 +1,46 @@
 /**
+ /**
+ * Copyright (c) 2012 Julian Bach
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.'
+ *
+ * This code was adapted from
  * Copyright (c) 2005 - 2010, James Auldridge
  * All rights reserved.
  *
  * Licensed under the BSD, MIT, and GPL (your choice!) Licenses:
  *  http://code.google.com/p/cookies/wiki/License
  *
- * Updated for ResolveJS compatibility by Julian Klappenbach, 2011
+ * Updated for ResolveJS compatibility by Julian Bach, 2012
  *
  */
 
-define([
-    'jquery'
-], function($) {
-    var jaaulde = window.jaaulde || {};
+define(['jquery'], function($) {
     jaaulde.utils = jaaulde.utils || {};
-    jaaulde.utils.cookies = (function () {
+    jaaulde.utils.cookies = (function() {
         var resolveOptions, assembleOptionsString, parseCookies, constructor, defaultOptions = {
-            expiresAt:null,
-            path:'/',
-            domain:null,
-            secure:false
+            expiresAt: null,
+            path: '/',
+            domain: null,
+            secure: false
         };
 
         /**
@@ -30,7 +51,7 @@ define([
          * @parameter Object options - optional options to start with
          * @return Object complete and valid options object
          */
-        resolveOptions = function (options) {
+        resolveOptions = function(options) {
             var returnValue, expireDate;
 
             if (typeof options !== 'object' || options === null) {
@@ -38,10 +59,10 @@ define([
             }
             else {
                 returnValue = {
-                    expiresAt:defaultOptions.expiresAt,
-                    path:defaultOptions.path,
-                    domain:defaultOptions.domain,
-                    secure:defaultOptions.secure
+                    expiresAt: defaultOptions.expiresAt,
+                    path: defaultOptions.path,
+                    domain: defaultOptions.domain,
+                    secure: defaultOptions.secure
                 };
 
                 if (typeof options.expiresAt === 'object' && options.expiresAt instanceof Date) {
@@ -77,7 +98,7 @@ define([
          * @parameter options OBJECT - optional options to start with
          * @return STRING - complete and valid cookie setting options
          */
-        assembleOptionsString = function (options) {
+        assembleOptionsString = function(options) {
             options = resolveOptions(options);
 
             return (
@@ -95,7 +116,7 @@ define([
          * @static
          * @return OBJECT - hash of cookies from document.cookie
          */
-        parseCookies = function () {
+        parseCookies = function() {
             var cookies = {}, i, pair, name, value, separated = document.cookie.split(';'), unparsedValue;
             for (i = 0; i < separated.length; i = i + 1) {
                 pair = separated[i].split('=');
@@ -123,7 +144,7 @@ define([
             return cookies;
         };
 
-        constructor = function () {
+        constructor = function() {
         };
 
         /**
@@ -133,7 +154,7 @@ define([
          * @paramater Mixed cookieName - String:name of single cookie; Array:list of multiple cookie names; Void (no param):if you want all cookies
          * @return Mixed - Value of cookie as set; Null:if only one cookie is requested and is not found; Object:hash of multiple or all cookies (if multiple or all requested);
          */
-        constructor.prototype.get = function (cookieName) {
+        constructor.prototype.get = function(cookieName) {
             var returnValue, item, cookies = parseCookies();
 
             if (typeof cookieName === 'string') {
@@ -163,7 +184,7 @@ define([
          * @paramater Object RegExp - The regular expression to match against cookie names
          * @return Mixed - Object:hash of cookies whose names match the RegExp
          */
-        constructor.prototype.filter = function (cookieNameRegExp) {
+        constructor.prototype.filter = function(cookieNameRegExp) {
             var cookieName, returnValue = {}, cookies = parseCookies();
 
             if (typeof cookieNameRegExp === 'string') {
@@ -187,7 +208,7 @@ define([
          * @paramater Object options - optional list of cookie options to specify
          * @return void
          */
-        constructor.prototype.set = function (cookieName, value, options) {
+        constructor.prototype.set = function(cookieName, value, options) {
             if (typeof options !== 'object' || options === null) {
                 options = {};
             }
@@ -219,7 +240,7 @@ define([
          * @paramater Object options - optional list of cookie options to specify ( path, domain )
          * @return void
          */
-        constructor.prototype.del = function (cookieName, options) {
+        constructor.prototype.del = function(cookieName, options) {
             var allCookies = {}, name;
 
             if (typeof options !== 'object' || options === null) {
@@ -245,7 +266,7 @@ define([
          * @access public
          * @return Boolean
          */
-        constructor.prototype.test = function () {
+        constructor.prototype.test = function() {
             var returnValue = false, testName = 'cT', testValue = 'data';
 
             this.set(testName, testValue);
@@ -264,7 +285,7 @@ define([
          * @param Object options - list of cookie options to specify
          * @return void
          */
-        constructor.prototype.setOptions = function (options) {
+        constructor.prototype.setOptions = function(options) {
             if (typeof options !== 'object') {
                 options = null;
             }
@@ -275,9 +296,9 @@ define([
         return new constructor();
     })();
 
-    (function () {
+    (function() {
         if (window.jQuery) {
-            (function ($) {
+            (function($) {
                 $.cookies = jaaulde.utils.cookies;
 
                 var extensions = {
@@ -289,8 +310,8 @@ define([
                      * @param options OBJECT - list of cookie options to specify
                      * @return jQuery
                      */
-                    cookify:function (options) {
-                        return this.each(function () {
+                    cookify: function(options) {
+                        return this.each(function() {
                             var i, nameAttrs = ['name', 'id'], name, $this = $(this), value;
 
                             for (i in nameAttrs) {
@@ -327,11 +348,11 @@ define([
                      * @access public
                      * @return jQuery
                      */
-                    cookieFill:function () {
-                        return this.each(function () {
+                    cookieFill: function() {
+                        return this.each(function() {
                             var n, getN, nameAttrs = ['name', 'id'], name, $this = $(this), value;
 
-                            getN = function () {
+                            getN = function() {
                                 n = nameAttrs.pop();
                                 return !!n;
                             };
@@ -369,17 +390,17 @@ define([
                      * @param options OBJECT - list of cookie options to specify
                      * @return jQuery
                      */
-                    cookieBind:function (options) {
-                        return this.each(function () {
+                    cookieBind: function(options) {
+                        return this.each(function() {
                             var $this = $(this);
-                            $this.cookieFill().change(function () {
+                            $this.cookieFill().change(function() {
                                 $this.cookify(options);
                             });
                         });
                     }
                 };
 
-                $.each(extensions, function (i) {
+                $.each(extensions, function(i) {
                     $.fn[i] = this;
                 });
 
