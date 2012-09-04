@@ -29,6 +29,14 @@
  */
 
 define(['cajeta'], function(cajeta) {
+
+    cajeta.View.Div = cajeta.View.Component.extend({
+        initialize: function(componentId) {
+            var self = (arguments.length > 1) ? arguments[2] : this;
+            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+        }
+    });
+
     cajeta.View.Link = cajeta.View.Component.extend({
         initialize: function(componentId) {
             var self = (arguments.length > 3) ? arguments[3] : this;
@@ -111,17 +119,8 @@ define(['cajeta'], function(cajeta) {
             return this.html.attr('value');
         },
         dock: function() {
-            var self = (arguments.length > 0) ? arguments[1] : this;
+            var self = (arguments.length > 0) ? arguments[0] : this;
             self.super.dock.call(this, self.super);
-
-            if (this.isDocked()) {
-                if (this.attrName !== undefined && this.html.attr('name') != this.attrName)
-                    this.html.attr('name', this.attrName);
-                if (this.attrType !== undefined && this.html.attr('type') != this.attrType)
-                    this.html.attr('type', this.attrType);
-                if (this.attrValue !== undefined && this.html.attr('value') != this.attrValue)
-                    this.html.attr('value', this.attrValue);
-            }
         }
     });
 

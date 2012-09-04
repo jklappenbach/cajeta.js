@@ -468,33 +468,6 @@ define([
         getModelPath: function() {
             return this.modelPath;
         },
-        setHtml: function(template) {
-            this.html = null;
-            var temp = $(template);
-            if (temp.length > 0) {
-                for (var i = 0; i < temp.length; i++) {
-                    if (temp[i].attributes != undefined) {
-                        var attrValue = temp[i].attributes['cajeta:templateId'];
-                        if (attrValue == undefined) {
-                            attrValue = temp[i].attributes['templateId'];
-                        }
-
-                        if (attrValue != undefined && attrValue.value == this.componentId) {
-                            this.html = $(temp[i]);
-                            this.html.attr('cajeta:componentId', this.componentId);
-                            break;
-                        }
-                    }
-                }
-            }
-            if (this.html == null) {
-                throw 'Invalid template for ' + this.getComponentId() +
-                    ', must contain an element with the attribute: "cajeta:templateId".';
-            }
-        },
-        getHtml: function() {
-            return this.html;
-        },
         addChild: function(component) {
             var componentId = component.getComponentId();
             if (componentId == undefined || componentId == '') {
@@ -511,6 +484,41 @@ define([
         },
         isVisible: function() {
             return this.visible;
+        },
+        /**
+         * A template may be assigned to a component, which will be used to override
+         * the markup existing in the DOM. If no template has been assigned, the exsting markup
+         * in the DOM will be used.  Templates nodes must be a direct child of the html parent.
+         *
+         * @param templateId The ID of the template
+         * @param template The template source, may contain many templates.
+         */
+        setHtml: function(templateId, template) {
+            this.html = null;
+            var temp = $(template);
+            if (temp.length > 0) {
+                for (var i = 0; i < temp.length; i++) {
+                    if (temp[i].attributes != undefined) {
+                        var attrValue = temp[i].attributes['cajeta:templateId'];
+                        if (attrValue == undefined) {
+                            attrValue = temp[i].attributes['templateId'];
+                        }
+
+                        if (attrValue != undefined && attrValue.value == templateId) {
+                            this.html = $(temp[i]);
+                            this.html.attr('cajeta:componentId', this.componentId);
+                            break;
+                        }
+                    }
+                }
+            }
+            if (this.html == null) {
+                throw 'Invalid template for ' + this.getComponentId() +
+                    ', must contain an element with the attribute: "templateId".';
+            }
+        },
+        getHtml: function() {
+            return this.html;
         },
         isDocked: function() {
             if (!this.isDocked || this.html == null)
@@ -601,7 +609,6 @@ define([
          * serialized state of the current element, and it's children.  When calling children, the component
          * should pass only a substring of the viewState, removing it's own section, in order to increase efficiency.
          *
-         * @param viewState A string representing the current state of the component tree
          */
         render: function() {
             if (this.visible == true) {
@@ -609,7 +616,7 @@ define([
 
                 // Dock starting from the top of the hierarchy down, then render children...
                 if (this.isDocked() == false) {
-                    this.dock();
+                    this.dock.call(this);
                 }
 
                 for (var componentId in this.children) {
@@ -647,6 +654,16 @@ define([
     Cajeta.View.Component.htmlEventDispatch = function(event) {
         event.data.fn.call(event.data.that, event);
     }
+
+    Cajeta.View.Component.Template = Cajeta.View.Component.extend({
+        initialize: function(componentId, modelPath, defaultValue) {
+            var self = (arguments.length > 3) ? arguments[3] : this;
+            self.super.initialize.call(this, componentId, null, null, self.super);
+            this.templateId = templateId;
+            this.title = 'Default Cajeta Page';
+            this.setElementType('body');
+        }
+    });
 
     /**
      *
