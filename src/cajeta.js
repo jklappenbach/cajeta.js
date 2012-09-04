@@ -514,7 +514,7 @@ define([
             }
             if (this.html == null) {
                 throw 'Invalid template for ' + this.getComponentId() +
-                    ', must contain an element with the attribute: "cajeta:templateId".';
+                    ', must contain an element with the attribute: "templateId".';
             }
         },
         getHtml: function() {
@@ -616,7 +616,7 @@ define([
 
                 // Dock starting from the top of the hierarchy down, then render children...
                 if (this.isDocked() == false) {
-                    this.dock();
+                    this.dock.call(this);
                 }
 
                 for (var componentId in this.children) {

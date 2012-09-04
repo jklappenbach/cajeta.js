@@ -117,19 +117,6 @@ define(['cajeta'], function(cajeta) {
                 throw 'html was undefined for componentId ' + this.componentId;
 
             return this.html.attr('value');
-        },
-        dock: function() {
-            var self = (arguments.length > 0) ? arguments[1] : this;
-            self.super.dock.call(this, self.super);
-
-            if (this.isDocked()) {
-                if (this.attrName !== undefined && this.html.attr('name') != this.attrName)
-                    this.html.attr('name', this.attrName);
-                if (this.attrType !== undefined && this.html.attr('type') != this.attrType)
-                    this.html.attr('type', this.attrType);
-                if (this.attrValue !== undefined && this.html.attr('value') != this.attrValue)
-                    this.html.attr('value', this.attrValue);
-            }
         }
     });
 
