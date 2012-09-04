@@ -278,7 +278,7 @@ define([
                 }
                 // If there's no current value, use the default provided by the component
                 if (obj[paths[i]] === undefined)
-                    obj[paths[i]] = component.getdefaultValue();
+                    obj[paths[i]] = component.getDefaultValue();
             }
         },
 
@@ -440,10 +440,10 @@ define([
         getComponentId: function() {
             return this.componentId;
         },
-        setdefaultValue: function(defaultValue) {
+        setDefaultValue: function(defaultValue) {
             this.defaultValue = defaultValue;
         },
-        getdefaultValue: function() {
+        getDefaultValue: function() {
             return this.defaultValue;
         },
         setElementType: function(elementType) {
@@ -454,12 +454,12 @@ define([
         },
         setElementValue: function(elementValue) {
             this.elementValue = elementValue;
-            if (this.html !== undefined)
+            if (this.isDocked)
                 this.html.val(elementValue);
         },
         getElementValue: function() {
-            if (this.html === undefined)
-                throw 'Call to getElementValue with undefined html on componentId: ' + this.componentId;
+            if (!this.isDocked)
+                return this.elementValue;
             return this.html.val();
         },
         setModelPath: function(modelPath) {
@@ -489,7 +489,7 @@ define([
             }
             if (this.html == null) {
                 throw 'Invalid template for ' + this.getComponentId() +
-                    ', must contain an element with a "cajeta:templateId" attribute.';
+                    ', must contain an element with the attribute: "cajeta:templateId".';
             }
         },
         getHtml: function() {
@@ -513,7 +513,7 @@ define([
             return this.visible;
         },
         isDocked: function() {
-            if (this.html === undefined || this.html == null)
+            if (!this.isDocked || this.html == null)
                 return false;
 
             if (this.html[0].parentNode === undefined || this.html[0].parentNode instanceof DocumentFragment) {
@@ -538,7 +538,16 @@ define([
             }
             this.bindHtmlEvents();
             this.html.show();
+
+            // Set the element's attributes.  The component is set, as well as any properties
+            // with the attr prefix...
             this.html.attr('cajeta:componentId', this.componentId);
+            for (var name in this) {
+                var index = name.indexOf('attr');
+                if (index >= 0) {
+                    this.html.attr(name.substring(4), this[name]);
+                }
+            }
             // Add to the application component map at this point.
             Cajeta.theApplication.getComponentMap()[this.componentId] = this;
 
@@ -558,9 +567,9 @@ define([
             for (var componentId in this.children)
                 this.children[componentId].undock();
 
-            if (this.html !== undefined && this.html[0] !== undefined &&
-                this.html[0].parentNode !== undefined)
+            if (this.isDocked()) {
                 this.html[0].parentNode = undefined;
+            }
 
             Cajeta.theApplication.getModel().releaseComponent(this);
 

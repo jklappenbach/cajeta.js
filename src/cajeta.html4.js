@@ -89,7 +89,7 @@ define(['cajeta'], function(cajeta) {
     /**
      *
      */
-    cajeta.View.AbstractInput = cajeta.View.Component.extend({
+    cajeta.View.Input = cajeta.View.Component.extend({
         initialize: function(componentId, modelPath, defaultValue) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
@@ -113,7 +113,7 @@ define(['cajeta'], function(cajeta) {
     /**
      *
      */
-    cajeta.View.TextInput = cajeta.View.AbstractInput.extend({
+    cajeta.View.TextInput = cajeta.View.Input.extend({
         initialize: function(componentId, modelPath, defaultValue) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
@@ -133,7 +133,7 @@ define(['cajeta'], function(cajeta) {
     /**
      *
      */
-    cajeta.View.RadioInput = cajeta.View.AbstractInput.extend({
+    cajeta.View.RadioInput = cajeta.View.Input.extend({
         initialize: function(componentId, modelPath, defaultValue) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);

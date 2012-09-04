@@ -46,7 +46,7 @@ define(['cajeta'], function(cajeta) {
             this.elementType = 'span';
         },
         onModelUpdate: function() {
-            if (this.html === undefined)
+            if (this.isDocked())
                 throw 'html was undefined for componentId ' + this.componentId;
 
             this.html.attr('value', cajeta.theApplication.getModel().getByPath(this.modelPath));
@@ -60,26 +60,8 @@ define(['cajeta'], function(cajeta) {
             this.elementType = 'label';
             this.attrFor = '';
         },
-        setAttrFor: function(attrFor) {
-            this.attrFor = attrFor;
-            if (this.html !== undefined)
-                this.html.attr('for', attrFor);
-        },
-        getAttrFor: function() {
-            if (this.html === undefined)
-                throw 'html was undefined for componentId ' + this.componentId;
-            return this.html.attr('for');
-        },
-        setElementValue: function(value) {
-
-        },
-        getElementValue: function() {
-            if (this.html === undefined)
-                throw 'html was undefined for componentId ' + this.componentId;
-            return this.html.val();
-        },
         onModelUpdate: function() {
-            if (this.html === undefined)
+            if (this.isDocked())
                 throw 'html was undefined for componentId ' + this.componentId;
 
             this.html.attr('value', cajeta.theApplication.getModel().getByPath(this.modelPath));
@@ -89,39 +71,69 @@ define(['cajeta'], function(cajeta) {
     /**
      *
      */
-    cajeta.View.AbstractInput = cajeta.View.Component.extend({
+    cajeta.View.Input = cajeta.View.Component.extend({
         initialize: function(componentId, modelPath, defaultValue) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
             this.elementType = 'input';
-            this.attrName = 'default';
-            this.attrType = 'default';
+            this.attrValue = defaultValue;
         },
         setAttrName: function(name) {
             this.attrName = name;
-            if (this.html !== undefined)
+            if (this.isDocked())
                 this.html.attr('name', name);
         },
         getAttrName: function() {
-            if (this.html === undefined)
+            if (!this.isDocked())
                 throw 'html was undefined for componentId ' + this.componentId;
 
             return this.html.attr('name');
-        }
-    });
-
-    /**
-     *
-     */
-    cajeta.View.TextInput = cajeta.View.AbstractInput.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
         },
-        setValue: function(value) {
+        setAttrType: function(type) {
+            this.attrType = type;
+            if (this.isDocked())
+                this.html.attr('type', type);
+        },
+        getAttrType: function() {
+            if (!this.isDocked())
+                throw 'html was undefined for componentId ' + this.componentId;
+
+            return this.html.attr('type');
+        },
+        setAttrValue: function(value) {
             this.html.attr('value', value);
             cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
         },
+        getAttrValue: function() {
+            if (!this.isDocked())
+                throw 'html was undefined for componentId ' + this.componentId;
+
+            return this.html.attr('value');
+        },
+        dock: function() {
+            var self = (arguments.length > 0) ? arguments[1] : this;
+            self.super.dock.call(this, self.super);
+
+            if (this.isDocked()) {
+                if (this.attrName !== undefined && this.html.attr('name') != this.attrName)
+                    this.html.attr('name', this.attrName);
+                if (this.attrType !== undefined && this.html.attr('type') != this.attrType)
+                    this.html.attr('type', this.attrType);
+                if (this.attrValue !== undefined && this.html.attr('value') != this.attrValue)
+                    this.html.attr('value', this.attrValue);
+            }
+        }
+    });
+
+    /**
+     *
+     */
+    cajeta.View.TextInput = cajeta.View.Input.extend({
+        initialize: function(componentId, modelPath, defaultValue) {
+            var self = (arguments.length > 3) ? arguments[3] : this;
+            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+        },
+
         onModelUpdate: function() {
             this.html.attr('value', cajeta.theApplication.getModel().getByPath(this.modelPath));
         },
@@ -131,18 +143,130 @@ define(['cajeta'], function(cajeta) {
     });
 
     /**
-     *
+     * Manages an HTML4 RadioInput compoennt
      */
-    cajeta.View.RadioInput = cajeta.View.AbstractInput.extend({
+    cajeta.View.RadioInput = cajeta.View.Input.extend({
         initialize: function(componentId, modelPath, defaultValue) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
         },
         onModelUpdate: function() {
+            // TODO Need to update this to compare setting versus 'name'
             this.html.attr('value', cajeta.theApplication.getModel().getByPath(this.modelPath));
         },
         onHtmlChange: function(event) {
+            // TODO Need to update this to compare setting versus 'name'
             cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
+        }
+    });
+
+    /**
+     * Manages an HTML4 RadioInput compoennt
+     */
+    cajeta.View.CheckboxInput = cajeta.View.Input.extend({
+        initialize: function(componentId, modelPath, defaultValue) {
+            var self = (arguments.length > 3) ? arguments[3] : this;
+            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+        },
+        onModelUpdate: function() {
+            // TODO Need to update this to compare setting versus 'name'
+            this.html.attr('value', cajeta.theApplication.getModel().getByPath(this.modelPath));
+        },
+        onHtmlChange: function(event) {
+            // TODO Need to update this to compare setting versus 'name'
+            cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
+        }
+    });
+
+    /**
+     *
+     */
+    cajeta.View.TextArea = cajeta.View.Component.extend({
+        initialize: function(componentId, modelPath, defaultValue) {
+            var self = (arguments.length > 3) ? arguments[3] : this;
+            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+            this.elementType = 'textarea';
+        },
+        setAttrName: function(name) {
+            this.attrName = name;
+            if (this.isDocked())
+                this.html.attr('name', name);
+        },
+        getAttrName: function() {
+            if (!this.isDocked())
+                return this.attrName;
+
+            return this.html.attr('name');
+        },
+        setAttrCols: function(cols) {
+            this.attrCols = cols;
+            if (this.isDocked())
+                this.html.attr('cols', cols);
+        },
+        getAttrCols: function() {
+            if (!this.isDocked())
+                return this.attrCols;
+
+            return this.html.attr('cols');
+        },
+        setAttrRows: function(rows) {
+            this.attrRows = rows;
+            if (this.isDocked())
+                this.html.attr('rows', rows);
+        },
+        getAttrRows: function() {
+            if (!this.isDocked())
+                return this.attrRows;
+
+            return this.html.attr('rows');
+        },
+        setAttrReadonly: function(readonly) {
+            this.attrReadonly = readonly;
+            if (this.isDocked())
+                this.html.attr('readonly', readonly);
+        },
+        getAttrReadonly: function() {
+            if (!this.isDocked())
+                return this.attrReadonly;
+
+            return this.html.attr('readonly');
+        }
+    });
+
+    /**
+     *
+     * @type {*}
+     */
+    cajeta.View.Legend = cajeta.View.Component.extend({
+        /**
+         *
+         * @param componentId
+         * @param modelPath
+         * @param defaultValue
+         */
+        initialize: function(componentId, modelPath, defaultValue) {
+            var self = (arguments.length > 3) ? arguments[3] : this;
+            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+            this.elementType = 'legend';
+        }
+    });
+
+    /**
+     *
+     * @type {*}
+     */
+    cajeta.View.Select = cajeta.View.Component.extend({
+        /**
+         *
+         * @param componentId
+         * @param modelPath
+         * @param defaultValue
+         * @param options A list containing Options and OptionGroups
+         */
+        initialize: function(componentId, modelPath, defaultValue, options) {
+            var self = (arguments.length > 3) ? arguments[3] : this;
+            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+            this.elementType = 'select';
         }
     });
 

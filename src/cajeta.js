@@ -278,7 +278,7 @@ define([
                 }
                 // If there's no current value, use the default provided by the component
                 if (obj[paths[i]] === undefined)
-                    obj[paths[i]] = component.getdefaultValue();
+                    obj[paths[i]] = component.getDefaultValue();
             }
         },
 
@@ -440,10 +440,10 @@ define([
         getComponentId: function() {
             return this.componentId;
         },
-        setdefaultValue: function(defaultValue) {
+        setDefaultValue: function(defaultValue) {
             this.defaultValue = defaultValue;
         },
-        getdefaultValue: function() {
+        getDefaultValue: function() {
             return this.defaultValue;
         },
         setElementType: function(elementType) {
