@@ -12,11 +12,11 @@ Obviously, with a JavaScript framework operating on the browser or native sandbo
 
 <h2>Modularity</h2>
 
-JavaScript has no "import" or "include" statement.  With AMD, JavaScript modules gain the ability to include external scripts.  Furthermore, AMD executes scripts in anonymous functions, preventing global namespace pollution.  With this strategy, large software projects can be broken down into smaller, manageable modules.  This, in turn, allows larger teams to work without trivial conflicts.  I'll go so far as to predict that, unless the custodians of the JavaScript specs relent and allow an "include" capability in the language, AMD will sweep the field.  But wait, we really don't want browsers making tens of calls for every page load to various modules, do we?  
+JavaScript has no "import" or "include" statement.  With AMD, JavaScript modules gain the ability to include external scripts.  Furthermore, AMD executes scripts in anonymous functions, preventing global namespace pollution.  With this strategy, large software projects can be broken down into smaller, manageable modules.  This, in turn, allows larger teams to work without trivial conflicts.  AMD also promotes code reuse through class definitions.  But wait, we really don't want browsers making dozens of calls for every page load to various modules, do we?  
 
 No.  
 
-That's where r.js comes in.  As part of the build chain for Cajeta, it optimizes the script calls and performs minimization.  Part of the roadmap for Cajeta will be to produce a similar function for HTML templates, reducing the many files involved into perhaps even one file for production.
+That's where r.js comes in.  As part of the build chain for Cajeta, r.js optimizes the script calls and performs minimization.  Part of the roadmap for Cajeta will be to produce a similar function for HTML templates, reducing the many files involved into perhaps even one file for production.
 
 <h2>Object Oriented Design</h2>
 
