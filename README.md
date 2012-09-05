@@ -1,4 +1,5 @@
 <h1>Welcome to CajetaJS!</h1> 
+<h4>Status: Prototype 0.0.1</h4>
 
 CajetaJS was created with the desire to bring the power of Apache Wicket's templating strategy to the field of JavaScript application frameworks.  In addition to powerful templating, my goal was to build a framework that focused on sound, time-tested software development principles:  modular structure, object-oriented design, micro-architectures, and scalability.
 
