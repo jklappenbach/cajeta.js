@@ -1,5 +1,5 @@
 /**
- * cajeta.view.html4.js
+ * File: cajeta.html4.js
  *
  * This module contains the definitions for HTML4 based components.
  *
@@ -21,23 +21,23 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
  * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
  * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.'
+ * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-define(['cajeta'], function(cajeta) {
+define(['jquery', 'cajeta'], function($, Cajeta) {
 
-    cajeta.View.Div = cajeta.View.Component.extend({
+    Cajeta.View.Div = Cajeta.View.Component.extend({
         initialize: function(componentId) {
             var self = (arguments.length > 1) ? arguments[2] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
         }
     });
 
-    cajeta.View.Link = cajeta.View.Component.extend({
+    Cajeta.View.Link = Cajeta.View.Component.extend({
         initialize: function(componentId) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
@@ -47,7 +47,7 @@ define(['cajeta'], function(cajeta) {
         }
     });
 
-    cajeta.View.Span = cajeta.View.Component.extend({
+    Cajeta.View.Span = Cajeta.View.Component.extend({
         initialize: function(componentId, modelPath, defaultValue) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
@@ -57,11 +57,11 @@ define(['cajeta'], function(cajeta) {
             if (this.isDocked())
                 throw 'html was undefined for componentId ' + this.componentId;
 
-            this.html.attr('value', cajeta.theApplication.getModel().getByPath(this.modelPath));
+            this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
         }
     });
 
-    cajeta.View.Label = cajeta.View.Component.extend({
+    Cajeta.View.Label = Cajeta.View.Component.extend({
         initialize: function(componentId, modelPath, defaultValue) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
@@ -72,14 +72,14 @@ define(['cajeta'], function(cajeta) {
             if (this.isDocked())
                 throw 'html was undefined for componentId ' + this.componentId;
 
-            this.html.attr('value', cajeta.theApplication.getModel().getByPath(this.modelPath));
+            this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
         }
     });
 
     /**
      *
      */
-    cajeta.View.Input = cajeta.View.Component.extend({
+    Cajeta.View.Input = Cajeta.View.Component.extend({
         initialize: function(componentId, modelPath, defaultValue) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
@@ -110,7 +110,7 @@ define(['cajeta'], function(cajeta) {
         },
         setAttrValue: function(value) {
             this.html.attr('value', value);
-            cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
         },
         getAttrValue: function() {
             if (!this.isDocked())
@@ -123,60 +123,59 @@ define(['cajeta'], function(cajeta) {
     /**
      *
      */
-    cajeta.View.TextInput = cajeta.View.Input.extend({
+    Cajeta.View.TextInput = Cajeta.View.Input.extend({
         initialize: function(componentId, modelPath, defaultValue) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
         },
-
         onModelUpdate: function() {
-            this.html.attr('value', cajeta.theApplication.getModel().getByPath(this.modelPath));
+            this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
         },
         onHtmlChange: function(event) {
-            cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
         }
     });
 
     /**
-     * Manages an HTML4 RadioInput compoennt
+     * Manages an HTML4 RadioInput control
      */
-    cajeta.View.RadioInput = cajeta.View.Input.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
-        },
-        onModelUpdate: function() {
-            // TODO Need to update this to compare setting versus 'name'
-            this.html.attr('value', cajeta.theApplication.getModel().getByPath(this.modelPath));
-        },
-        onHtmlChange: function(event) {
-            // TODO Need to update this to compare setting versus 'name'
-            cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
+    Cajeta.View.RadioInput = Cajeta.View.Input.extend({
+        initialize: function(componentId) {
+            var self = (arguments.length > 1) ? arguments[1] : this;
+            self.super.initialize.call(this, componentId, null, null, self.super);
         }
     });
 
     /**
-     * Manages an HTML4 RadioInput compoennt
+     * Manages an HTML4 RadioInput component
      */
-    cajeta.View.CheckboxInput = cajeta.View.Input.extend({
+    Cajeta.View.CheckboxInput = Cajeta.View.Input.extend({
         initialize: function(componentId, modelPath, defaultValue) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
         },
         onModelUpdate: function() {
             // TODO Need to update this to compare setting versus 'name'
-            this.html.attr('value', cajeta.theApplication.getModel().getByPath(this.modelPath));
+            this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
         },
         onHtmlChange: function(event) {
             // TODO Need to update this to compare setting versus 'name'
-            cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
+        },
+        dock: function() {
+            var self = (arguments.length > 0) ? arguments[0] : this;
+            self.super.dock.call(this, self.super);
+            if (this.isDocked()) {
+                if (this.html.attr('value') === undefined || this.html.attr('value') == '')
+                    this.html.attr('value', this.componentId);
+            }
         }
     });
 
     /**
      *
      */
-    cajeta.View.TextArea = cajeta.View.Component.extend({
+    Cajeta.View.TextArea = Cajeta.View.Component.extend({
         initialize: function(componentId, modelPath, defaultValue) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
@@ -232,7 +231,7 @@ define(['cajeta'], function(cajeta) {
      *
      * @type {*}
      */
-    cajeta.View.Legend = cajeta.View.Component.extend({
+    Cajeta.View.Legend = Cajeta.View.Component.extend({
         /**
          *
          * @param componentId
@@ -250,7 +249,7 @@ define(['cajeta'], function(cajeta) {
      *
      * @type {*}
      */
-    cajeta.View.Select = cajeta.View.Component.extend({
+    Cajeta.View.Select = Cajeta.View.Component.extend({
         /**
          *
          * @param componentId
@@ -268,7 +267,7 @@ define(['cajeta'], function(cajeta) {
     /**
      *
      */
-    cajeta.View.Form = cajeta.View.Component.extend({
+    Cajeta.View.Form = Cajeta.View.Component.extend({
         initialize: function(componentId, modelPath, defaultValue) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
@@ -279,5 +278,5 @@ define(['cajeta'], function(cajeta) {
         }
     });
 
-    return cajeta;
+    return Cajeta;
 });

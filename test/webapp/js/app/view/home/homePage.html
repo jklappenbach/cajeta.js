@@ -1,9 +1,26 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <div xmlns:cajeta="http://www.cajetajs/v01" cajeta:templateId="homePage">
-	Home Page!
+
 	<form cajeta:componentId="testForm">
-		First name: <input type="text" cajeta:componentId="firstName" /><br />
-		Last name: <input type="text" cajeta:componentId="lastName" />
+		<fieldset>
+			<legend>Text input fields</legend>
+			First name: <input type="text" cajeta:componentId="firstName" /><br />
+			Last name: <input type="text" cajeta:componentId="lastName" /><br />
+		</fieldset>
+		<fieldset>
+			<legend>Checkbox</legend>
+			<input type="checkbox" name="green" cajeta:componentId="green" />Green<br />
+			<input type="checkbox" name="blue" cajeta:componentId="blue" />Blue<br />
+			<input type="checkbox" name="red" cajeta:componentId="red" />Red<br />
+		</fieldset>
+		<fieldset>
+			<legend>Radio</legend>
+			<input type="radio" name="diet" cajeta:componentId="vegetarian"  /><br />
+			<input type="radio" name="diet" cajeta:componentId="pescetarian" /><br />
+			<input type="radio" name="diet" cajeta:componentId="omnivore" /><br />
+		</fieldset>
+
+		<input type="submit" value="Submit" />
 	</form>
 </div>
 

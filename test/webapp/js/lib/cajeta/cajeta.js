@@ -544,8 +544,6 @@ define([
             } else {
                 domElement.replaceWith(this.html);
             }
-            this.bindHtmlEvents();
-            this.html.show();
 
             // Set the element's attributes.  The component is set, as well as any properties
             // with the attr prefix...
@@ -556,6 +554,7 @@ define([
                     this.html.attr(name.substring(4), this[name]);
                 }
             }
+
             // Add to the application component map at this point.
             Cajeta.theApplication.getComponentMap()[this.componentId] = this;
 
@@ -622,6 +621,8 @@ define([
                 for (var componentId in this.children) {
                     this.children[componentId].render();
                 }
+                this.bindHtmlEvents();
+
             } else {
                 if (this.html != undefined) {
                     this.html.hide();
@@ -653,7 +654,40 @@ define([
 
     Cajeta.View.Component.htmlEventDispatch = function(event) {
         event.data.fn.call(event.data.that, event);
-    }
+    };
+
+    Cajeta.View.ComponentGroup = Cajeta.View.Component.extend({
+        initialize: function(componentId, modelPath, defaultValue) {
+            var self = (arguments.length > 3) ? arguments[3] : this;
+            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+            this.value = defaultValue;
+        },
+        onModelUpdate: function() {
+            this.value =  Cajeta.theApplication.getModel().getByPath(this.modelPath);
+        },
+        onChildChange: function(event) {
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.value, this);
+        },
+        bindHtmlEvents: function() {
+            var eventData = new Object();
+            eventData['that'] = this;
+            eventData['fn'] = this.onChildChange;
+            for (var name in this.children) {
+                if (name !== undefined && this.children[name].attrType == 'radio') {
+                    this.children[name].html.bind('change', eventData, Cajeta.View.Component.htmlEventDispatch);
+                }
+            }
+        },
+        dock: function() {
+            // Add to the application component map at this point.
+            Cajeta.theApplication.getComponentMap()[this.componentId] = this;
+            // Bind the component to the model
+            Cajeta.theApplication.getModel().bindComponent(this);
+
+            // Update the component from the model (we may not have used our default value
+            this.onModelUpdate();
+        }
+    });
 
     Cajeta.View.Component.Template = Cajeta.View.Component.extend({
         initialize: function(componentId, modelPath, defaultValue) {
