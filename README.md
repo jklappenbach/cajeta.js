@@ -21,11 +21,13 @@ That's where r.js comes in.  As part of the build chain for Cajeta, it optimizes
 <h2>Object Oriented Design</h2>
 
 JavaScript has its fair share of detractors, and honestly, they have every right to point fingers.  Case in point: the prototype system has some woefully ugly edge cases for inheritance.  With Cajeta, many existing inheritance strategies were evaluated and lessons learned were used in the resulting design.  Given the number of attempts at solving prototype's deficiencies over the years, I wouldn't be surprised if Cajeta's approach hasn't been done before.  Regardless, with it, developers can enjoy:
-The freedom to create arbitrary layers of inheritance, utilizing function overrides and polymorphism.
-Not having to worry about constructors firing during the definition phase.
-Avoiding class property mirroring between child and parent classes.
-An extension strategy that is easy to implement and maintain.
-Micro-Architecture
+<ul>
+<li>The freedom to create arbitrary layers of inheritance, utilizing function overrides and polymorphism.</li>
+<li>Not having to worry about constructors firing during the definition phase.</li>
+<li>Avoiding class property mirroring between child and parent classes.</li>
+<li>An extension strategy that is easy to implement and maintain.</li>
+</ul>
+<h2>Micro-Architecture</h2>
 
 The basic idea behind MA is to evaluate the design of a software system from the perspective of the interaction of small atomic units of functionality or patterns, and to implement the system using these atoms.  From the book Core J2EE Patterns:
 
