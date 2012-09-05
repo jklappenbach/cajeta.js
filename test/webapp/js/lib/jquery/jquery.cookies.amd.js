@@ -143,7 +143,7 @@ define(['jquery'], function($) {
         return cookies;
     };
 
-    jCookies = function() {};
+    var jCookies = function() {};
 
     /**
      * get - get one, several, or all cookies

@@ -422,17 +422,32 @@ define([
      *
      */
     Cajeta.View.Component = Cajeta.Class.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            this.elementType = 'div';
-            this.componentId = componentId;
-            this.defaultValue = defaultValue;
-            this.modelPath = modelPath === undefined ? this.componentId : modelPath;
+        /**
+         * Constructor supports mixins for fast definitions.  If only a few methods are needed, this
+         * can be an easier way of extending functionality than inheritance.  A componentId must be specified.
+         * Other properties include: modelPath, defaultValue (for model), as well as
+         * values using elementValue or attr* for element values and attributes, and methods using
+         * onHtml* for event handlers.  For portable, re-usable definitions, consider subclassing.
+         *
+         * For polymorphism, always invoke superclass definitions with call or apply, using the top level
+         * this pointer.  Use this.super to select the correct superclass implementation.  And include 'self'
+         * as a property, using this.super as the value.  Javascript does not maintain this internally, so
+         * passing 'super' in will ensure that the correct definition 'frame' is maintained.
+         *
+         * @param properties
+         */
+        initialize: function(properties) {
+            $.extend(this, properties);
+            if (this.componentId === undefined)
+                throw 'A componentId must be defined';
+            this.modelPath = properties.modelPath === undefined ? this.componentId : properties.modelPath;
             this.parent = null;
             this.children = new Object();
             this.html = null;
-            this.visible = true;
             this.viewStateId = '';
             this.hotKeys = new Object();
+            if (this.visible === undefined)
+                this.visible = true;
         },
         setComponentId: function(componentId) {
             this.componentId = componentId;
@@ -471,7 +486,7 @@ define([
         addChild: function(component) {
             var componentId = component.getComponentId();
             if (componentId == undefined || componentId == '') {
-                throw 'A component must have a valid componentId';
+                throw 'A component must have a valid componentId to be added as a child';
             }
             this.children[componentId] = component;
             component.parent = this;
@@ -530,39 +545,42 @@ define([
             return true;
         },
         dock: function() {
-            var type = this.getElementType();
-            var domElement = $(type + '[cajeta\\:componentId = "' + this.componentId + '"]');
-            if (domElement.length == 0) {
-                // Try again, without namespace
-                domElement = $(type + '[componentId = "' + this.componentId + '"]');
-                throw 'A component was not found with componentId "' + this.componentId + '"!';
-            } else if (domElement.length > 1) {
-                throw 'More than one component was found with componentId "' + this.componentId + '"!';
-            }
-            if (this.html == null) {
-                this.html = domElement;
-            } else {
-                domElement.replaceWith(this.html);
-            }
-
-            // Set the element's attributes.  The component is set, as well as any properties
-            // with the attr prefix...
-            this.html.attr('cajeta:componentId', this.componentId);
-            for (var name in this) {
-                var index = name.indexOf('attr');
-                if (index >= 0) {
-                    this.html.attr(name.substring(4), this[name]);
+            if (!this.isDocked()) {
+                var type = this.getElementType();
+                var domElement = $(type + '[cajeta\\:componentid = "' + this.componentId + '"]');
+                if (domElement.length == 0) {
+                    // Try again, without namespace
+                    domElement = $(type + '[componentid = "' + this.componentId + '"]');
+                    throw 'A component was not found with componentId "' + this.componentId + '"!';
+                } else if (domElement.length > 1) {
+                    throw 'More than one component was found with componentId "' + this.componentId + '"!';
                 }
+                if (this.html == null) {
+                    this.html = domElement;
+                } else {
+                    domElement.replaceWith(this.html);
+                }
+
+                // Set the element's attributes.  The component is set, as well as any properties
+                // with the attr prefix...
+                this.html.attr('cajeta:componentId', this.componentId);
+                for (var name in this) {
+                    var index = name.indexOf('attr');
+                    // See if we have a property matching our convention, and not 'type', which can't be changed
+                    if (index >= 0 && name != 'attrType') {
+                        this.html.attr(name.substring(4).toLowerCase(), this[name]);
+                    }
+                }
+
+                // Add to the application component map at this point.
+                Cajeta.theApplication.getComponentMap()[this.componentId] = this;
+
+                // Bind the component to the model
+                Cajeta.theApplication.getModel().bindComponent(this);
+
+                // Update the component from the model (we may not have used our default value
+                this.onModelUpdate();
             }
-
-            // Add to the application component map at this point.
-            Cajeta.theApplication.getComponentMap()[this.componentId] = this;
-
-            // Bind the component to the model
-            Cajeta.theApplication.getModel().bindComponent(this);
-
-            // Update the component from the model (we may not have used our default value
-            this.onModelUpdate();
         },
 
         /**
@@ -619,8 +637,10 @@ define([
                 }
 
                 for (var componentId in this.children) {
-                    this.children[componentId].render();
+                    if (componentId !== undefined)
+                        this.children[componentId].render();
                 }
+
                 this.bindHtmlEvents();
 
             } else {
@@ -657,10 +677,12 @@ define([
     };
 
     Cajeta.View.ComponentGroup = Cajeta.View.Component.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
-            this.value = defaultValue;
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            if (this.defaultValue !== undefined)
+                this.value = this.defaultValue;
         },
         onModelUpdate: function() {
             this.value =  Cajeta.theApplication.getModel().getByPath(this.modelPath);
@@ -674,7 +696,8 @@ define([
             eventData['fn'] = this.onChildChange;
             for (var name in this.children) {
                 if (name !== undefined && this.children[name].attrType == 'radio') {
-                    this.children[name].html.bind('change', eventData, Cajeta.View.Component.htmlEventDispatch);
+                    var childHtml = this.children[name].html;
+                    childHtml.bind('change', eventData, Cajeta.View.Component.htmlEventDispatch);
                 }
             }
         },
@@ -689,25 +712,17 @@ define([
         }
     });
 
-    Cajeta.View.Component.Template = Cajeta.View.Component.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, null, null, self.super);
-            this.templateId = templateId;
-            this.title = 'Default Cajeta Page';
-            this.setElementType('body');
-        }
-    });
-
     /**
      *
      * @type {*}
      */
     Cajeta.View.Page = Cajeta.View.Component.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
-            this.title = 'Default Cajeta Page';
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            if (this.title === undefined)
+                this.title = 'Default Cajeta Page';
             this.setElementType('body');
         },
         setTitle: function(title) {
@@ -742,7 +757,8 @@ define([
      * @type {Function}
      */
     Cajeta.Application = Cajeta.Class.extend({
-        initialize: function() {
+        initialize: function(properties) {
+            $.extend(this, properties);
             this.viewStateAliasMap = new Object();
             this.anchor = '';
             this.viewStateId = '';
