@@ -86,8 +86,12 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'input';
-            if (this.attrValue === undefined && properties.defaultValue !== undefined)
-                this.attrValue = properties.defaultValue;
+            if (this.attrValue === undefined) {
+                if (properties.defaultValue !== undefined)
+                    this.attrValue = properties.defaultValue;
+                else
+                    this.attrValue = this.componentId;
+            }
         },
         setAttrName: function(name) {
             this.attrName = name;
@@ -131,6 +135,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
+            if (this.defaultValue !== undefined)
+                this.attrValue = this.defaultValue;
         },
         onModelUpdate: function() {
             this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
@@ -149,9 +155,14 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             properties.self = self.super;
             self.super.initialize.call(this, properties);
         },
+        dock: function() {
+            var self = (arguments.length > 0) ? arguments[0] : this;
+            self.super.dock.call(this);
 
-        onHtmlChange: function(event) {
-            alert("I'm here!");
+            // Set the value of the element if not set in markup
+            if (this.html.attr('value') === undefined) {
+                this.html.attr('value', this.componentId);
+            }
         }
     });
 
@@ -165,19 +176,26 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             self.super.initialize.call(this, properties);
         },
         onModelUpdate: function() {
-            // TODO Need to update this to compare setting versus 'name'
-            this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
+            var data = Cajeta.theApplication.getModel().getByPath(this.modelPath);
+            this.html.prop('checked', data);
         },
         onHtmlChange: function(event) {
-            // TODO Need to update this to compare setting versus 'name'
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
+            var data = this.html.prop('checked');
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, data, this);
         },
         dock: function() {
             var self = (arguments.length > 0) ? arguments[0] : this;
             self.super.dock.call(this, self.super);
-            if (this.isDocked()) {
-                if (this.html.attr('value') === undefined || this.html.attr('value') == '')
-                    this.html.attr('value', this.componentId);
+            var self = (arguments.length > 0) ? arguments[0] : this;
+            self.super.dock.call(this);
+
+            // Bind the component to the model if we have a valid path
+            if (this.modelPath !== undefined)
+                Cajeta.theApplication.getModel().bindComponent(this);
+
+            // Set the value of the element if not set in markup
+            if (this.html.attr('value') === undefined) {
+                this.html.attr('value', this.componentId);
             }
         }
     });
