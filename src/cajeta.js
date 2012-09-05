@@ -319,7 +319,7 @@ define([
                 if (components != undefined) {
                     for (var componentId in components) {
                         var component = components[componentId];
-                        if (committor != undefined && component != committor)
+                        if (component != undefined && component != committor)
                             component.onModelUpdate();
                     }
                 }
@@ -422,17 +422,33 @@ define([
      *
      */
     Cajeta.View.Component = Cajeta.Class.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            this.elementType = 'div';
-            this.componentId = componentId;
-            this.defaultValue = defaultValue;
-            this.modelPath = modelPath === undefined ? this.componentId : modelPath;
+        /**
+         * Constructor supports mixins for fast definitions.  If only a few methods are needed, this
+         * can be an easier way of extending functionality than inheritance.  A componentId must be specified.
+         * Other properties include: modelPath, defaultValue (for model), as well as
+         * values using elementValue or attr* for element values and attributes, and methods using
+         * onHtml* for event handlers.  For portable, re-usable definitions, consider subclassing.
+         *
+         * For polymorphism, always invoke superclass definitions with call or apply, using the top level
+         * this pointer.  Use this.super to select the correct superclass implementation.  And include 'self'
+         * as a property, using this.super as the value.  Javascript does not maintain this internally, so
+         * passing 'super' in will ensure that the correct definition 'frame' is maintained.
+         *
+         * @param properties
+         */
+        initialize: function(properties) {
+            $.extend(this, properties);
+            if (this.componentId === undefined)
+                throw 'A componentId must be defined';
+            this.modelPath = properties.modelPath === undefined ? this.componentId : properties.modelPath;
             this.parent = null;
             this.children = new Object();
             this.html = null;
-            this.visible = true;
             this.viewStateId = '';
             this.hotKeys = new Object();
+            this.htmlEventBound = false;
+            if (this.visible === undefined)
+                this.visible = true;
         },
         setComponentId: function(componentId) {
             this.componentId = componentId;
@@ -471,7 +487,7 @@ define([
         addChild: function(component) {
             var componentId = component.getComponentId();
             if (componentId == undefined || componentId == '') {
-                throw 'A component must have a valid componentId';
+                throw 'A component must have a valid componentId to be added as a child';
             }
             this.children[componentId] = component;
             component.parent = this;
@@ -495,6 +511,7 @@ define([
          */
         setHtml: function(templateId, template) {
             this.html = null;
+            this.htmlEventBound = false;
             var temp = $(template);
             if (temp.length > 0) {
                 for (var i = 0; i < temp.length; i++) {
@@ -530,39 +547,42 @@ define([
             return true;
         },
         dock: function() {
-            var type = this.getElementType();
-            var domElement = $(type + '[cajeta\\:componentId = "' + this.componentId + '"]');
-            if (domElement.length == 0) {
-                // Try again, without namespace
-                domElement = $(type + '[componentId = "' + this.componentId + '"]');
-                throw 'A component was not found with componentId "' + this.componentId + '"!';
-            } else if (domElement.length > 1) {
-                throw 'More than one component was found with componentId "' + this.componentId + '"!';
-            }
-            if (this.html == null) {
-                this.html = domElement;
-            } else {
-                domElement.replaceWith(this.html);
-            }
-
-            // Set the element's attributes.  The component is set, as well as any properties
-            // with the attr prefix...
-            this.html.attr('cajeta:componentId', this.componentId);
-            for (var name in this) {
-                var index = name.indexOf('attr');
-                if (index >= 0) {
-                    this.html.attr(name.substring(4), this[name]);
+            if (!this.isDocked()) {
+                var type = this.getElementType();
+                var domElement = $(type + '[cajeta\\:componentid = "' + this.componentId + '"]');
+                if (domElement.length == 0) {
+                    // Try again, without namespace
+                    domElement = $(type + '[componentid = "' + this.componentId + '"]');
+                    throw 'Dock failed: a component was not found with componentId "' + this.componentId + '"!';
+                } else if (domElement.length > 1) {
+                    throw 'Dock failed: more than one component was found with componentId "' + this.componentId + '"!';
                 }
+                if (this.html == null) {
+                    this.html = domElement;
+                } else {
+                    domElement.replaceWith(this.html);
+                }
+
+                // Set the element's attributes.  The component is set, as well as any properties
+                // with the attr prefix...
+                this.html.attr('cajeta:componentId', this.componentId);
+                for (var name in this) {
+                    var index = name.indexOf('attr');
+                    // See if we have a property matching our convention, and not 'type', which can't be changed
+                    if (index >= 0 && name != 'attrType') {
+                        this.html.attr(name.substring(4).toLowerCase(), this[name]);
+                    }
+                }
+
+                // Add to the application component map at this point.
+                Cajeta.theApplication.getComponentMap()[this.componentId] = this;
+
+                // Bind the component to the model
+                Cajeta.theApplication.getModel().bindComponent(this);
+
+                // Update the component from the model (we may not have used our default value
+                this.onModelUpdate();
             }
-
-            // Add to the application component map at this point.
-            Cajeta.theApplication.getComponentMap()[this.componentId] = this;
-
-            // Bind the component to the model
-            Cajeta.theApplication.getModel().bindComponent(this);
-
-            // Update the component from the model (we may not have used our default value
-            this.onModelUpdate();
         },
 
         /**
@@ -576,6 +596,7 @@ define([
 
             if (this.isDocked()) {
                 this.html[0].parentNode = undefined;
+                this.htmlEventBound = false;
             }
 
             Cajeta.theApplication.getModel().releaseComponent(this);
@@ -588,14 +609,17 @@ define([
          * * events.  These include: change, mouseOver, mouseOut, focus, blur, and click.
          */
         bindHtmlEvents: function() {
-            for (var name in this) {
-                if (name.indexOf('onHtml') >= 0) {
-                    var eventName = name.substring(6).toLowerCase();
-                    var eventData = new Object();
-                    eventData['that'] = this;
-                    eventData['fn'] = this[name];
-                    this.html.bind(eventName, eventData, Cajeta.View.Component.htmlEventDispatch);
+            if (this.htmlEventBound == false) {
+                for (var name in this) {
+                    if (name.indexOf('onHtml') >= 0) {
+                        var eventName = name.substring(6).toLowerCase();
+                        var eventData = new Object();
+                        eventData['that'] = this;
+                        eventData['fnName'] = name;
+                        this.html.bind(eventName, eventData, Cajeta.View.Component.htmlEventDispatch);
+                    }
                 }
+                this.htmlEventBound = true;
             }
         },
 
@@ -619,10 +643,14 @@ define([
                 }
 
                 for (var componentId in this.children) {
-                    this.children[componentId].render();
+                    if (componentId !== undefined)
+                        this.children[componentId].render();
                 }
+
                 this.bindHtmlEvents();
 
+                // Update the component from the model (we may not have used our default value
+                this.onModelUpdate();
             } else {
                 if (this.html != undefined) {
                     this.html.hide();
@@ -653,49 +681,59 @@ define([
     });
 
     Cajeta.View.Component.htmlEventDispatch = function(event) {
-        event.data.fn.call(event.data.that, event);
+        event.data.that[event.data.fnName].call(event.data.that, event);
     };
 
     Cajeta.View.ComponentGroup = Cajeta.View.Component.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
-            this.value = defaultValue;
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            if (this.defaultValue !== undefined)
+                this.value = this.defaultValue;
         },
         onModelUpdate: function() {
             this.value =  Cajeta.theApplication.getModel().getByPath(this.modelPath);
+            // iterate through our set of children, looking for the value attribute of children.
+            // The one that matches our current value gets set.
+            for (var name in this.children) {
+                if (name !== undefined) {
+                    if (this.children[name].html.attr('value') == this.value) {
+                        this.children[name].html.prop('checked', true);
+                    }
+                }
+            }
         },
         onChildChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.value, this);
+            if (this.modelPath !== undefined) {
+                this.value = event.target.getAttribute('value');
+                if (this.value === undefined)
+                    throw 'Error: A ComponentGroup change event resulted in an undefined model value.';
+                Cajeta.theApplication.getModel().setByPath(this.modelPath, this.value, this);
+            }
         },
         bindHtmlEvents: function() {
-            var eventData = new Object();
-            eventData['that'] = this;
-            eventData['fn'] = this.onChildChange;
-            for (var name in this.children) {
-                if (name !== undefined && this.children[name].attrType == 'radio') {
-                    this.children[name].html.bind('change', eventData, Cajeta.View.Component.htmlEventDispatch);
+            if (this.htmlEventBound == false) {
+                this.htmlEventBound = true;
+                var eventData = new Object();
+                eventData['that'] = this;
+                eventData['fnName'] = 'onChildChange';
+                for (var name in this.children) {
+                    if (name !== undefined) {
+                        this.children[name].html.bind('change', eventData, Cajeta.View.Component.htmlEventDispatch);
+                    }
                 }
             }
         },
         dock: function() {
-            // Add to the application component map at this point.
-            Cajeta.theApplication.getComponentMap()[this.componentId] = this;
-            // Bind the component to the model
-            Cajeta.theApplication.getModel().bindComponent(this);
+            if (!this.isDocked()) {
+                // Add to the application component map at this point.
+                Cajeta.theApplication.getComponentMap()[this.componentId] = this;
 
-            // Update the component from the model (we may not have used our default value
-            this.onModelUpdate();
-        }
-    });
-
-    Cajeta.View.Component.Template = Cajeta.View.Component.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, null, null, self.super);
-            this.templateId = templateId;
-            this.title = 'Default Cajeta Page';
-            this.setElementType('body');
+                // Bind the component to the model if we have a valid path
+                if (this.modelPath !== undefined)
+                    Cajeta.theApplication.getModel().bindComponent(this);
+            }
         }
     });
 
@@ -704,10 +742,12 @@ define([
      * @type {*}
      */
     Cajeta.View.Page = Cajeta.View.Component.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
-            this.title = 'Default Cajeta Page';
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            if (this.title === undefined)
+                this.title = 'Default Cajeta Page';
             this.setElementType('body');
         },
         setTitle: function(title) {
@@ -742,7 +782,8 @@ define([
      * @type {Function}
      */
     Cajeta.Application = Cajeta.Class.extend({
-        initialize: function() {
+        initialize: function(properties) {
+            $.extend(this, properties);
             this.viewStateAliasMap = new Object();
             this.anchor = '';
             this.viewStateId = '';

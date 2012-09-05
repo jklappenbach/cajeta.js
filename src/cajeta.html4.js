@@ -31,24 +31,25 @@
 define(['jquery', 'cajeta'], function($, Cajeta) {
 
     Cajeta.View.Div = Cajeta.View.Component.extend({
-        initialize: function(componentId) {
-            var self = (arguments.length > 1) ? arguments[2] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            this.elementType = 'div';
         }
     });
 
     Cajeta.View.Link = Cajeta.View.Component.extend({
-        initialize: function(componentId) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
-        },
-        onHtmlClicked: function(event) {
-
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            this.elementType = 'a';
         }
     });
 
     Cajeta.View.Span = Cajeta.View.Component.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
+        initialize: function(properties) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
             this.elementType = 'span';
@@ -62,11 +63,11 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
     });
 
     Cajeta.View.Label = Cajeta.View.Component.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
             this.elementType = 'label';
-            this.attrFor = '';
         },
         onModelUpdate: function() {
             if (this.isDocked())
@@ -80,11 +81,17 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      *
      */
     Cajeta.View.Input = Cajeta.View.Component.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
             this.elementType = 'input';
-            this.attrValue = defaultValue;
+            if (this.attrValue === undefined) {
+                if (properties.defaultValue !== undefined)
+                    this.attrValue = properties.defaultValue;
+                else
+                    this.attrValue = this.componentId;
+            }
         },
         setAttrName: function(name) {
             this.attrName = name;
@@ -124,9 +131,12 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      *
      */
     Cajeta.View.TextInput = Cajeta.View.Input.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            if (this.defaultValue !== undefined)
+                this.attrValue = this.defaultValue;
         },
         onModelUpdate: function() {
             this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
@@ -140,9 +150,19 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      * Manages an HTML4 RadioInput control
      */
     Cajeta.View.RadioInput = Cajeta.View.Input.extend({
-        initialize: function(componentId) {
-            var self = (arguments.length > 1) ? arguments[1] : this;
-            self.super.initialize.call(this, componentId, null, null, self.super);
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+        },
+        dock: function() {
+            var self = (arguments.length > 0) ? arguments[0] : this;
+            self.super.dock.call(this);
+
+            // Set the value of the element if not set in markup
+            if (this.html.attr('value') === undefined) {
+                this.html.attr('value', this.componentId);
+            }
         }
     });
 
@@ -150,24 +170,32 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      * Manages an HTML4 RadioInput component
      */
     Cajeta.View.CheckboxInput = Cajeta.View.Input.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
         },
         onModelUpdate: function() {
-            // TODO Need to update this to compare setting versus 'name'
-            this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
+            var data = Cajeta.theApplication.getModel().getByPath(this.modelPath);
+            this.html.prop('checked', data);
         },
         onHtmlChange: function(event) {
-            // TODO Need to update this to compare setting versus 'name'
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
+            var data = this.html.prop('checked');
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, data, this);
         },
         dock: function() {
             var self = (arguments.length > 0) ? arguments[0] : this;
             self.super.dock.call(this, self.super);
-            if (this.isDocked()) {
-                if (this.html.attr('value') === undefined || this.html.attr('value') == '')
-                    this.html.attr('value', this.componentId);
+            var self = (arguments.length > 0) ? arguments[0] : this;
+            self.super.dock.call(this);
+
+            // Bind the component to the model if we have a valid path
+            if (this.modelPath !== undefined)
+                Cajeta.theApplication.getModel().bindComponent(this);
+
+            // Set the value of the element if not set in markup
+            if (this.html.attr('value') === undefined) {
+                this.html.attr('value', this.componentId);
             }
         }
     });
@@ -176,9 +204,10 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      *
      */
     Cajeta.View.TextArea = Cajeta.View.Component.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
             this.elementType = 'textarea';
         },
         setAttrName: function(name) {
@@ -232,15 +261,10 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      * @type {*}
      */
     Cajeta.View.Legend = Cajeta.View.Component.extend({
-        /**
-         *
-         * @param componentId
-         * @param modelPath
-         * @param defaultValue
-         */
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
             this.elementType = 'legend';
         }
     });
@@ -250,16 +274,10 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      * @type {*}
      */
     Cajeta.View.Select = Cajeta.View.Component.extend({
-        /**
-         *
-         * @param componentId
-         * @param modelPath
-         * @param defaultValue
-         * @param options A list containing Options and OptionGroups
-         */
-        initialize: function(componentId, modelPath, defaultValue, options) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
             this.elementType = 'select';
         }
     });
@@ -268,9 +286,10 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      *
      */
     Cajeta.View.Form = Cajeta.View.Component.extend({
-        initialize: function(componentId, modelPath, defaultValue) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
             this.setElementType('form');
         },
         onHtmlSubmit: function() {
