@@ -5,11 +5,11 @@ CajetaJS was created with the desire to bring the power of Apache Wicket's templ
 
 <h2>Why Wicket?</h2>
 
-Wicket was really the first Java framework for web applications that felt right for me.  In many ways, it was exactly like developing on many native application SDKs.  One creates the application object, then some components which are added as children, and the entire application is managed as a hierarchy.  In addition, the Wicket founders understood the workflow in many top development houses.  Broken into teams, a UX side focuses on graphic arts, information architecture, and the user experience; while a development side attempts to convert these deliverables into scalable, bulletproof implementation.  In the ideal workflow, both teams share the declarative artifacts of web applications: HTML.
+Wicket was really the first Java framework for web applications that felt right for me.  In many ways, it was exactly like developing on traditional native application SDKs.  One creates the application object, then some components which are added as children, and the entire application is managed as a hierarchy.  In addition, the Wicket founders understood the workflow in many top development houses.  Broken into teams, a UX side focuses on graphic design, information architecture, and the user experience; while a development side attempts to convert these deliverables into scalable, bulletproof implementation.  In the ideal workflow, both teams share the declarative artifacts over the span of the development lifecycle.
 
 The problem is that when UX teams deliver HTML, the developers usually take these files, pepper them with macros, template declarations, and other non-HTML conforming code.  The result is that the UX deliverables are usually dead on arrival.  Wicket takes an approach to dynamic content that avoids this, by using special attributes in normal HTML tags that indicate targets for dynamic content, but are ignored by editors and browsers.  Furthermore, Wicket favored AJAX based element replacement over page reloads, enabling dramatically more responsive applications with half the effort of competing SDKs.
 
-Obviously, with a JavaScript framework operating on the browser or native sandbox, the CajetaJS API is going to be a bit different than Wicket's.  But for those of you familiar, I hope you feel that I've managed to preserve the original semantics.
+Obviously, with a JavaScript framework operating on the browser or native sandbox, CajetaJS is going to be a bit different than Wicket.  But for those of you familiar, I hope you feel that I've managed to preserve the original semantics.
 
 <h2>Modularity</h2>
 
@@ -32,9 +32,9 @@ JavaScript has its fair share of detractors, and honestly, they have every right
 
 The basic idea behind MA is to evaluate the design of a software system from the perspective of the interaction of small atomic units of functionality or patterns, and to implement the system using these atoms.  From the book Core J2EE Patterns:
 
-We define micro-architecture as a set of patterns used together to realize parts of a system or subsystem. We view a micro-architecture as a building block for piecing together well-known, cohesive portions of an overall architecture. A micro-architecture is used to solve a coarser-grained, higher-level problem that cannot be solved by a single pattern. Thus, a micro-architecture represents a higher level of abstraction than the individual patterns.
+<blockquote>We define micro-architecture as a set of patterns used together to realize parts of a system or subsystem. We view a micro-architecture as a building block for piecing together well-known, cohesive portions of an overall architecture. A micro-architecture is used to solve a coarser-grained, higher-level problem that cannot be solved by a single pattern. Thus, a micro-architecture represents a higher level of abstraction than the individual patterns.</blockquote>
 
-In developing Cajeta, the concept of a micro-architecture has been the litmus test for design.  Over my years of software development, I've seen important benefits from the approach.  Code use is maximized, as is maintainability.  But the best? That's when you've reach a critical mass, and the code just seems to write itself.
+In developing Cajeta, the concept of a micro-architecture has been the litmus test for design.  Over my years of software development, I've seen important benefits from the approach.  Code use is maximized, as is maintainability.  But the best? That's when you've reach a critical mass, and the code is largely written by drawing on existing primitives, instead of trying to figure out how to refactor larger constructs.
 
 <h2>Scalability</h2>
 
