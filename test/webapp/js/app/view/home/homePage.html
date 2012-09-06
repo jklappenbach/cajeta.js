@@ -1,11 +1,13 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <div xmlns:cajeta="http://www.cajetajs/v01" cajeta:templateId="homePage">
-
+	Experiment with the undo functionality built in to the framework -- modify a few fields, and then press the
+	back button.
 	<form cajeta:componentId="testForm">
 		<fieldset>
 			<legend>Text input fields</legend>
-			First name: <input type="text" cajeta:componentId="firstName" /><br />
-			Last name: <input type="text" cajeta:componentId="lastName" /><br />
+			<label cajeta:componentId="firstLabel"></label><br />
+			First Field: <input type="text" cajeta:componentId="firstTextField" /><br />
+			Second Field: <input type="text" cajeta:componentId="secondTextField" /><br />
 		</fieldset>
 		<fieldset>
 			<legend>Checkbox</legend>

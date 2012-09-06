@@ -29,8 +29,9 @@
  */
 
 define(['jquery', 'cajeta'], function($, Cajeta) {
+    Cajeta.View.Html4 = {};
 
-    Cajeta.View.Div = Cajeta.View.Component.extend({
+    Cajeta.View.Html4.Div = Cajeta.View.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -39,7 +40,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         }
     });
 
-    Cajeta.View.Link = Cajeta.View.Component.extend({
+    Cajeta.View.Html4.Link = Cajeta.View.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -48,39 +49,44 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         }
     });
 
-    Cajeta.View.Span = Cajeta.View.Component.extend({
+    Cajeta.View.Html4.Span = Cajeta.View.Component.extend({
         initialize: function(properties) {
             var self = (arguments.length > 3) ? arguments[3] : this;
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
             this.elementType = 'span';
         },
-        onModelUpdate: function() {
-            if (this.isDocked())
-                throw 'html was undefined for componentId ' + this.componentId;
-
-            this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
+        getValue: function() {
+            return this.html.html();
+        },
+        setValue: function(value) {
+            this.html.html(value);
         }
     });
 
-    Cajeta.View.Label = Cajeta.View.Component.extend({
+    Cajeta.View.Html4.Label = Cajeta.View.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'label';
         },
-        onModelUpdate: function() {
-            if (this.isDocked())
-                throw 'html was undefined for componentId ' + this.componentId;
-
-            this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
+        getValue: function() {
+            return this.html.html();
+        },
+        setValue: function(value) {
+            this.html.html(value);
+        },
+        dock: function() {
+            var self = (arguments.length > 0) ? arguments[0] : this;
+            self.super.dock.call(this);
         }
+
     });
 
     /**
      *
      */
-    Cajeta.View.Input = Cajeta.View.Component.extend({
+    Cajeta.View.Html4.Input = Cajeta.View.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -130,7 +136,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
     /**
      *
      */
-    Cajeta.View.TextInput = Cajeta.View.Input.extend({
+    Cajeta.View.Html4.TextInput = Cajeta.View.Html4.Input.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -138,11 +144,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             if (this.defaultValue !== undefined)
                 this.attrValue = this.defaultValue;
         },
-        onModelUpdate: function() {
-            this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
-        },
         onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
         }
     });
 
@@ -150,7 +153,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      * Manages an HTML4 RadioInput control
      * State handling managed by ComponentGroup.
      */
-    Cajeta.View.RadioInput = Cajeta.View.Input.extend({
+    Cajeta.View.Html4.RadioInput = Cajeta.View.Html4.Input.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -170,25 +173,20 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
     /**
      * Manages an HTML4 CheckboxInput control
      */
-    Cajeta.View.CheckboxInput = Cajeta.View.Input.extend({
+    Cajeta.View.Html4.CheckboxInput = Cajeta.View.Html4.Input.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
         },
-        isChecked: function() {
-            if (this.isDocked())
-                return this.html.prop('checked');
-            else
-                throw 'Component must be docked before calling this method.';
+        setValue: function(value) {
+            this.html.prop('checked', value);
         },
-        onModelUpdate: function() {
-            var data = Cajeta.theApplication.getModel().getByPath(this.modelPath);
-            this.html.prop('checked', data);
+        getValue: function() {
+            return this.html.prop('checked');
         },
         onHtmlChange: function(event) {
-            var data = this.html.prop('checked');
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, data, this);
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
         },
         dock: function() {
             var self = (arguments.length > 0) ? arguments[0] : this;
@@ -208,7 +206,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
     /**
      *
      */
-    Cajeta.View.TextArea = Cajeta.View.Component.extend({
+    Cajeta.View.Html4.TextArea = Cajeta.View.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -259,11 +257,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
 
             return this.html.attr('readonly');
         },
-        onModelUpdate: function() {
-            this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
-        },
         onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
         }
     });
 
@@ -271,12 +266,20 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      *
      * @type {*}
      */
-    Cajeta.View.Legend = Cajeta.View.Component.extend({
+    Cajeta.View.Html4.Legend = Cajeta.View.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'legend';
+        },
+        dock: function() {
+            if (!this.isDocked()) {
+                var self = (arguments.length > 0) ? arguments[0] : this;
+                self.super.dock.call(this, self.super);
+                if (this.defaultValue !== undefined)
+                    this.setValue(this.defaultValue);
+            }
         }
     });
 
@@ -284,7 +287,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      *
      * @type {*}
      */
-    Cajeta.View.Select = Cajeta.View.Component.extend({
+    Cajeta.View.Html4.Select = Cajeta.View.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -337,18 +340,39 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                 }
             }
         },
-        onModelUpdate: function() {
-            this.html.val(Cajeta.theApplication.getModel().getByPath(this.modelPath));
-        },
         onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.val(), this);
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
         }
     });
 
     /**
      *
      */
-    Cajeta.View.Form = Cajeta.View.Component.extend({
+    Cajeta.View.Html4.Image = Cajeta.View.Component.extend({
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            this.setElementType('img');
+        },
+        dock: function() {
+            if (!this.isDocked()) {
+                var self = (arguments.length > 0) ? arguments[0] : this;
+                self.super.dock.call(this, self.super);
+
+            }
+        },
+        getSrc: function() {
+
+        }
+
+        //src="smiley.gif" alt="Smiley face" width="32" height
+    });
+
+    /**
+     *
+     */
+    Cajeta.View.Html4.Form = Cajeta.View.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;

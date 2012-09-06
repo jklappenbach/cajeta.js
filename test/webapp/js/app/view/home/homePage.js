@@ -3,54 +3,58 @@ define([
     'cajetaHtml4',
     'text!js/app/view/home/homePage.html'
 ], function($, Cajeta, homePageText) {
+    
+    // Create an alias for shortening namespace.
+    var Html4 = Cajeta.View.Html4;
+
     var homePage = new Cajeta.View.Page({ componentId: Cajeta.View.homePage });
     homePage.setHtml('homePage', homePageText);
-    var form = new Cajeta.View.Form({ componentId: 'testForm',
+    var form = new Html4.Form({ componentId: 'testForm',
         onHtmlSubmit: function() {
             alert('Got a submit!');
         }
     });
 
-    var firstNameInput = new Cajeta.View.TextInput({ componentId: 'firstName',
-        modelPath: 'testForm.firstName', defaultValue: 'Julian' });
-    form.addChild(firstNameInput);
-    var lastNameInput = new Cajeta.View.TextInput({ componentId: 'lastName',
-        modelPath: 'testForm.lastName', defaultValue: 'Bach' });
-    form.addChild(lastNameInput);
+    form.addChild(new Html4.Label({ componentId: 'firstLabel',
+        modelPath: 'testForm.firstLabelField', defaultValue: 'Label Text' }));
+    form.addChild(new Html4.TextInput({ componentId: 'firstTextField',
+        modelPath: 'testForm.firstTextField', defaultValue: 'First Example Text' }));
+    form.addChild(new Html4.TextInput({ componentId: 'secondTextField',
+        modelPath: 'testForm.secondTextField', defaultValue: 'Second Example Text' }));
 
     // Add Checkboxes
-    form.addChild(new Cajeta.View.CheckboxInput({ componentId: 'greenColor',
+    form.addChild(new Html4.CheckboxInput({ componentId: 'greenColor',
         modelPath: 'testForm.greenColor', defaultValue: true }));
-    form.addChild(new Cajeta.View.CheckboxInput({ componentId: 'blueColor',
+    form.addChild(new Html4.CheckboxInput({ componentId: 'blueColor',
         modelPath: 'testForm.blueColor', defaultValue: false }));
-    form.addChild(new Cajeta.View.CheckboxInput({ componentId: 'redColor',
+    form.addChild(new Html4.CheckboxInput({ componentId: 'redColor',
         modelPath: 'testForm.redColor', defaultValue: true }));
 
     // Add RadioGroup
     var radioGroup = new Cajeta.View.ComponentGroup({ componentId: 'dietGroup',
         modelPath: 'testForm.diet', defaultValue: 'omnivore' });
-    radioGroup.addChild(new Cajeta.View.RadioInput({ componentId: 'vegetarian' }));
-    radioGroup.addChild(new Cajeta.View.RadioInput({ componentId: 'pescatarian' }));
-    radioGroup.addChild(new Cajeta.View.RadioInput({ componentId: 'omnivore' }));
+    radioGroup.addChild(new Html4.RadioInput({ componentId: 'vegetarian' }));
+    radioGroup.addChild(new Html4.RadioInput({ componentId: 'pescatarian' }));
+    radioGroup.addChild(new Html4.RadioInput({ componentId: 'omnivore' }));
 
     // TextArea
-    form.addChild(new Cajeta.View.TextArea({ componentId: 'textArea',
+    form.addChild(new Html4.TextArea({ componentId: 'textArea',
         modelPath: 'testForm.description', defaultValue: 'Enter a description here.' }));
 
-    form.addChild(new Cajeta.View.Select({ componentId: 'selectStatic',
+    form.addChild(new Html4.Select({ componentId: 'selectStatic',
         modelPath: 'testForm.selectStatic' }));
 
-    form.addChild(new Cajeta.View.Select({ componentId: 'selectProgrammatic',
+    form.addChild(new Html4.Select({ componentId: 'selectProgrammatic',
         modelPath: 'testForm.selectProgrammatic', options: [
             { elementType: 'option', label: 'First Option', value: 'firstOption' },
             { elementType: 'option', label: 'Second Option', value: 'secondOption'},
             { elementType: 'option', label: 'Third Option', value: 'thirdOption' }],
         onHtmlChange: function() {
-            alert('Programmatic Change (wish it was this easy with the world)!');
+            alert('Programmatic is programmed.');
         }
     }));
 
-    form.addChild(new Cajeta.View.Select({ componentId: 'selectProgrammaticOption',
+    form.addChild(new Html4.Select({ componentId: 'selectProgrammaticOption',
         modelPath: 'testForm.selectProgrammatic', options: [
             { elementType: 'optgroup', label: 'First Option', options: [
                 { elementType: 'option', label: 'First Child Option', value: 'firstChildOption'},
@@ -58,7 +62,7 @@ define([
             { elementType: 'option', label: 'Second Option', value: 'secondOption'},
             { elementType: 'option', label: 'Third Option', value: 'thirdOption' }],
         onHtmlChange: function() {
-            alert('Programmatic Change (wish it was this easy with the world)!');
+            alert('Option select is optioned.');
         }
     }));
 
