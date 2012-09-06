@@ -38,11 +38,23 @@ define([
         modelPath: 'testForm.description', defaultValue: 'Enter a description here.' }));
 
     form.addChild(new Cajeta.View.Select({ componentId: 'selectStatic',
-        modelPath: 'testForm.SelectStatic' }));
+        modelPath: 'testForm.selectStatic' }));
 
     form.addChild(new Cajeta.View.Select({ componentId: 'selectProgrammatic',
         modelPath: 'testForm.selectProgrammatic', options: [
             { elementType: 'option', label: 'First Option', value: 'firstOption' },
+            { elementType: 'option', label: 'Second Option', value: 'secondOption'},
+            { elementType: 'option', label: 'Third Option', value: 'thirdOption' }],
+        onHtmlChange: function() {
+            alert('Programmatic Change (wish it was this easy with the world)!');
+        }
+    }));
+
+    form.addChild(new Cajeta.View.Select({ componentId: 'selectProgrammaticOption',
+        modelPath: 'testForm.selectProgrammatic', options: [
+            { elementType: 'optgroup', label: 'First Option', options: [
+                { elementType: 'option', label: 'First Child Option', value: 'firstChildOption'},
+                { elementType: 'option', label: 'Second Child Option', value: 'secondChildOption' }] },
             { elementType: 'option', label: 'Second Option', value: 'secondOption'},
             { elementType: 'option', label: 'Third Option', value: 'thirdOption' }],
         onHtmlChange: function() {

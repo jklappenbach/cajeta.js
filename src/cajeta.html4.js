@@ -148,6 +148,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
 
     /**
      * Manages an HTML4 RadioInput control
+     * State handling managed by ComponentGroup.
      */
     Cajeta.View.RadioInput = Cajeta.View.Input.extend({
         initialize: function(properties) {
@@ -167,13 +168,19 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
     });
 
     /**
-     * Manages an HTML4 RadioInput component
+     * Manages an HTML4 CheckboxInput control
      */
     Cajeta.View.CheckboxInput = Cajeta.View.Input.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
+        },
+        isChecked: function() {
+            if (this.isDocked())
+                return this.html.prop('checked');
+            else
+                throw 'Component must be docked before calling this method.';
         },
         onModelUpdate: function() {
             var data = Cajeta.theApplication.getModel().getByPath(this.modelPath);
@@ -186,8 +193,6 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         dock: function() {
             var self = (arguments.length > 0) ? arguments[0] : this;
             self.super.dock.call(this, self.super);
-            var self = (arguments.length > 0) ? arguments[0] : this;
-            self.super.dock.call(this);
 
             // Bind the component to the model if we have a valid path
             if (this.modelPath !== undefined)
@@ -253,6 +258,12 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                 return this.attrReadonly;
 
             return this.html.attr('readonly');
+        },
+        onModelUpdate: function() {
+            this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
+        },
+        onHtmlChange: function(event) {
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
         }
     });
 
@@ -279,6 +290,58 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'select';
+        },
+        dock: function() {
+            if (!this.isDocked()) {
+                var self = (arguments.length > 0) ? arguments[0] : this;
+                self.super.dock.call(this, self.super);
+
+                var populateOption = function(option, properties) {
+                    for (var name in properties) {
+                        if (name !== undefined && name != 'elementType') {
+                            var value = properties[name];
+                            option.attr(name, value);
+                            if (name == 'label')
+                                option.html(value);
+                        }
+                    }
+                }
+
+                // Add Options and Option Groups
+                if (this.options !== undefined) {
+                    for (var i = 0; i < this.options.length; i++) {
+                        element = $('<' + this.options[i].elementType + ' />');
+                        if (this.options[i].elementType == 'optgroup') {
+                            element.attr('label', this.options[i].label);
+                            element.html(this.options[i].label);
+                            for (var j = 0; j < this.options[i].options.length; j++) {
+                                var option = $('<' + this.options[i].options[j].elementType + ' />');
+                                populateOption(option, this.options[i].options[j]);
+                                element.append(option);
+                            }
+                        } else {
+                            populateOption(element, this.options[i]);
+                        }
+                        this.html.append(element);
+                    }
+                }
+
+                // Bind the component to the model if we have a valid path
+                if (this.modelPath !== undefined) {
+                    if (this.defaultValue == undefined) {
+                        this.defaultValue = this.html.val();
+                    } else {
+                        this.html.val(this.defaultValue);
+                    }
+                    Cajeta.theApplication.getModel().bindComponent(this);
+                }
+            }
+        },
+        onModelUpdate: function() {
+            this.html.val(Cajeta.theApplication.getModel().getByPath(this.modelPath));
+        },
+        onHtmlChange: function(event) {
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.val(), this);
         }
     });
 
@@ -291,9 +354,6 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.setElementType('form');
-        },
-        onHtmlSubmit: function() {
-            alert('Got a submit!');
         }
     });
 

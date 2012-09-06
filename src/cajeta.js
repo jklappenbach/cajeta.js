@@ -85,8 +85,8 @@ define([
         initialize: function(cacheId) {
             this.cacheId = cacheId
         },
-        putValue: function(key, value) { alert('This abstract method must be overridden!'); },
-        getValue: function(key) { alert('This abstract method must be overridden!'); return null; }
+        putValue: function(key, value) { alert('This abstract method must be overridden.'); },
+        getValue: function(key) { alert('This abstract method must be overridden.'); return null; }
     });
 
     /**
@@ -553,9 +553,9 @@ define([
                 if (domElement.length == 0) {
                     // Try again, without namespace
                     domElement = $(type + '[componentid = "' + this.componentId + '"]');
-                    throw 'Dock failed: a component was not found with componentId "' + this.componentId + '"!';
+                    throw 'Dock failed: a component was not found with componentId "' + this.componentId + '".';
                 } else if (domElement.length > 1) {
-                    throw 'Dock failed: more than one component was found with componentId "' + this.componentId + '"!';
+                    throw 'Dock failed: more than one component was found with componentId "' + this.componentId + '".';
                 }
                 if (this.html == null) {
                     this.html = domElement;
@@ -579,9 +579,6 @@ define([
 
                 // Bind the component to the model
                 Cajeta.theApplication.getModel().bindComponent(this);
-
-                // Update the component from the model (we may not have used our default value
-                this.onModelUpdate();
             }
         },
 
@@ -836,9 +833,9 @@ define([
                 // for the application, and populate the (browser's) url with the anchor,
                 // bootstrapping the render.
                 if (this.anchor === undefined || this.anchor == '') {
-                    this.viewStateId = Cajeta.View.homePage;
+                    var viewStateId = Cajeta.View.homePage;
                     this.modelStateId = this.model.getStateId();
-                    this.anchor = this.viewStateId;
+                    this.anchor = viewStateId;
                     if (this.modelStateId != '') {
                         this.anchor += '=' + this.modelStateId;
                     }
@@ -959,14 +956,6 @@ define([
             } else {
                 this.currentPage = component;
             }
-
-
-            if (fromUrl !== undefined && fromUrl == false) {
-                this.setViewStateId(component.getViewState());
-            } else {
-                // render the page
-                this.currentPage.render();
-            }
         },
 
         /**
@@ -976,11 +965,10 @@ define([
          */
         setViewStateId: function(viewStateId, fromUrl) {
             // If the sequence was URL driven, we communicate the state to the view...
-            this.viewStateId = viewStateId;
             if (fromUrl !== undefined && fromUrl == true) {
                 var page;
                 // Distribute the viewState over the components...
-                var viewStateEntries = this.viewStateId.split(':');
+                var viewStateEntries = viewStateId.split(':');
                 for (var i = 0; i < viewStateEntries.length; i++) {
                     var componentState = viewStateEntries[i].split('.');
                     var component = this.componentMap[componentState[0]];
@@ -993,12 +981,17 @@ define([
                         }
                     } else {
                         // We have an invalid viewStateId!  Set it to the homePage
-                        this.viewStateId = Cajeta.View.homePage;
-                        page = this.componentMap[this.viewStateId];
+                        viewStateId = Cajeta.View.homePage;
+                        page = this.componentMap[viewStateId];
                         break;
                     }
                 }
-                this.setCurrentPage(page, fromUrl);
+                if (this.viewStateId != viewStateId) {
+                    this.viewStateId = viewStateId;
+                    if (page != this.currentPage)
+                        this.setCurrentPage(page, fromUrl);
+                    this.render();
+                }
             } else {
                 // Otherwise, that state already exists in the view, and all that needs to be done is
                 // update the internal variable and the URL.

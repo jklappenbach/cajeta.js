@@ -292,27 +292,56 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             this.elementType = 'select';
         },
         dock: function() {
-            // TODO Must fix the oddness with the static select options moved to the programmatic option select.
-            var self = (arguments.length > 0) ? arguments[0] : this;
-            self.super.dock.call(this, self.super);
+            if (!this.isDocked()) {
+                var self = (arguments.length > 0) ? arguments[0] : this;
+                self.super.dock.call(this, self.super);
 
-            if (this.options !== undefined) {
-                for (var i = 0; i < this.options.length; i++) {
-                    var element = $(this.options[i].elementType);
-                    delete this.options[i].elementType;
-                    $.extend(element, this.options[i]);
-                    this.html.append(element);
+                var populateOption = function(option, properties) {
+                    for (var name in properties) {
+                        if (name !== undefined && name != 'elementType') {
+                            var value = properties[name];
+                            option.attr(name, value);
+                            if (name == 'label')
+                                option.html(value);
+                        }
+                    }
+                }
+
+                // Add Options and Option Groups
+                if (this.options !== undefined) {
+                    for (var i = 0; i < this.options.length; i++) {
+                        element = $('<' + this.options[i].elementType + ' />');
+                        if (this.options[i].elementType == 'optgroup') {
+                            element.attr('label', this.options[i].label);
+                            element.html(this.options[i].label);
+                            for (var j = 0; j < this.options[i].options.length; j++) {
+                                var option = $('<' + this.options[i].options[j].elementType + ' />');
+                                populateOption(option, this.options[i].options[j]);
+                                element.append(option);
+                            }
+                        } else {
+                            populateOption(element, this.options[i]);
+                        }
+                        this.html.append(element);
+                    }
+                }
+
+                // Bind the component to the model if we have a valid path
+                if (this.modelPath !== undefined) {
+                    if (this.defaultValue == undefined) {
+                        this.defaultValue = this.html.val();
+                    } else {
+                        this.html.val(this.defaultValue);
+                    }
+                    Cajeta.theApplication.getModel().bindComponent(this);
                 }
             }
-
-            // Bind the component to the model if we have a valid path
-            if (this.modelPath !== undefined)
-                Cajeta.theApplication.getModel().bindComponent(this);
-
-            // Set the value of the element if not set in markup
-            if (this.html.attr('value') === undefined) {
-                this.html.attr('value', this.componentId);
-            }
+        },
+        onModelUpdate: function() {
+            this.html.val(Cajeta.theApplication.getModel().getByPath(this.modelPath));
+        },
+        onHtmlChange: function(event) {
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.val(), this);
         }
     });
 
