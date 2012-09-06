@@ -40,4 +40,11 @@ In developing Cajeta, the concept of a micro-architecture has been the litmus te
 
 The benefits of an approach like Cajeta are much more than what I've outlined so far.  One of the strategic accomplishments of the current generation of JavaScript frameworks is the move of the controller from the server to the client.  Applications can now be easily designed with all navigation and view logic completely resident in the browser.  This can potentially reduce interaction with back-end services to just authentication, and REST access to datasources.  For the end-user, the result is a much more responsive and enjoyable experience.  For the server developer, the ability to focus on REST based APIs results in reduced complexity and time-to-market.  For business stakeholders, the benefits are realized in cost savings with reduced loads and development overhead.
 
-I've really enjoyed putting together this project, and I sincerely hope you enjoy it as well.
+<h2>Getting Started</h2>
+
+The project is currently in a prototype phase, but is functional.  Until the build process is worked out, r.js (or any formal chain) will be left to the developer. A test project has been placed under cajeta.js/test/webapp.  Since the project uses the text.js plugin for RequireJS, requests are only supported through a webserver.  Just configure your webserver's document root for cajeta.js/test/webapp, start the server, and point your browser to <a href="http://localhost/index.html">http://localhost/index.html</a>.
+
+A demo REST server is planned, both to test a currently undeveloped client request layer, as well as demonstrate a POC REST server based on Apache Avro.
+
+For more information on the project, please see the Wiki and the Issues sections of this site.  Also, feel free to join groups for <a href="https://groups.google.com/forum/?fromgroups#!forum/cajeta-users">CajetaJS Users</a> and <a href="https://groups.google.com/forum/?fromgroups#!forum/cajeta-developers">CajetaJS Developers</a> depending on your interest.
+
