@@ -148,6 +148,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
 
     /**
      * Manages an HTML4 RadioInput control
+     * State handling managed by ComponentGroup.
      */
     Cajeta.View.RadioInput = Cajeta.View.Input.extend({
         initialize: function(properties) {
@@ -167,13 +168,19 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
     });
 
     /**
-     * Manages an HTML4 RadioInput component
+     * Manages an HTML4 CheckboxInput control
      */
     Cajeta.View.CheckboxInput = Cajeta.View.Input.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
+        },
+        isChecked: function() {
+            if (this.isDocked())
+                return this.html.prop('checked');
+            else
+                throw 'Component must be docked before calling this method.';
         },
         onModelUpdate: function() {
             var data = Cajeta.theApplication.getModel().getByPath(this.modelPath);
@@ -186,8 +193,6 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         dock: function() {
             var self = (arguments.length > 0) ? arguments[0] : this;
             self.super.dock.call(this, self.super);
-            var self = (arguments.length > 0) ? arguments[0] : this;
-            self.super.dock.call(this);
 
             // Bind the component to the model if we have a valid path
             if (this.modelPath !== undefined)
@@ -253,6 +258,12 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                 return this.attrReadonly;
 
             return this.html.attr('readonly');
+        },
+        onModelUpdate: function() {
+            this.html.attr('value', Cajeta.theApplication.getModel().getByPath(this.modelPath));
+        },
+        onHtmlChange: function(event) {
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
         }
     });
 
@@ -279,6 +290,29 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'select';
+        },
+        dock: function() {
+            // TODO Must fix the oddness with the static select options moved to the programmatic option select.
+            var self = (arguments.length > 0) ? arguments[0] : this;
+            self.super.dock.call(this, self.super);
+
+            if (this.options !== undefined) {
+                for (var i = 0; i < this.options.length; i++) {
+                    var element = $(this.options[i].elementType);
+                    delete this.options[i].elementType;
+                    $.extend(element, this.options[i]);
+                    this.html.append(element);
+                }
+            }
+
+            // Bind the component to the model if we have a valid path
+            if (this.modelPath !== undefined)
+                Cajeta.theApplication.getModel().bindComponent(this);
+
+            // Set the value of the element if not set in markup
+            if (this.html.attr('value') === undefined) {
+                this.html.attr('value', this.componentId);
+            }
         }
     });
 
@@ -291,9 +325,6 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.setElementType('form');
-        },
-        onHtmlSubmit: function() {
-            alert('Got a submit!');
         }
     });
 

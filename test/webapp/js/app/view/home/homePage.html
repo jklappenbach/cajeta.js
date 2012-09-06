@@ -16,8 +16,23 @@
 		<fieldset>
 			<legend>Radio</legend>
 			<input type="radio" name="diet" cajeta:componentId="vegetarian" />Vegetarian<br />
-			<input type="radio" name="diet" cajeta:componentId="pescetarian" />Pescetarian<br />
+			<input type="radio" name="diet" cajeta:componentId="pescatarian" />Pescatarian<br />
 			<input type="radio" name="diet" cajeta:componentId="omnivore" />Omnivore<br />
+		</fieldset>
+		<fieldset>
+			<legend>TextArea</legend>
+			<textarea rows="4" cols="10" cajeta:componentId="textArea" />
+		</fieldset>
+		<fieldset>
+			<legend>Select</legend>
+			Static:
+			<select cajeta:componentId="selectStatic">
+				<option value="First Choice">First Choice</option>
+				<option value="Second Choice">Second Choice</option>
+				<option value="Third Choice">Third Choice</option>
+			</select><br />
+			Programmatic: <select cajeta:componentId="selectProgrammatic" /><br />
+
 		</fieldset>
 
 		<input type="submit" value="Submit" />

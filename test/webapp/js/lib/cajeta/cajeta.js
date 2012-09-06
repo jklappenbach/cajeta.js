@@ -85,8 +85,8 @@ define([
         initialize: function(cacheId) {
             this.cacheId = cacheId
         },
-        putValue: function(key, value) { alert('This abstract method must be overridden!'); },
-        getValue: function(key) { alert('This abstract method must be overridden!'); return null; }
+        putValue: function(key, value) { alert('This abstract method must be overridden.'); },
+        getValue: function(key) { alert('This abstract method must be overridden.'); return null; }
     });
 
     /**
@@ -553,9 +553,9 @@ define([
                 if (domElement.length == 0) {
                     // Try again, without namespace
                     domElement = $(type + '[componentid = "' + this.componentId + '"]');
-                    throw 'Dock failed: a component was not found with componentId "' + this.componentId + '"!';
+                    throw 'Dock failed: a component was not found with componentId "' + this.componentId + '".';
                 } else if (domElement.length > 1) {
-                    throw 'Dock failed: more than one component was found with componentId "' + this.componentId + '"!';
+                    throw 'Dock failed: more than one component was found with componentId "' + this.componentId + '".';
                 }
                 if (this.html == null) {
                     this.html = domElement;
