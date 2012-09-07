@@ -37,6 +37,12 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'div';
+        },
+        getValue: function() {
+            return this.html.html();
+        },
+        setValue: function(value) {
+            this.html.html(value);
         }
     });
 
@@ -46,6 +52,19 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'a';
+        },
+        getValue: function() {
+            if (this.isDocked())
+                return this.html.attr('href');
+            else
+                return this.attrHref;
+        },
+        setValue: function(value) {
+            if (this.isDocked()) {
+                this.html.attr('href', value);
+            } else {
+                this.attrHref = value;
+            }
         }
     });
 
@@ -56,10 +75,16 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             this.elementType = 'span';
         },
         getValue: function() {
-            return this.html.html();
+            if (this.isDocked())
+                return this.html.html();
+            else
+                return this.elementContent;
         },
         setValue: function(value) {
-            this.html.html(value);
+            if (this.isDocked())
+                this.html.html(value);
+            else
+                this.elementContent = value;
         }
     });
 
@@ -71,10 +96,16 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             this.elementType = 'label';
         },
         getValue: function() {
-            return this.html.html();
+            if (this.isDocked())
+                return this.html.html();
+            else
+                return this.elementContent;
         },
         setValue: function(value) {
-            this.html.html(value);
+            if (this.isDocked())
+                this.html.html(value);
+            else
+                this.elementContent = value;
         }
     });
 
@@ -93,38 +124,6 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                 else
                     this.attrValue = this.componentId;
             }
-        },
-        setAttrName: function(name) {
-            this.attrName = name;
-            if (this.isDocked())
-                this.html.attr('name', name);
-        },
-        getAttrName: function() {
-            if (!this.isDocked())
-                throw 'html was undefined for componentId ' + this.componentId;
-
-            return this.html.attr('name');
-        },
-        setAttrType: function(type) {
-            this.attrType = type;
-            if (this.isDocked())
-                this.html.attr('type', type);
-        },
-        getAttrType: function() {
-            if (!this.isDocked())
-                throw 'html was undefined for componentId ' + this.componentId;
-
-            return this.html.attr('type');
-        },
-        setAttrValue: function(value) {
-            this.html.attr('value', value);
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.html.attr('value'), this);
-        },
-        getAttrValue: function() {
-            if (!this.isDocked())
-                throw 'html was undefined for componentId ' + this.componentId;
-
-            return this.html.attr('value');
         }
     });
 
@@ -146,7 +145,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
 
     /**
      * Manages an HTML4 RadioInput control
-     * State handling managed by ComponentGroup.
+     * State handling should be provided by Cajeta.View.ComponentGroup.
      */
     Cajeta.View.Html4.RadioInput = Cajeta.View.Html4.Input.extend({
         initialize: function(properties) {
@@ -175,10 +174,16 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             self.super.initialize.call(this, properties);
         },
         setValue: function(value) {
-            this.html.prop('checked', value);
+            if (this.isDocked())
+                this.html.prop('checked', value);
+            else
+                this.propChecked = value;
         },
         getValue: function() {
-            return this.html.prop('checked');
+            if (this.isDocked())
+                return this.html.prop('checked');
+            else
+                return this.propChecked;
         },
         $onHtmlChange: function(event) {
             Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
