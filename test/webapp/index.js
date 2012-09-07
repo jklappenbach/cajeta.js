@@ -3,7 +3,7 @@ requirejs.config({
     paths: {
         jquery: 'js/lib/jquery/require-jquery',
         vcdiff: 'js/lib/vcdiff/vcdiff',
-        cookies: 'js/lib/jquery/jquery.cookies.amd',
+        jcookies: 'js/lib/jquery/jquery.cookies.amd',
         cajeta: 'js/lib/cajeta/cajeta',
         cajetaHtml4: 'js/lib/cajeta/cajeta.html4',
         text: 'js/lib/require/plugin/text',

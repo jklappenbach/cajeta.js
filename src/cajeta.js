@@ -28,11 +28,11 @@
 define([
     'jquery',
     'vcdiff',
-    'cookies'
-], function($, vcDiff, jCookie) {
+    'jcookies'
+], function($, vcDiff, jCookies) {
 
     var Cajeta = {
-        author: 'Julian Bach',
+        author: 'Julian Klappenbach',
         version: '0.0.1',
         license: 'MIT 2012',
         theApplication: null
@@ -58,7 +58,7 @@ define([
         // A proxy constructor for objects, avoids calling constructors (initialize)
         // when object definition logic is executed.
         var child = function() {
-            if (Cajeta.Class.defining != true)
+            if (!Cajeta.Class.defining)
                 if (this.initialize !== undefined)
                     this.initialize.apply(this, arguments);
         }
@@ -85,24 +85,64 @@ define([
         initialize: function(cacheId) {
             this.cacheId = cacheId
         },
-        putValue: function(key, value) { alert('This abstract method must be overridden.'); },
-        getValue: function(key) { alert('This abstract method must be overridden.'); return null; }
+        put: function(key, value) { alert('This abstract method must be overridden.'); },
+        get: function(key) { alert('This abstract method must be overridden.'); return null; },
+        del: function(pattern) { }
     });
 
     /**
-     * DefaultCacheStrategy will attempt to store information in HTML5 localdb, then as a
-     * cookie, and if cookies aren't enabled, in-memory.
+     * DefaultCacheStrategy will attempt to store information as a cookie, and if cookies aren't
+     * enabled, in-memory. If single url function is acceptable (games, local content editors, etc),
+     * then this implementation should suffice. If possible lack of cookie support is an issue,
+     * then subclassing AbstractCacheStrategy to provide server interaction is recommended.
      */
     Cajeta.Cache.DefaultCacheStrategy = Cajeta.Cache.AbstractCacheStrategy.extend({
         initialize: function(cacheId) {
-            this.cache = new Object();
+            if (!jCookies.test())
+                this.cache = new Object();
         },
-        putValue: function(key, value) {
-            // Just do in-memory for now.  Eventually will try localdb, then cookies, then in-memory
-            this.cache[this.cacheId + ':' + key] = value;
+        /**
+         * First, attempt to use cookies.  If they're not available, go to an in-memory store
+         * The former is more desirable as in-memory is flushed for every url change.
+         *
+         * @param key The key of the entry to store in cache.
+         * @param value The value of the entry to store in cache.
+         */
+        put: function(key, value) {
+            // Make sure that a ":" isn't in the key, which would cause issues for document name parsing.
+            if (key.indexOf(':') >= 0)
+                throw 'The ":" character is not allowed in cache key values.';
+
+            if (this.cache === undefined) {
+                jCookies.set(this.cacheId + ':' + key, value);
+            } else {
+                this.cache[this.cacheId + ':' + key] = value;
+            }
         },
-        getValue: function(key) {
-            return this.cache[this.cacheId + ':'  + key];
+        get: function(key) {
+            if (this.cache === undefined)
+                return jCookies.get(this.cacheId + ':' + key);
+            else
+                return this.cache[this.cacheId + ':'  + key];
+        },
+        del: function(pattern) {
+            if (this.cache === undefined) {
+                var cookies = jCookies.filter(pattern);
+                for (var name in cookies) {
+                    if (name !== undefined) {
+                        jCookies.del(name);
+                    }
+                }
+            } else {
+                // Include the ':' in the pattern, reducing the chance of false positives.
+                pattern = (pattern.indexOf(':') >= 0) ? pattern : pattern + ':';
+                var regExp = new RegExp(pattern);
+                for (var name in this.cache) {
+                    if (name !== undefined && name.match(regExp)) {
+                        delete this.cache.name;
+                    }
+                }
+            }
         }
     });
 
@@ -130,15 +170,38 @@ define([
      * component binding and notification.
      */
     Cajeta.Model = Cajeta.Class.extend({
-        initialize: function(enableHistory, enableJsonDelta) {
-            this.enableHistory = enableHistory;
+        /**
+         * Supported attributes:
+         *      enableHistory:  Enables the ability of applications to keep a history of model state,
+         *                      which allows for either component-state based undo, or navigation
+         *      documentName:   Allows applications to manage multiple discrete model states, each representing
+         *                      a separate 'document'
+         *      enableSession:  Generates unique session IDs for access, and ensures that urls for one session
+         *                      are not used for another.  Without sessions, applications have a timeless and
+         *                      locationless state that *may* be shared between instances.  The latter is
+         *                      highly dependent on implementation.
+         * @param properties
+         */
+        initialize: function(properties) {
+            this.enableHistory = (properties.enableHistory !== undefined) ? properties.enableHistory : false;
+            this.documentName = properties.documentName !== undefined ? properties.documentName : 'app';
             this.pathMap = new Object();
             this.dataMap = new Object();
-            this.cacheStrategy = new Cajeta.Cache.DefaultCacheStrategy('app');
-            this.sessionId = new Date().getTime();
+            this.cacheStrategy = new Cajeta.Cache.DefaultCacheStrategy(this.documentName);
+            if (properties.enableSession !== undefined && properties.enableSession)
+                this.sessionId = new Date().getTime();
+            else
+                this.sessionId = '';
+
             this.versionId = 0;
-            this.stateId = enableHistory ? this.sessionId + '.' + this.versionId : '';
-            this.enableJsonDelta = enableJsonDelta;
+
+            if (this.enableHistory) {
+                this.stateId = (this.enableSession) ? this.sessionId + '.' : '';
+                this.stateId += this.versionId;
+            } else {
+                this.stateId = '';
+            }
+            this.enableJsonDelta = (properties.enableJsonDelta !== undefined) ? properties.enableJsonDelta : false;
             this.modelJson = null;
             this.vcd = null;
             if (this.enableJsonDelta == true) {
@@ -156,6 +219,12 @@ define([
          */
         isHistoryEnabled: function() {
             return this.enableHistory;
+        },
+
+        clearHistory: function(documentName) {
+            if (documentName === undefined)
+                documentName = 'app';
+            this.cacheStrategy.del(documentName);
         },
 
         /**
@@ -351,8 +420,9 @@ define([
                 cacheEntry = new Cajeta.Cache.ModelHistoryEntry(this.stateId, null, this.dataMap);
 
             }
-            this.cacheStrategy.putValue(this.stateId, cacheEntry);
-            this.stateId = this.sessionId + '.' + ++this.versionId;
+            this.cacheStrategy.put(this.stateId, cacheEntry);
+            this.stateId = (this.enableSession) ? this.sessionId + '.' : '';
+            this.stateId += ++this.versionId;
         },
 
         onModelChanged: function(modelPath, committor) {
@@ -388,11 +458,11 @@ define([
                 // We're going backward, so set the state ID to that requested
                 this.stateId = stateId;
 
-                var entryToRestore = this.cacheStrategy.getValue(stateId);
+                var entryToRestore = this.cacheStrategy.get(stateId);
                 if (entryToRestore !== undefined) {
                     // Save state as a copy, not a delta, if it's not already in our map...
-                    if (this.cacheStrategy.getValue(this.stateId) == undefined)
-                        this.cacheStrategy.putValue(this.stateId, new Cajeta.Cache.ModelHistoryEntry(this.stateId,
+                    if (this.cacheStrategy.get(this.stateId) == undefined)
+                        this.cacheStrategy.put(this.stateId, new Cajeta.Cache.ModelHistoryEntry(this.stateId,
                             null, $.extend(true, {}, this.dataMap)));
                     if (entryToRestore.modelCopy != null) {
                         this.dataMap = entryToRestore.modelCopy;
@@ -465,7 +535,7 @@ define([
         setValue: function(value) {
             this.html.attr('value', value);
         },
-        getValue: function() {
+        get: function() {
             return this.html.attr('value');
         },
         setElementType: function(elementType) {
@@ -474,15 +544,29 @@ define([
         getElementType: function() {
             return this.elementType;
         },
+        setAttribute: function(name, value) {
+            if (this.isDocked()) {
+                this.html.attr(name, value);
+            } else {
+                this['attr' + name.substr(0, 1).toUpperCase() + name.substr(1)] = value;
+            }
+        },
+        getAttribute: function(name) {
+            if (this.isDocked()) {
+                return this.html.attr(name);
+            } else {
+                return this['attr' + name.substr(0, 1).toUpperCase() + name.substr(1)];
+            }
+        },
         setElementContent: function(elementContent) {
             this.elementContent = elementContent;
             if (this.isDocked)
-                this.html.val(elementContent);
+                this.html.html(elementContent);
         },
         getElementContent: function() {
             if (!this.isDocked)
                 return this.elementContent;
-            return this.html.val();
+            return this.html.html();
         },
         setModelPath: function(modelPath) {
             this.modelPath = modelPath;
@@ -801,8 +885,13 @@ define([
             this.viewStateId = '';
             this.modelStateId = '';
 
-            // Use history, but not JSON delta compression
-            this.model = new Cajeta.Model(true, false);
+            // Use history, but not session or JSON delta compression
+            this.model = new Cajeta.Model({
+                enableHistory: true,
+                enableSession: false,
+                enableJsonDelta: false,
+                documentName: 'testApp'
+            });
             this.componentMap = new Object();
             this.stringResourceMap = new Object();
             this.currentPage = null;

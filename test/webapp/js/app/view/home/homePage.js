@@ -39,7 +39,8 @@ define([
 
     // TextArea
     form.addChild(new Html4.TextArea({ componentId: 'textArea',
-        modelPath: 'testForm.description', defaultValue: 'Enter a description here.' }));
+        modelPath: 'testForm.description', defaultValue: 'Enter a description here.',
+        attrCols: 50, attrRows: 5 }));
 
     form.addChild(new Html4.Select({ componentId: 'selectStatic',
         modelPath: 'testForm.selectStatic' }));

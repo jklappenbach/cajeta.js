@@ -55,7 +55,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
             this.elementType = 'span';
         },
-        getValue: function() {
+        get: function() {
             return this.html.html();
         },
         setValue: function(value) {
@@ -70,7 +70,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             self.super.initialize.call(this, properties);
             this.elementType = 'label';
         },
-        getValue: function() {
+        get: function() {
             return this.html.html();
         },
         setValue: function(value) {
@@ -140,7 +140,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                 this.attrValue = this.defaultValue;
         },
         onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.get(), this);
         }
     });
 
@@ -177,11 +177,11 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         setValue: function(value) {
             this.html.prop('checked', value);
         },
-        getValue: function() {
+        get: function() {
             return this.html.prop('checked');
         },
         onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.get(), this);
         },
         dock: function() {
             var self = (arguments.length > 0) ? arguments[0] : this;
@@ -203,52 +203,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             self.super.initialize.call(this, properties);
             this.elementType = 'textarea';
         },
-        setAttrName: function(name) {
-            this.attrName = name;
-            if (this.isDocked())
-                this.html.attr('name', name);
-        },
-        getAttrName: function() {
-            if (!this.isDocked())
-                return this.attrName;
-
-            return this.html.attr('name');
-        },
-        setAttrCols: function(cols) {
-            this.attrCols = cols;
-            if (this.isDocked())
-                this.html.attr('cols', cols);
-        },
-        getAttrCols: function() {
-            if (!this.isDocked())
-                return this.attrCols;
-
-            return this.html.attr('cols');
-        },
-        setAttrRows: function(rows) {
-            this.attrRows = rows;
-            if (this.isDocked())
-                this.html.attr('rows', rows);
-        },
-        getAttrRows: function() {
-            if (!this.isDocked())
-                return this.attrRows;
-
-            return this.html.attr('rows');
-        },
-        setAttrReadonly: function(readonly) {
-            this.attrReadonly = readonly;
-            if (this.isDocked())
-                this.html.attr('readonly', readonly);
-        },
-        getAttrReadonly: function() {
-            if (!this.isDocked())
-                return this.attrReadonly;
-
-            return this.html.attr('readonly');
-        },
         onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.get(), this);
         }
     });
 
@@ -323,7 +279,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             }
         },
         isMultiple: function() {
-            return (!this.isDocked()) ? this.propMultiple : (this.html.attr('multiple') !== undefined);
+            return (!this.isDocked()) ? this.attrMultiple : (this.html.attr('multiple') !== undefined);
         },
         setMultiple: function(multiple) {
             this.propMultiple = multiple;
@@ -348,7 +304,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                 }
             }
         },
-        getValue: function() {
+        get: function() {
             if (this.isDocked()) {
                 var value;
                 if (this.isMultiple()) {
@@ -362,7 +318,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             }
         },
         onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.get(), this);
         }
     });
 
