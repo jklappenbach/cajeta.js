@@ -462,20 +462,26 @@ define([
         getDefaultValue: function() {
             return this.defaultValue;
         },
+        setValue: function(value) {
+            this.html.attr('value', value);
+        },
+        getValue: function() {
+            return this.html.attr('value');
+        },
         setElementType: function(elementType) {
             this.elementType = elementType;
         },
         getElementType: function() {
             return this.elementType;
         },
-        setElementValue: function(elementValue) {
-            this.elementValue = elementValue;
+        setElementContent: function(elementContent) {
+            this.elementContent = elementContent;
             if (this.isDocked)
-                this.html.val(elementValue);
+                this.html.val(elementContent);
         },
-        getElementValue: function() {
+        getElementContent: function() {
             if (!this.isDocked)
-                return this.elementValue;
+                return this.elementContent;
             return this.html.val();
         },
         setModelPath: function(modelPath) {
@@ -571,6 +577,10 @@ define([
                     // See if we have a property matching our convention, and not 'type', which can't be changed
                     if (index >= 0 && name != 'attrType') {
                         this.html.attr(name.substring(4).toLowerCase(), this[name]);
+                    } else {
+                        index = name.indexOf('prop');
+                        if (index >= 0)
+                            this.html.attr(name.substring(4).toLowerCase(), this[name]);
                     }
                 }
 
@@ -658,7 +668,9 @@ define([
 
         },
         onModelUpdate: function() {
-
+            if (this.isDocked() && this.modelPath) {
+                this.setValue(Cajeta.theApplication.getModel().getByPath(this.modelPath));
+            }
         },
         getViewState: function() {
             var stateId = '';
@@ -722,6 +734,9 @@ define([
                 }
             }
         },
+        /**
+         * There will be no corresponding markup in the template to support groups, so we override dock...
+         */
         dock: function() {
             if (!this.isDocked()) {
                 // Add to the application component map at this point.
