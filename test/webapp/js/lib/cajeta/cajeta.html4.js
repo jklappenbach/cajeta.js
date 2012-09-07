@@ -75,12 +75,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         },
         setValue: function(value) {
             this.html.html(value);
-        },
-        dock: function() {
-            var self = (arguments.length > 0) ? arguments[0] : this;
-            self.super.dock.call(this);
         }
-
     });
 
     /**
@@ -195,11 +190,6 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             // Bind the component to the model if we have a valid path
             if (this.modelPath !== undefined)
                 Cajeta.theApplication.getModel().bindComponent(this);
-
-            // Set the value of the element if not set in markup
-            if (this.html.attr('value') === undefined) {
-                this.html.attr('value', this.componentId);
-            }
         }
     });
 
@@ -272,14 +262,6 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'legend';
-        },
-        dock: function() {
-            if (!this.isDocked()) {
-                var self = (arguments.length > 0) ? arguments[0] : this;
-                self.super.dock.call(this, self.super);
-                if (this.defaultValue !== undefined)
-                    this.setValue(this.defaultValue);
-            }
         }
     });
 
@@ -338,6 +320,45 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                     }
                     Cajeta.theApplication.getModel().bindComponent(this);
                 }
+            }
+        },
+        isMultiple: function() {
+            return (!this.isDocked()) ? this.propMultiple : (this.html.attr('multiple') !== undefined);
+        },
+        setMultiple: function(multiple) {
+            this.propMultiple = multiple;
+            if (this.isDocked())
+                this.html.prop('multiple', multiple);
+        },
+        setValue: function(value) {
+            if (this.isDocked()) {
+                if (this.isMultiple()) {
+                    if (value == null) {
+                        this.html.find('option').map(function() { this.selected = false; });
+                    } else {
+                        var options = this.html.find('option');
+                        var values = {};
+                        value.split(',').map(function() {
+                            values[arguments[0]] = true;
+                        });
+                        for (var i = 0; i < options.length; i++) {
+                            options[i].selected = (values[options[i].value] !== undefined);
+                        }
+                    }
+                }
+            }
+        },
+        getValue: function() {
+            if (this.isDocked()) {
+                var value;
+                if (this.isMultiple()) {
+                    value = this.html.find("option:selected").map(function() { return this.value; }).get().join(",");
+                } else {
+                    value = this.html.val();
+                }
+                return value;
+            } else {
+                throw 'The component must be docked and active to make this call.';
             }
         },
         onHtmlChange: function(event) {

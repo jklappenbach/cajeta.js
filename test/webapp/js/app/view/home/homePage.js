@@ -66,6 +66,15 @@ define([
         }
     }));
 
+    form.addChild(new Html4.Select({ componentId: 'selectMultiProgrammatic',
+        modelPath: 'testForm.selectMultiProgrammatic',
+        options: [
+            { elementType: 'option', label: 'First Multi Option', value: 'firstMultiOption' },
+            { elementType: 'option', label: 'Second Multi Option', value: 'secondMultiOption'},
+            { elementType: 'option', label: 'Third Multi Option', value: 'thirdMultiOption' }
+        ]
+    }));
+
     form.addChild(radioGroup);
     homePage.addChild(form);
     return homePage;

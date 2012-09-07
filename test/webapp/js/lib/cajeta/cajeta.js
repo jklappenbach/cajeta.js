@@ -577,6 +577,10 @@ define([
                     // See if we have a property matching our convention, and not 'type', which can't be changed
                     if (index >= 0 && name != 'attrType') {
                         this.html.attr(name.substring(4).toLowerCase(), this[name]);
+                    } else {
+                        index = name.indexOf('prop');
+                        if (index >= 0)
+                            this.html.attr(name.substring(4).toLowerCase(), this[name]);
                     }
                 }
 
@@ -730,6 +734,9 @@ define([
                 }
             }
         },
+        /**
+         * There will be no corresponding markup in the template to support groups, so we override dock...
+         */
         dock: function() {
             if (!this.isDocked()) {
                 // Add to the application component map at this point.
