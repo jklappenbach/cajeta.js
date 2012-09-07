@@ -421,6 +421,7 @@ define([
 
             }
             this.cacheStrategy.put(this.stateId, cacheEntry);
+
             this.stateId = (this.enableSession) ? this.sessionId + '.' : '';
             this.stateId += ++this.versionId;
         },
@@ -535,7 +536,7 @@ define([
         setValue: function(value) {
             this.html.attr('value', value);
         },
-        get: function() {
+        getValue: function() {
             return this.html.attr('value');
         },
         setElementType: function(elementType) {
@@ -664,7 +665,7 @@ define([
                     } else {
                         index = name.indexOf('prop');
                         if (index >= 0)
-                            this.html.attr(name.substring(4).toLowerCase(), this[name]);
+                            this.html.prop(name.substring(4).toLowerCase(), this[name]);
                     }
                 }
 
@@ -702,8 +703,9 @@ define([
         bindHtmlEvents: function() {
             if (this.htmlEventBound == false) {
                 for (var name in this) {
-                    if (name.indexOf('onHtml') >= 0) {
-                        var eventName = name.substring(6).toLowerCase();
+                    var index = name.indexOf('onHtml');
+                    if (index >= 0) {
+                        var eventName = name.substring(index + 6).toLocaleLowerCase();
                         var eventData = new Object();
                         eventData['that'] = this;
                         eventData['fnName'] = name;
@@ -774,7 +776,7 @@ define([
     });
 
     Cajeta.View.Component.htmlEventDispatch = function(event) {
-        event.data.that[event.data.fnName].call(event.data.that, event);
+        return event.data.that[event.data.fnName].call(event.data.that, event);
     };
 
     Cajeta.View.ComponentGroup = Cajeta.View.Component.extend({

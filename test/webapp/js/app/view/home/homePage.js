@@ -49,22 +49,22 @@ define([
         modelPath: 'testForm.selectProgrammatic', options: [
             { elementType: 'option', label: 'First Option', value: 'firstOption' },
             { elementType: 'option', label: 'Second Option', value: 'secondOption'},
-            { elementType: 'option', label: 'Third Option', value: 'thirdOption' }],
-        onHtmlChange: function() {
+            { elementType: 'option', label: 'Third Option', value: 'thirdOption' }
+        ]
+        ,
+        onHtmlChange: function(event) {
             alert('Programmatic is programmed.');
         }
     }));
 
     form.addChild(new Html4.Select({ componentId: 'selectProgrammaticOption',
-        modelPath: 'testForm.selectProgrammatic', options: [
+        modelPath: 'testForm.selectProgrammaticOption', options: [
             { elementType: 'optgroup', label: 'First Option', options: [
                 { elementType: 'option', label: 'First Child Option', value: 'firstChildOption'},
                 { elementType: 'option', label: 'Second Child Option', value: 'secondChildOption' }] },
             { elementType: 'option', label: 'Second Option', value: 'secondOption'},
-            { elementType: 'option', label: 'Third Option', value: 'thirdOption' }],
-        onHtmlChange: function() {
-            alert('Option select is optioned.');
-        }
+            { elementType: 'option', label: 'Third Option', value: 'thirdOption' }
+        ]
     }));
 
     form.addChild(new Html4.Select({ componentId: 'selectMultiProgrammatic',

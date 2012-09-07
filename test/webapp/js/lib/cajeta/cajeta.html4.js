@@ -55,7 +55,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
             this.elementType = 'span';
         },
-        get: function() {
+        getValue: function() {
             return this.html.html();
         },
         setValue: function(value) {
@@ -70,7 +70,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             self.super.initialize.call(this, properties);
             this.elementType = 'label';
         },
-        get: function() {
+        getValue: function() {
             return this.html.html();
         },
         setValue: function(value) {
@@ -139,8 +139,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             if (this.defaultValue !== undefined)
                 this.attrValue = this.defaultValue;
         },
-        onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.get(), this);
+        $onHtmlChange: function(event) {
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
         }
     });
 
@@ -177,11 +177,11 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         setValue: function(value) {
             this.html.prop('checked', value);
         },
-        get: function() {
+        getValue: function() {
             return this.html.prop('checked');
         },
-        onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.get(), this);
+        $onHtmlChange: function(event) {
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
         },
         dock: function() {
             var self = (arguments.length > 0) ? arguments[0] : this;
@@ -203,8 +203,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             self.super.initialize.call(this, properties);
             this.elementType = 'textarea';
         },
-        onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.get(), this);
+        $onHtmlChange: function(event) {
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
         }
     });
 
@@ -302,9 +302,12 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                         }
                     }
                 }
+                else {
+                    this.html.val(value);
+                }
             }
         },
-        get: function() {
+        getValue: function() {
             if (this.isDocked()) {
                 var value;
                 if (this.isMultiple()) {
@@ -317,8 +320,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                 throw 'The component must be docked and active to make this call.';
             }
         },
-        onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.get(), this);
+        $onHtmlChange: function(event) {
+            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
         }
     });
 
