@@ -320,7 +320,7 @@ define(['jquery'], function($) {
                                 value = $this.val();
                             }
                             else {
-                                value = $this.html();
+                                value = $this.template();
                             }
 
                             if (typeof value !== 'string' || value === '') {
@@ -367,7 +367,7 @@ define(['jquery'], function($) {
                                 $this.val(value);
                             }
                             else {
-                                $this.html(value);
+                                $this.template(value);
                             }
                         }
 

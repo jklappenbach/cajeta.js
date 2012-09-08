@@ -3,7 +3,7 @@
  *
  * This module contains the definitions for HTML4 based components.
  *
- * Copyright (c) 2012 Julian Bach
+ * Copyright (c) 2012 Julian Klappenbach
  *
  *
  * Permission is hereby granted, free of charge, to any person
@@ -39,10 +39,37 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             this.elementType = 'div';
         },
         getValue: function() {
-            return this.html.html();
+            if (this.isDocked())
+                return this.template.text();
+            else
+                return this.elementText;
         },
         setValue: function(value) {
-            this.html.html(value);
+            if (this.isDocked())
+                this.template.text(value);
+            else
+                this.elementText = value;
+        }
+    });
+
+    Cajeta.View.Html4.UnorderedList = Cajeta.View.Component.extend({
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            this.elementType = 'ul';
+        },
+        dock: function() {
+            var self = (arguments.length > 0) ? arguments[0] : this;
+            self.super.dock.call(this, self.super);
+
+            // Grab the first li child, if any exist, and use that as a template
+            // for dynamic population.
+            var liChildren = this.template.find('li');
+            if (liChildren.length > 0)
+                this.listItemHtml = liChildren[0];
+            else
+                this.listItemHtml = $('<li />');
         }
     });
 
@@ -55,13 +82,13 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         },
         getValue: function() {
             if (this.isDocked())
-                return this.html.attr('href');
+                return this.template.attr('href');
             else
                 return this.attrHref;
         },
         setValue: function(value) {
             if (this.isDocked()) {
-                this.html.attr('href', value);
+                this.template.attr('href', value);
             } else {
                 this.attrHref = value;
             }
@@ -70,21 +97,22 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
 
     Cajeta.View.Html4.Span = Cajeta.View.Component.extend({
         initialize: function(properties) {
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.initialize.call(this, componentId, modelPath, defaultValue, self.super);
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
             this.elementType = 'span';
         },
         getValue: function() {
             if (this.isDocked())
-                return this.html.html();
+                return this.template.html();
             else
-                return this.elementContent;
+                return this.elementText;
         },
         setValue: function(value) {
             if (this.isDocked())
-                this.html.html(value);
+                this.template.html(value);
             else
-                this.elementContent = value;
+                this.elementText = value;
         }
     });
 
@@ -97,15 +125,15 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         },
         getValue: function() {
             if (this.isDocked())
-                return this.html.html();
+                return this.template.text();
             else
-                return this.elementContent;
+                return this.elementText;
         },
         setValue: function(value) {
             if (this.isDocked())
-                this.html.html(value);
+                this.template.text(value);
             else
-                this.elementContent = value;
+                this.elementText = value;
         }
     });
 
@@ -158,8 +186,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             self.super.dock.call(this);
 
             // Set the value of the element if not set in markup
-            if (this.html.attr('value') === undefined) {
-                this.html.attr('value', this.componentId);
+            if (this.template.attr('value') === undefined) {
+                this.template.attr('value', this.componentId);
             }
         }
     });
@@ -175,13 +203,13 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         },
         setValue: function(value) {
             if (this.isDocked())
-                this.html.prop('checked', value);
+                this.template.prop('checked', value);
             else
                 this.propChecked = value;
         },
         getValue: function() {
             if (this.isDocked())
-                return this.html.prop('checked');
+                return this.template.prop('checked');
             else
                 return this.propChecked;
         },
@@ -248,7 +276,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                             var value = properties[name];
                             option.attr(name, value);
                             if (name == 'label')
-                                option.html(value);
+                                option.template(value);
                         }
                     }
                 }
@@ -259,7 +287,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                         element = $('<' + this.options[i].elementType + ' />');
                         if (this.options[i].elementType == 'optgroup') {
                             element.attr('label', this.options[i].label);
-                            element.html(this.options[i].label);
+                            element.template(this.options[i].label);
                             for (var j = 0; j < this.options[i].options.length; j++) {
                                 var option = $('<' + this.options[i].options[j].elementType + ' />');
                                 populateOption(option, this.options[i].options[j]);
@@ -268,36 +296,36 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                         } else {
                             populateOption(element, this.options[i]);
                         }
-                        this.html.append(element);
+                        this.template.append(element);
                     }
                 }
 
                 // Bind the component to the model if we have a valid path
                 if (this.modelPath !== undefined) {
                     if (this.defaultValue == undefined) {
-                        this.defaultValue = this.html.val();
+                        this.defaultValue = this.template.val();
                     } else {
-                        this.html.val(this.defaultValue);
+                        this.template.val(this.defaultValue);
                     }
                     Cajeta.theApplication.getModel().bindComponent(this);
                 }
             }
         },
         isMultiple: function() {
-            return (!this.isDocked()) ? this.attrMultiple : (this.html.attr('multiple') !== undefined);
+            return (!this.isDocked()) ? this.attrMultiple : (this.template.attr('multiple') !== undefined);
         },
         setMultiple: function(multiple) {
             this.propMultiple = multiple;
             if (this.isDocked())
-                this.html.prop('multiple', multiple);
+                this.template.prop('multiple', multiple);
         },
         setValue: function(value) {
             if (this.isDocked()) {
                 if (this.isMultiple()) {
                     if (value == null) {
-                        this.html.find('option').map(function() { this.selected = false; });
+                        this.template.find('option').map(function() { this.selected = false; });
                     } else {
-                        var options = this.html.find('option');
+                        var options = this.template.find('option');
                         var values = {};
                         value.split(',').map(function() {
                             values[arguments[0]] = true;
@@ -308,7 +336,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                     }
                 }
                 else {
-                    this.html.val(value);
+                    this.template.val(value);
                 }
             }
         },
@@ -316,9 +344,9 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             if (this.isDocked()) {
                 var value;
                 if (this.isMultiple()) {
-                    value = this.html.find("option:selected").map(function() { return this.value; }).get().join(",");
+                    value = this.template.find("option:selected").map(function() { return this.value; }).get().join(",");
                 } else {
-                    value = this.html.val();
+                    value = this.template.val();
                 }
                 return value;
             } else {
@@ -338,7 +366,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
-            this.setElementType('img');
+            this.elementType = 'img';
         },
         dock: function() {
             if (!this.isDocked()) {
@@ -347,11 +375,102 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
 
             }
         },
-        getSrc: function() {
+        getValue: function() {
+            if (this.isDocked()) {
+                return this.template.attr('src');
+            } else {
+                return this.attrSrc;
+            }
+        },
+        setValue: function(value) {
+            if (this.isDocked()) {
+                this.template.attr('src', value);
+            } else {
+                this.attrSrc = value;
+            }
+        }
+    });
+
+    Cajeta.View.Html4.Tabs = Cajeta.View.Html4.UnorderedList.extend({
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            this.tabEntries = new Array();
+            this.selectedIndex = 0;
+        },
+        dock: function() {
+            if (!this.isDocked()) {
+                var self = (arguments.length > 0) ? arguments[0] : this;
+                self.super.dock.call(this, self.super);
+
+                this.template.empty();
+
+                // Create the tabs
+                for (var i = 0; i < this.tabEntries.length; i++) {
+                    var listItem = this.listItemHtml.clone();
+                    listItem.text(this.tabEntries[i].title);
+                    var eventData = new Object();
+                    eventData['that'] = this;
+                    eventData['fnName'] = '$onTabClick';
+                    eventData['index'] = i;
+                    listItem.click(eventData, Cajeta.View.Component.htmlEventDispatch);
+                    this.template.append(listItem);
+                }
+
+                this.content = $('div[cajeta\\:componentId="' + this.contentId + '"]');
+                if (this.content.length = 0)
+                    throw 'No content target with componentId ' + this.contentId + 'was found for Tabs ' +
+                            this.componentId + '.';
+            }
+        },
+        addChild: function(tabEntry) {
+            if (tabEntry.component === undefined || tabEntry.title === undefined)
+                throw 'Invalid tabEntry submitted to tabControl "' + this.componentId + '".';
+            tabEntry.component.setComponentId(this.contentId);
+            this.tabEntries.push(tabEntry);
+        },
+
+        /**
+         * Override render here to extend the call to the content div.
+         */
+        render: function() {
+            var self = arguments.length > 0 ? argument[0] : this;
+            self.super.render.call(this, self.super);
+
+            this.tabEntries[this.selectedIndex].component.render();
+        },
+
+        /**
+         * Provide styles for tab selection states.  Supported states are:
+         *
+         *  unselected      unselected style
+         *  selected        selected style
+         *
+         *  The value for each property entry will be a string containing CSS declarations for the element
+         *
+         * @param styleMap
+         */
+        setCss: function(cssClassMap) {
+            if (cssClassMap.selected === undefined)
+                throw 'Argument must contain map entry for "selected".  See documentation for more on supported states';
+
+            this.cssClassMap = cssClassMap;
+        },
+
+        $onTabClick: function(event) {
+            var index = event.data['index'];
+            if (index !== undefined && index != this.selectedIndex) {
+                // Figure out the best way to show selected state.  Methinks toggling a css class entry is the right way
+                // Remove the selection state from the current tab
+                // this.template[this.selectedIndex].css()
+                // Add it to the component for the one that's been selected.
+                // And ideally, we set out selectedIndex...
+                // Update the viewStateId (without forcing a pagewide render)
+                // And render from this node on down.
+            }
 
         }
-
-        //src="smiley.gif" alt="Smiley face" width="32" height
     });
 
     /**
@@ -362,7 +481,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
-            this.setElementType('form');
+            this.elementType = 'form';
         }
     });
 

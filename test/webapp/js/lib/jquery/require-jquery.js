@@ -1825,7 +1825,7 @@ var requirejs, require, define;
         if (isBrowser) {
             //In the browser so use a script tag
             node = config.xhtml ?
-                document.createElementNS('http://www.w3.org/1999/xhtml', 'html:script') :
+                document.createElementNS('http://www.w3.org/1999/xhtml', 'template:script') :
                 document.createElement('script');
             node.type = config.scriptType || 'text/javascript';
             node.charset = 'utf-8';
@@ -7711,7 +7711,7 @@ var requirejs, require, define;
             });
         },
 
-        html: function(value) {
+        template: function(value) {
             return jQuery.access(this, function(value) {
                 var elem = this[0] || {},
                     i = 0,
@@ -7760,7 +7760,7 @@ var requirejs, require, define;
                 // this can help fix replacing a parent with child elements
                 if (jQuery.isFunction(value)) {
                     return this.each(function(i) {
-                        var self = jQuery(this), old = self.html();
+                        var self = jQuery(this), old = self.template();
                         self.replaceWith(value.call(this, i, old));
                     });
                 }
@@ -7813,7 +7813,7 @@ var requirejs, require, define;
             if (jQuery.isFunction(value)) {
                 return this.each(function(i) {
                     var self = jQuery(this);
-                    args[0] = value.call(this, i, table ? self.html() : undefined);
+                    args[0] = value.call(this, i, table ? self.template() : undefined);
                     self.domManip(args, table, callback);
                 });
             }
@@ -9302,7 +9302,7 @@ var requirejs, require, define;
 
             // if "type" variable is undefined, then "GET" method will be used
             type: type,
-            dataType: "html",
+            dataType: "template",
             data: params,
             complete: function(jqXHR, status) {
                 if (callback) {
@@ -9315,7 +9315,7 @@ var requirejs, require, define;
                 response = arguments;
 
                 // See if a selector was specified
-                self.html(selector ?
+                self.template(selector ?
 
                     // Create a dummy div to hold the results
                     jQuery("<div>")
@@ -9409,7 +9409,7 @@ var requirejs, require, define;
 
             accepts: {
                 xml: "application/xml, text/xml",
-                html: "text/html",
+                template: "text/html",
                 text: "text/plain",
                 json: "application/json, text/javascript",
                 "*": allTypes
@@ -9417,7 +9417,7 @@ var requirejs, require, define;
 
             contents: {
                 xml: /xml/,
-                html: /html/,
+                template: /html/,
                 json: /json/
             },
 

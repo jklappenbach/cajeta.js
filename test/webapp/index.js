@@ -10,7 +10,8 @@ requirejs.config({
         order: 'js/lib/require/plugin/order',
         depend: 'js/lib/require/plugin/depend',
         homePage: 'js/app/view/home/homePage',
-        accountView: 'js/app/view/account/account'
+        accountView: 'js/app/view/account/account',
+        formExampleDiv: 'js/app/view/home/formExampleDiv'
     }
 });
 

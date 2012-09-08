@@ -514,7 +514,7 @@ define([
             this.modelPath = properties.modelPath === undefined ? this.componentId : properties.modelPath;
             this.parent = null;
             this.children = new Object();
-            this.html = null;
+            this.template = null;
             this.viewStateId = '';
             this.hotKeys = new Object();
             this.htmlEventBound = false;
@@ -534,10 +534,10 @@ define([
             return this.defaultValue;
         },
         setValue: function(value) {
-            this.html.attr('value', value);
+            this.template.attr('value', value);
         },
         getValue: function() {
-            return this.html.attr('value');
+            return this.template.attr('value');
         },
         setElementType: function(elementType) {
             this.elementType = elementType;
@@ -547,27 +547,27 @@ define([
         },
         setAttribute: function(name, value) {
             if (this.isDocked()) {
-                this.html.attr(name, value);
+                this.template.attr(name, value);
             } else {
                 this['attr' + name.substr(0, 1).toUpperCase() + name.substr(1)] = value;
             }
         },
         getAttribute: function(name) {
             if (this.isDocked()) {
-                return this.html.attr(name);
+                return this.template.attr(name);
             } else {
                 return this['attr' + name.substr(0, 1).toUpperCase() + name.substr(1)];
             }
         },
         setElementContent: function(elementContent) {
-            this.elementContent = elementContent;
+            this.elementText = elementContent;
             if (this.isDocked)
-                this.html.html(elementContent);
+                this.template.html(elementContent);
         },
         getElementContent: function() {
             if (!this.isDocked)
-                return this.elementContent;
-            return this.html.html();
+                return this.elementText;
+            return this.template.html();
         },
         setModelPath: function(modelPath) {
             this.modelPath = modelPath;
@@ -600,8 +600,8 @@ define([
          * @param templateId The ID of the template
          * @param template The template source, may contain many templates.
          */
-        setHtml: function(templateId, template) {
-            this.html = null;
+        setTemplate: function(templateId, template) {
+            this.template = null;
             this.htmlEventBound = false;
             var temp = $(template);
             if (temp.length > 0) {
@@ -613,26 +613,35 @@ define([
                         }
 
                         if (attrValue != undefined && attrValue.value == templateId) {
-                            this.html = $(temp[i]);
-                            this.html.attr('cajeta:componentId', this.componentId);
+                            this.template = $(temp[i]);
+                            this.template.attr('cajeta:componentId', this.componentId);
                             break;
                         }
                     }
                 }
             }
-            if (this.html == null) {
+            if (this.template == null) {
                 throw 'Invalid template for ' + this.getComponentId() +
-                    ', must contain an element with the attribute: "templateId".';
+                    ', must contain an element with the attribute templateId having the value ' + templateId + '.';
             }
         },
-        getHtml: function() {
-            return this.html;
+        getTemplate: function() {
+            return this.template;
         },
+
+        /**
+         * We tell if the component is docked (referring to live HTML in the DOM) by first checking to
+         * see if the template is non-null.  Since templates can be provided for substitution, we need
+         * to further check to see if the html parentNode is a valid DOM element, or if it's a DocumentFragment or
+         * even undefined.
+         *
+         * @return {Boolean}
+         */
         isDocked: function() {
-            if (!this.isDocked || this.html == null)
+            if (this.template == null)
                 return false;
 
-            if (this.html[0].parentNode === undefined || this.html[0].parentNode instanceof DocumentFragment) {
+            if (this.template[0].parentNode === undefined || this.template[0].parentNode instanceof DocumentFragment) {
                 return false;
             }
             return true;
@@ -648,24 +657,24 @@ define([
                 } else if (domElement.length > 1) {
                     throw 'Dock failed: more than one component was found with componentId "' + this.componentId + '".';
                 }
-                if (this.html == null) {
-                    this.html = domElement;
+                if (this.template == null) {
+                    this.template = domElement;
                 } else {
-                    domElement.replaceWith(this.html);
+                    domElement.replaceWith(this.template);
                 }
 
                 // Set the element's attributes.  The component is set, as well as any properties
                 // with the attr prefix...
-                this.html.attr('cajeta:componentId', this.componentId);
+                this.template.attr('cajeta:componentId', this.componentId);
                 for (var name in this) {
                     var index = name.indexOf('attr');
                     // See if we have a property matching our convention, and not 'type', which can't be changed
                     if (index >= 0 && name != 'attrType') {
-                        this.html.attr(name.substring(4).toLowerCase(), this[name]);
+                        this.template.attr(name.substring(4).toLowerCase(), this[name]);
                     } else {
                         index = name.indexOf('prop');
                         if (index >= 0)
-                            this.html.prop(name.substring(4).toLowerCase(), this[name]);
+                            this.template.prop(name.substring(4).toLowerCase(), this[name]);
                     }
                 }
 
@@ -687,7 +696,7 @@ define([
                 this.children[componentId].undock();
 
             if (this.isDocked()) {
-                this.html[0].parentNode = undefined;
+                this.template[0].parentNode = undefined;
                 this.htmlEventBound = false;
             }
 
@@ -709,7 +718,7 @@ define([
                         var eventData = new Object();
                         eventData['that'] = this;
                         eventData['fnName'] = name;
-                        this.html.bind(eventName, eventData, Cajeta.View.Component.htmlEventDispatch);
+                        this.template.bind(eventName, eventData, Cajeta.View.Component.htmlEventDispatch);
                     }
                 }
                 this.htmlEventBound = true;
@@ -745,8 +754,8 @@ define([
                 // Update the component from the model (we may not have used our default value
                 this.onModelUpdate();
             } else {
-                if (this.html != undefined) {
-                    this.html.hide();
+                if (this.template != undefined) {
+                    this.template.hide();
                 }
             }
         },
@@ -793,8 +802,8 @@ define([
             // The one that matches our current value gets set.
             for (var name in this.children) {
                 if (name !== undefined) {
-                    if (this.children[name].html.attr('value') == this.value) {
-                        this.children[name].html.prop('checked', true);
+                    if (this.children[name].template.attr('value') == this.value) {
+                        this.children[name].template.prop('checked', true);
                     }
                 }
             }
@@ -815,7 +824,7 @@ define([
                 eventData['fnName'] = 'onChildChange';
                 for (var name in this.children) {
                     if (name !== undefined) {
-                        this.children[name].html.bind('change', eventData, Cajeta.View.Component.htmlEventDispatch);
+                        this.children[name].template.bind('change', eventData, Cajeta.View.Component.htmlEventDispatch);
                     }
                 }
             }
@@ -863,7 +872,7 @@ define([
 
             // First, remove any children of body...
             body.empty();
-            body.append(this.html);
+            body.append(this.template);
         },
 
         /**
@@ -1163,8 +1172,7 @@ define([
      */
     Cajeta.Application.onAnchorChanged = function() {
         Cajeta.theApplication.onAnchorChanged();
-    }
-
+    };
 
     return Cajeta;
 });
