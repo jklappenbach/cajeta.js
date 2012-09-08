@@ -461,6 +461,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         $onTabClick: function(event) {
             var index = event.data['index'];
             if (index !== undefined && index != this.selectedIndex) {
+                // TODO:
                 // Figure out the best way to show selected state.  Methinks toggling a css class entry is the right way
                 // Remove the selection state from the current tab
                 // this.template[this.selectedIndex].css()
