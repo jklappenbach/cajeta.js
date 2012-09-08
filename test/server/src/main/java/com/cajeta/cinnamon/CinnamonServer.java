@@ -1,4 +1,4 @@
-package com.cajeta.cream;
+package com.cajeta.cinnamon;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
@@ -14,7 +14,7 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
  * Hello world!
  * 
  */
-public class CreamServer {
+public class CinnamonServer {
 	public static void main(String[] args) {
 		ChannelFactory factory = new NioServerSocketChannelFactory(
 				Executors.newCachedThreadPool(), Executors.newCachedThreadPool());

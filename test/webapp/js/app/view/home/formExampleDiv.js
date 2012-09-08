@@ -12,7 +12,16 @@ define([
 
     var form = new Html4.Form({ componentId: 'testForm',
         onHtmlSubmit: function() {
-            alert('Got a submit!');
+            // Make an AJAX (need to rename this.  Who uses XML anymore?) call to
+            // the server, use headers as opposed to query args.  Query arguments are usually
+            // stored in server logs, and are not a good place for protected data (such as form posts).
+            $.ajax({
+                type: 'POST',
+                url: 'http://localhost:8080/ajax/testForm',
+                headers: Cajeta.theApplication.model.get('testForm')
+            }).done(function( msg ) {
+                alert('Recieved: ' + data);
+            });
         }
     });
 
