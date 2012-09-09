@@ -7,7 +7,6 @@ import static org.jboss.netty.channel.Channels.pipeline;
 
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
-//import org.jboss.netty.example.http.snoop.HttpSnoopServerHandler;
 import org.jboss.netty.handler.codec.http.HttpContentCompressor;
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
@@ -33,7 +32,7 @@ public class CinnamonServerPipelineFactory implements ChannelPipelineFactory {
         pipeline.addLast("encoder", new HttpResponseEncoder());
         // Remove the following line if you don't want automatic content compression.
         pipeline.addLast("deflater", new HttpContentCompressor());
-     // TODO Add this back in   pipeline.addLast("handler", new HttpSnoopServerHandler());
+        pipeline.addLast("handler", new HttpServerHandler());
         return pipeline;
 	}
 }
