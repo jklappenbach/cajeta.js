@@ -19,8 +19,12 @@ define([
                 type: 'POST',
                 url: 'http://localhost:8080/ajax/testForm',
                 headers: Cajeta.theApplication.model.get('testForm'),
-                success: function(data) { alert('Success: ' + data); },
-                error: function(data) { alert('Error: ' + data); }
+                success: function(data) {
+                    alert('Success: ' + data);
+                },
+                error: function(data) {
+                    alert('Error: ' + data);
+                }
             });
         }
     });
