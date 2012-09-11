@@ -9,14 +9,14 @@ import java.lang.reflect.Constructor;
  * @author julian
  *
  */
-public class RestParameterEntry {
+public class RestParameter {
 	private ParameterSource parameterSource;
 	private String parameterName;
 	private Class<?> parameterClass;
 	private Constructor<?> constructor;
 	private String defaultValue;
 	
-	public RestParameterEntry(ParameterSource parameterSource, String parameterName,
+	public RestParameter(ParameterSource parameterSource, String parameterName,
 			Class<?> parameterClass, String defaultValue) {
 		this.parameterSource = parameterSource;
 		this.parameterName = parameterName;

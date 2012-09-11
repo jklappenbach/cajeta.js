@@ -10,14 +10,14 @@ import java.util.Set;
  * @author julian
  *
  */
-public class RestClassEntry {
+public class RestClass {
 	private Object instance = null;
 	private String path = "";
 	private String[] segments = null;
 	private Set<String> produces = new HashSet<String>();
 	private Set<String> consumes = new HashSet<String>();
 	
-	public RestClassEntry(Object instance) {
+	public RestClass(Object instance) {
 		this.instance = instance;
 	}
 
