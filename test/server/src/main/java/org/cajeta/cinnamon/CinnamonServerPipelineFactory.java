@@ -5,7 +5,6 @@ package org.cajeta.cinnamon;
 
 import static org.jboss.netty.channel.Channels.pipeline;
 
-import org.cajeta.cinnamon.jaxrs.CinnamonRestHandler;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.handler.codec.http.HttpContentCompressor;
@@ -33,7 +32,7 @@ public class CinnamonServerPipelineFactory implements ChannelPipelineFactory {
         pipeline.addLast("encoder", new HttpResponseEncoder());
         // Remove the following line if you don't want automatic content compression.
         pipeline.addLast("deflater", new HttpContentCompressor());
-        pipeline.addLast("handler", new CinnamonRestHandler("org.cajeta.cinnamon"));
+        pipeline.addLast("handler", new CinnamonRestHandler());
         return pipeline;
 	}
 }

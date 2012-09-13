@@ -18,7 +18,7 @@ public class CinnamonServer {
 				new NioServerSocketChannelFactory(
 				        Executors.newCachedThreadPool(),
 				        Executors.newCachedThreadPool()),
-				"org.cajeta.cinnamon");
+				        "org.cajeta.cinnamon.handler");
 
         // Set up the event pipeline factory.
         bootstrap.setPipelineFactory(new CinnamonServerPipelineFactory());

@@ -5,11 +5,15 @@ package org.cajeta.cinnamon.jaxrs;
 
 import java.lang.reflect.Constructor;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * @author julian
  *
  */
 public class RestParameter {
+	private final static Logger logger = LoggerFactory.getLogger(RestParameter.class);
 	private ParameterSource parameterSource;
 	private String parameterName;
 	private Class<?> parameterClass;
@@ -24,7 +28,8 @@ public class RestParameter {
 		try {
 			constructor = parameterClass.getConstructor(String.class);
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.info("No default constructor found for " + parameterClass.getCanonicalName() + 
+					", installation of a Converter will be required.  See the org.cajeta.cinnamon.converter for more information");
 		}
 		this.defaultValue = defaultValue;
 	}

@@ -15,17 +15,8 @@ define([
             // Make an AJAX (need to rename this.  Who uses XML anymore?) call to
             // the server, use headers as opposed to query args.  Query arguments are usually
             // stored in server logs, and are not a good place for protected data (such as form posts).
-            $.ajax({
-                type: 'POST',
-                url: 'http://localhost:8080/ajax/testForm',
-                headers: Cajeta.theApplication.model.get('testForm'),
-                success: function(data) {
-                    alert('Success: ' + data);
-                },
-                error: function(data) {
-                    alert('Error: ' + data);
-                }
-            });
+            var myData = Cajeta.theApplication.model.get('testForm');
+            $.post('http://localhost:8080/application/restApi', myData);
         }
     });
 

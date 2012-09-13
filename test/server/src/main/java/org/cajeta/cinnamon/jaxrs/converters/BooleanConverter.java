@@ -13,8 +13,9 @@ public class BooleanConverter implements Converter {
 
 	@Override
 	public Object convert(String str) {
-		// TODO Auto-generated method stub
-		return null;
+		if (str == null || str.isEmpty())
+			return null;
+		return new Boolean(str);
 	}
 
 }
