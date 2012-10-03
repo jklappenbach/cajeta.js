@@ -1,9 +1,9 @@
 /**
  * 
  */
-package org.cajeta.cinnamon.jaxrs.converters;
+package org.cajeta.cinnamon.jaxrs.codec;
 
-import org.cajeta.cinnamon.jaxrs.converters.Converter;
+import org.cajeta.cinnamon.jaxrs.codec.Converter;
 
 /**
  * @author julian

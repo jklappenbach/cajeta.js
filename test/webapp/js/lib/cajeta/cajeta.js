@@ -38,7 +38,6 @@ define([
         theApplication: null
     };
 
-
     // JavaScript object model, based on prototype, but using some additional
     // strategies to enable polymorphism.
     Cajeta.Class = function() { };
@@ -74,7 +73,49 @@ define([
         return child;
     };
 
-    // Declaration for namespace
+    Cajeta.Ajax = Cajeta.Class.extend({
+        initialize: function(header, encoding) {
+            this.header = header !== undefined ? header : {};
+        },
+        createAjax: function() {
+            if (window.XMLHttpRequest) {
+                return new XMLHttpRequest();
+            } else if (window.ActiveXObject) {
+                return new ActiveXObject("MSXML2.XMLHTTP.3.0");
+            }
+        },
+        onError: function(event) {
+            console.log("An error occured: " + event);
+        },
+        exec: function(method, url, data, callback, header) {
+            var ajax = this.createAjax();
+            header = (header !== undefined) ? header : this.header;
+            
+
+            ajax.open(method, url, true);
+
+            ajax.onerror = this.onError;
+
+            if (callback !== undefined) {
+                ajax.onreadystatechange = callback;
+            }
+
+            for (var name in header) {
+                if (name !== undefined)
+                    ajax.setRequestHeader(name, header[name]);
+            }
+
+            if (data !== undefined) {
+                data = $.param(data, true);
+                ajax.send(data);
+            } else {
+                ajax.send();
+            }
+        }
+    });
+
+
+// Declaration for namespace
     Cajeta.Cache = {};
 
     /**
@@ -98,6 +139,8 @@ define([
      */
     Cajeta.Cache.DefaultCacheStrategy = Cajeta.Cache.AbstractCacheStrategy.extend({
         initialize: function(cacheId) {
+            var self = arguments.length > 1 ? arguments[1] : this;
+            self.super.initialize.call(this, cacheId);
             if (!jCookies.test())
                 this.cache = new Object();
         },
@@ -641,7 +684,8 @@ define([
             if (this.template == null)
                 return false;
 
-            if (this.template[0].parentNode === undefined || this.template[0].parentNode instanceof DocumentFragment) {
+            if (this.template[0].parentNode === undefined ||
+                    this.template[0].parentNode instanceof DocumentFragment) {
                 return false;
             }
             return true;

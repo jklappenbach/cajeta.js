@@ -16,7 +16,17 @@ define([
             // the server, use headers as opposed to query args.  Query arguments are usually
             // stored in server logs, and are not a good place for protected data (such as form posts).
             var myData = Cajeta.theApplication.model.get('testForm');
-            $.post('http://localhost:8080/application/restApi', myData);
+
+            var ajax = new Cajeta.Ajax({
+                'Accept' : "application/json; charset=UTF-8",
+                'Content-Type' : "application/x-www-form-urlencoded; charset=UTF-8" },
+                'application/json'
+            );
+            ajax.exec('POST', 'http://localhost:8080/application/createUser', myData, function(event) {
+                var x = this.responseText;
+                console.log("received: '" + this.responseText + "', readyState: " + this.readyState);
+            });
+            return false;
         }
     });
 

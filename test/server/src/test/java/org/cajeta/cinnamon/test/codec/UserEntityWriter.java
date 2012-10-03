@@ -1,4 +1,4 @@
-package org.cajeta.cinnamon.format;
+package org.cajeta.cinnamon.test.codec;
 
 import java.io.IOException;
 import java.io.OutputStream;

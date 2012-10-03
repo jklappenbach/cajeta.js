@@ -25,7 +25,7 @@ public class JsonBodyWriter implements MessageBodyWriter<Object> {
 	JsonFactory factory = new JsonFactory();
 	ObjectMapper mapper = new ObjectMapper();
 	// May not need concurrent hashmap, depends on thread model.
-	Map<Integer, OutputStreamMonitor> streamMap = new ConcurrentHashMap<Integer, OutputStreamMonitor>();
+	static final Map<Integer, OutputStreamMonitor> streamMap = new ConcurrentHashMap<Integer, OutputStreamMonitor>();
 
 	
 	@Override
@@ -40,9 +40,10 @@ public class JsonBodyWriter implements MessageBodyWriter<Object> {
 			Annotation[] annotations, MediaType mediaType) {
 		OutputStreamMonitor osm = streamMap.get(t.hashCode());
 		if (osm != null) {
+			streamMap.remove(osm);
 			return (long) osm.getBytesWritten();
 		} else {
-			return 0;
+			return -1;
 		}
 	}
 

@@ -396,6 +396,7 @@ var requirejs, require, define;
                     }
                 });
             }
+            return false;
         }
 
         function hasPathFallback(id) {

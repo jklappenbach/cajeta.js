@@ -3,18 +3,15 @@
  */
 package org.cajeta.cinnamon.jaxrs;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
-import javax.ws.rs.core.Response;
-
+import org.cajeta.cinnamon.jaxrs.message.CinnamonResponse;
+import org.cajeta.cinnamon.jaxrs.message.MediaType;
+import org.cajeta.cinnamon.jaxrs.message.RequestContext;
 import org.jboss.netty.handler.codec.http.HttpMethod;
-import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 
 /**
  * PathSegment performs routing and dynamic method invocation.  Methods are stored as:
@@ -32,55 +29,46 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
  */
 public class PathSegmentEntry {
 	
-	private Map<String, RestMethod> methods = new HashMap<String, RestMethod>();
-	private Map<String, RestMethod> lookupCache = new HashMap<String, RestMethod>();
+	private Map<String, RequestHandler> methods = new HashMap<String, RequestHandler>();
+	private Map<String, RequestHandler> lookupCache = new HashMap<String, RequestHandler>();
 	private Map<String, PathSegmentEntry> pathSegments = new HashMap<String, PathSegmentEntry>();
-	
-	
-	// TODO Define how rest methods will be invoked here, as well as how param links in a url
-	// will be traversed.
-	//private Map<String, Rest>
 	private PathSegmentEntry wildcard = null;
-	private Pattern filter = null; 
 	
 	public PathSegmentEntry() { }	
-	public PathSegmentEntry(RestMethod restMethod, String[] segments, int level) {
+	public PathSegmentEntry(RequestHandler restMethod, String[] segments, int level) {
 		populate(restMethod, segments, level);
 	}
 	
 	
-	public Object dispatch(HttpRequest request, String[] uriSegments, int segmentIndex) {
+	public CinnamonResponse dispatch(RequestContext requestContext, int segmentIndex) {
 		if (wildcard != null) {
-			return wildcard.dispatch(request, uriSegments, ++segmentIndex);
+			return wildcard.dispatch(requestContext, ++segmentIndex);
 		}
-		if (segmentIndex < uriSegments.length) {
-			PathSegmentEntry childEntry = pathSegments.get(uriSegments[segmentIndex]);
+		if (segmentIndex < requestContext.getUriSegments().length) {
+			PathSegmentEntry childEntry = pathSegments.get(requestContext.getUriSegments()[segmentIndex]);
 			if (childEntry != null)
-				return childEntry.dispatch(request,  uriSegments,  ++segmentIndex);
+				return childEntry.dispatch(requestContext, ++segmentIndex);
 			else
-				return null; // TODO 404
+				return new CinnamonResponse(requestContext, HttpResponseStatus.NOT_FOUND);
 		} else {
-			HttpMethod httpMethod = request.getMethod();
-			String consumes = request.getHeader("Content-Type");
-			if (consumes == null) consumes = "text/plain";
-			String produces = request.getHeader("Accept");
-			if (produces == null) produces = "text/plain";
+			HttpMethod httpMethod = requestContext.getHttpRequest().getMethod();
+			String consumes = requestContext.getHttpRequest().getHeader("Content-Type");
+			if (consumes == null) consumes = MediaType.WILDCARD;
 			
 			// Make a check against our cached method map...
-			RestMethod methodEntry = lookupCache.get(httpMethod.getName() + consumes + produces);
+			RequestHandler restMethod = lookupCache.get(httpMethod.getName() + consumes);
 			
 			// If not, execute the logic to resolve the method
-			if (methodEntry != null) {
-				return methodEntry.execute(request, uriSegments);
-			} else {
-				methodEntry = resolveMethod(httpMethod, consumes, produces);
+			if (restMethod == null) {
+				restMethod = resolveMethod(httpMethod, consumes);
+				if (restMethod != null)
+					lookupCache.put(httpMethod.getName() + consumes, restMethod);
 			}
-			if (methodEntry == null) {
-				return null; // TODO 415
+
+			if (restMethod == null) {
+				return new CinnamonResponse(HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE);
 			} else {
-				lookupCache.put(httpMethod.getName() + consumes + produces, methodEntry);
-				Response response;
-				return methodEntry.execute(request, uriSegments);
+				return restMethod.execute(requestContext);
 			}
 		}
 	}
@@ -100,33 +88,27 @@ public class PathSegmentEntry {
 	 * @param produces
 	 * @return
 	 */
-	private RestMethod resolveMethod(HttpMethod httpMethod, String consumes, String produces) {
+	private RequestHandler resolveMethod(HttpMethod httpMethod, String consumes) {
 		// First, if consumes and produces are both supported without wildcards		
-		RestMethod restMethod = null;
+		RequestHandler restMethod = null;
 		
 		// Check first for wildcard entries on the request.  We remove these from the key
 		// In anticipation, the map has been populated with partial key entries for each method to support this. 
-		if (restMethod == null && (consumes.equals(RestMethod.ALL_FORMATS) || 
-				produces.equals(RestMethod.ALL_FORMATS))) {
+		if (consumes.equals(MediaType.WILDCARD)) {
 			String key = httpMethod.getName();
-			if (!consumes.equals(RestMethod.ALL_FORMATS)) {
-				key += RestMethod.CONSUMES + consumes; 
-			}
-			if (!produces.equals(RestMethod.ALL_FORMATS)) {
-				key += RestMethod.PRODUCES + produces;
+			if (!consumes.equals(MediaType.WILDCARD)) {
+				key += RequestHandler.CONSUMES + consumes; 
 			}
 			restMethod = methods.get(key);
 		}
 			
 		// Still unresolved?  We may have wildcard entries on the method
 		if (restMethod == null) {
-			restMethod = methods.get(httpMethod.getName() + RestMethod.CONSUMES + RestMethod.ALL_FORMATS + 
-					RestMethod.PRODUCES + produces);
+			restMethod = methods.get(httpMethod.getName() + RequestHandler.CONSUMES + MediaType.WILDCARD);
 			if (restMethod == null) {
-				restMethod = methods.get(httpMethod.getName() + RestMethod.CONSUMES + consumes + 
-						RestMethod.PRODUCES + RestMethod.ALL_FORMATS);
+				restMethod = methods.get(httpMethod.getName() + RequestHandler.CONSUMES + consumes);
 				if (restMethod == null)
-					restMethod = methods.get(httpMethod.getName() + RestMethod.ALL_FORMATS + RestMethod.ALL_FORMATS);
+					restMethod = methods.get(httpMethod.getName() + MediaType.WILDCARD + MediaType.WILDCARD);
 			}				
 		}
 		
@@ -156,7 +138,7 @@ public class PathSegmentEntry {
 	 * @param segments 
 	 * @param level 
 	 */
-	public void populate(RestMethod restMethod, String[] segments, int level) {
+	public void populate(RequestHandler restMethod, String[] segments, int level) {
 		// First, recurse out until we've populated the path...
 		if (level < segments.length) {
 			PathSegmentEntry childEntry = this.pathSegments.get(segments[level]);
@@ -168,16 +150,10 @@ public class PathSegmentEntry {
 			}
 		} else {
 			// Second, add the method and populate the supported format sets
-			// HttpMethod { Consumer[*] {  
-			//         
-			Set<String> setConsumption = restMethod.getConsumes(), setProduction = restMethod.getProduces();
+			Set<String> setConsumption = restMethod.getConsumes();
 			for (String consumes : setConsumption) {
-				for (String produces : setProduction) {
-					methods.put(restMethod.getHttpMethod().getName(), restMethod);
-					methods.put(restMethod.getHttpMethod().getName() + RestMethod.CONSUMES + consumes , restMethod);
-					methods.put(restMethod.getHttpMethod().getName() + RestMethod.PRODUCES + produces, restMethod);
-					methods.put(restMethod.getHttpMethod().getName() + RestMethod.CONSUMES + consumes + RestMethod.PRODUCES + produces, restMethod);
-				}
+				methods.put(restMethod.getHttpMethod().getName(), restMethod);
+				methods.put(restMethod.getHttpMethod().getName() + RequestHandler.CONSUMES + consumes , restMethod);
 			}
 		}
 	}
