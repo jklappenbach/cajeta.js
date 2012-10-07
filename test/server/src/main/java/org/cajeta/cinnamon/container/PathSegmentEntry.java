@@ -1,15 +1,15 @@
 /**
  * 
  */
-package org.cajeta.cinnamon.jaxrs;
+package org.cajeta.cinnamon.container;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.cajeta.cinnamon.jaxrs.message.CinnamonResponse;
-import org.cajeta.cinnamon.jaxrs.message.MediaType;
-import org.cajeta.cinnamon.jaxrs.message.RequestContext;
+import org.cajeta.cinnamon.api.message.CinnamonResponse;
+import org.cajeta.cinnamon.api.message.MediaType;
+import org.cajeta.cinnamon.api.message.RequestContext;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 

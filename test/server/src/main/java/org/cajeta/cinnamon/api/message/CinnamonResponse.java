@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.cajeta.cinnamon.jaxrs.message;
+package org.cajeta.cinnamon.api.message;
 
 import org.jboss.netty.buffer.DynamicChannelBuffer;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;

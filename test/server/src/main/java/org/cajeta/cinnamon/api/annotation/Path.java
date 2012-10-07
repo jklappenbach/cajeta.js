@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.cajeta.cinnamon.jaxrs.annotation;
+package org.cajeta.cinnamon.api.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -9,11 +9,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * @author Julian Klappenbach jklappenbach@gmail.com
- *
+ * Indicates that the annotated method responds to HTTP GET requests
+ * @see HttpMethod
  */
-@Target({ ElementType.TYPE })
+@Target({ ElementType.METHOD, ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ApplicationRootPath {
+public @interface Path { 
 	String value();
 }

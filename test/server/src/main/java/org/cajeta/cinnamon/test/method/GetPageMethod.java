@@ -3,13 +3,13 @@
  */
 package org.cajeta.cinnamon.test.method;
 
-import org.cajeta.cinnamon.jaxrs.RequestHandler;
-import org.cajeta.cinnamon.jaxrs.annotation.ApplicationRootPath;
-import org.cajeta.cinnamon.jaxrs.annotation.Consumes;
-import org.cajeta.cinnamon.jaxrs.annotation.Get;
-import org.cajeta.cinnamon.jaxrs.annotation.Path;
-import org.cajeta.cinnamon.jaxrs.message.CinnamonResponse;
-import org.cajeta.cinnamon.jaxrs.message.RequestContext;
+import org.cajeta.cinnamon.api.annotation.ApplicationRootPath;
+import org.cajeta.cinnamon.api.annotation.Consumes;
+import org.cajeta.cinnamon.api.annotation.Get;
+import org.cajeta.cinnamon.api.annotation.Path;
+import org.cajeta.cinnamon.api.message.CinnamonResponse;
+import org.cajeta.cinnamon.api.message.RequestContext;
+import org.cajeta.cinnamon.container.RequestHandler;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 
 /**

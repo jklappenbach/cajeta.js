@@ -1,13 +1,13 @@
 /**
  * 
  */
-package org.cajeta.cinnamon.jaxrs;
+package org.cajeta.cinnamon.container;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.cajeta.cinnamon.jaxrs.message.CinnamonResponse;
-import org.cajeta.cinnamon.jaxrs.message.RequestContext;
+import org.cajeta.cinnamon.api.message.CinnamonResponse;
+import org.cajeta.cinnamon.api.message.RequestContext;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;

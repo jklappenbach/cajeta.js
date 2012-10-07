@@ -5,7 +5,7 @@
  *
  */
 
-package org.cajeta.cinnamon.jaxrs.message;
+package org.cajeta.cinnamon.api.message;
 
 import java.util.Collections;
 import java.util.Comparator;

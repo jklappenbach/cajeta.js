@@ -19,20 +19,17 @@ import org.codehaus.jackson.map.ObjectMapper;
 @Produces(MediaType.APPLICATION_JSON)
 public class UserEntityWriter implements MessageBodyWriter<User> {
 
-	@Override
 	public boolean isWriteable(Class<?> type, Type genericType,
 			Annotation[] annotations, MediaType mediaType) {
 		return (type == User.class || genericType.getClass() == User.class);
 	}
 
-	@Override
 	public long getSize(User t, Class<?> type, Type genericType,
 			Annotation[] annotations, MediaType mediaType) {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
-	@Override
 	public void writeTo(User t, Class<?> type, Type genericType,
 			Annotation[] annotations, MediaType mediaType,
 			MultivaluedMap<String, Object> httpHeaders,

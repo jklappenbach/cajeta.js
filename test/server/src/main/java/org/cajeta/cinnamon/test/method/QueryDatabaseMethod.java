@@ -3,14 +3,14 @@
  */
 package org.cajeta.cinnamon.test.method;
 
-import org.cajeta.cinnamon.jaxrs.AsyncRequestHandler;
-import org.cajeta.cinnamon.jaxrs.RestContainer;
-import org.cajeta.cinnamon.jaxrs.annotation.ApplicationRootPath;
-import org.cajeta.cinnamon.jaxrs.annotation.Consumes;
-import org.cajeta.cinnamon.jaxrs.annotation.Get;
-import org.cajeta.cinnamon.jaxrs.annotation.Path;
-import org.cajeta.cinnamon.jaxrs.annotation.Post;
-import org.cajeta.cinnamon.jaxrs.message.CinnamonResponse;
+import org.cajeta.cinnamon.api.annotation.ApplicationRootPath;
+import org.cajeta.cinnamon.api.annotation.Consumes;
+import org.cajeta.cinnamon.api.annotation.Get;
+import org.cajeta.cinnamon.api.annotation.Path;
+import org.cajeta.cinnamon.api.annotation.Post;
+import org.cajeta.cinnamon.api.message.CinnamonResponse;
+import org.cajeta.cinnamon.container.AsyncRequestHandler;
+import org.cajeta.cinnamon.container.RestContainer;
 import org.cajeta.cinnamon.test.entity.User;
 
 /**
@@ -19,11 +19,10 @@ import org.cajeta.cinnamon.test.entity.User;
  */
 @ApplicationRootPath("/application")
 @Path("createUser") 
-@Post
+@Get
 @Consumes("application/x-www-form-urlencoded; charset=UTF-8")
 public class QueryDatabaseMethod extends AsyncRequestHandler {
 
-	@Override
 	public void run() {
 		User user = new User();
 		user.setFirstName("Athena");

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.cajeta.cinnamon.jaxrs.codec;
+package org.cajeta.cinnamon.api.codec;
 
 import java.io.IOException;
 import java.io.OutputStream;

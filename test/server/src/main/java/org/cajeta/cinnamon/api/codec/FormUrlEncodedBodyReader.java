@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.cajeta.cinnamon.jaxrs.codec;
+package org.cajeta.cinnamon.api.codec;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,14 +24,12 @@ import javax.ws.rs.ext.Provider;
 @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 public class FormUrlEncodedBodyReader implements MessageBodyReader<Map<String, String>> {
 
-	@Override
 	public boolean isReadable(Class<?> type, Type genericType,
 			Annotation[] annotations, MediaType mediaType) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
-	@Override
 	public Map<String, String> readFrom(Class<Map<String, String>> type,
 			Type genericType, Annotation[] annotations, MediaType mediaType,
 			MultivaluedMap<String, String> httpHeaders, InputStream entityStream)

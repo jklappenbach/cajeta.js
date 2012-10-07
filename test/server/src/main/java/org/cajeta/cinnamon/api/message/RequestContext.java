@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.cajeta.cinnamon.jaxrs.message;
+package org.cajeta.cinnamon.api.message;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;

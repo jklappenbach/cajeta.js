@@ -28,9 +28,9 @@ import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 import java.util.Set;
 
-import org.cajeta.cinnamon.jaxrs.RestContainer;
-import org.cajeta.cinnamon.jaxrs.message.CinnamonResponse;
-import org.cajeta.cinnamon.jaxrs.message.RequestContext;
+import org.cajeta.cinnamon.api.message.CinnamonResponse;
+import org.cajeta.cinnamon.api.message.RequestContext;
+import org.cajeta.cinnamon.container.RestContainer;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
