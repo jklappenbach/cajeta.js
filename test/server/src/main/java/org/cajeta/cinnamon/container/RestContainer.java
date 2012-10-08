@@ -122,9 +122,10 @@ public class RestContainer {
 		encoders.put("text/plain", plainTextEncoder);
 		encoders.put("text/html", plainTextEncoder);
 		encoders.put("application/javascript", plainTextEncoder);
-		encoders.put("application/jpeg", binaryEncoder);
-		encoders.put("application/png", binaryEncoder);
-		encoders.put("application/gif" , binaryEncoder);
+		encoders.put("image/ico", binaryEncoder);
+		encoders.put("image/jpeg", binaryEncoder);
+		encoders.put("image/png", binaryEncoder);
+		encoders.put("image/gif" , binaryEncoder);
 		
 		// Install the default converters
 		reflections = new Reflections(new ConfigurationBuilder()
@@ -236,6 +237,7 @@ public class RestContainer {
     				extensions.put("png", "image/png");
     				extensions.put("jpg", "image/jpg");
     				extensions.put("gif", "image/gif");
+    				extensions.put("ico", "image/png");
     			}
     			loadDirectory(new File(prop.getProperty(DOCUMENT_ROOT)));
     		}
@@ -304,6 +306,7 @@ public class RestContainer {
 	
 	public void dispatch(RequestContext requestContext) {
 		CinnamonResponse response = null;
+		logger.debug("Processing request for " + requestContext.getHttpRequest().getUri().toString());
 		
 		// First, check to see if we have a request for a document
 		DocumentCacheEntry cacheEntry = documents.get(requestContext.getHttpRequest().getUri());
