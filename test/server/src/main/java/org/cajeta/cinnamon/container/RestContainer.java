@@ -326,6 +326,7 @@ public class RestContainer {
 	static public void writeResponse(RequestContext request, CinnamonResponse response) {
 		if (response == null)
 			return; 
+		
 		// TODO Handle other encoding types than UTF-8
 		HttpRequest httpRequest = request.getHttpRequest();
 		if (response.getEntity() != null) {

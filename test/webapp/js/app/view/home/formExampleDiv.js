@@ -22,10 +22,9 @@ define([
                 'Content-Type' : "application/x-www-form-urlencoded; charset=UTF-8" },
                 'application/json'
             );
-            ajax.exec('GET', 'http://localhost:8080/application/createUser', myData, function(event) {
+            ajax.exec('POST', 'http://localhost:8080/application/createUser', myData, function(event) {
                 if (this.readyState == 4) {
-                    if (this.readyState == 4)
-                        console.log("received: '" + this.responseText + "', readyState: " + this.readyState);
+                    console.log("received: '" + this.responseText + "', readyState: " + this.readyState);
                 }
             });
             return false;

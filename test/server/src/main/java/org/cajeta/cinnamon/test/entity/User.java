@@ -12,6 +12,8 @@ public class User {
 	private String lastName;
 	private String password;
 	private String iconUrl;
+	private String diet;
+
 	public String getFirstName() {
 		return firstName;
 	}
@@ -35,5 +37,11 @@ public class User {
 	}
 	public void setIconUrl(String iconUrl) {
 		this.iconUrl = iconUrl;
+	}
+	public String getDiet() {
+		return diet;
+	}
+	public void setDiet(String diet) {
+		this.diet = diet;
 	}
 }

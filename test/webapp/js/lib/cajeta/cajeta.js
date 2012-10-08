@@ -1007,6 +1007,9 @@ define([
             }
         },
 
+        /**
+         * Called when the browser or container URL is changed
+         */
         onAnchorChanged: function() {
             var urlAnchor = this.getUrlAnchor();
             if (urlAnchor !== undefined && urlAnchor != '') {
@@ -1040,6 +1043,9 @@ define([
             }
         },
 
+        /**
+         * Called with the model is updated
+         */
         onModelChanged: function() {
             this.anchor = '#' + this.viewStateId + '=' + this.model.getStateId();
             this.setUrlAnchor(this.anchor);
