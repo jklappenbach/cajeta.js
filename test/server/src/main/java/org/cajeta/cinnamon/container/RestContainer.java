@@ -16,9 +16,7 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.net.URLEncoder;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -41,8 +39,6 @@ import org.cajeta.cinnamon.api.codec.PlainTextEncoder;
 import org.cajeta.cinnamon.api.codec.XmlEncoder;
 import org.cajeta.cinnamon.api.message.CinnamonResponse;
 import org.cajeta.cinnamon.api.message.RequestContext;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -53,7 +49,6 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import org.jboss.netty.util.CharsetUtil;
 import org.reflections.Reflections;
 import org.reflections.scanners.FieldAnnotationsScanner;
 import org.reflections.scanners.MethodAnnotationsScanner;
@@ -64,8 +59,6 @@ import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.inject.cglib.core.Converter;
 
 /**
  * Java API for NIO based REST.
@@ -175,7 +168,6 @@ public class RestContainer {
 		}
 	}	
 
-	@SuppressWarnings("unchecked")
 	private void processTypesWithAnnotation(Class<? extends Annotation>... annotationClasses) throws Exception {
 		for (Class<? extends Annotation> annotationClass : annotationClasses) {
 			Set<Class<?>> classes = reflections.getTypesAnnotatedWith(annotationClass);
@@ -324,8 +316,8 @@ public class RestContainer {
 		}
 		
 		// If we've not found a suitable response, use not acceptable
-		if (response == null)
-			response = new CinnamonResponse(HttpResponseStatus.NOT_ACCEPTABLE);
+		//if (response == null)
+		//	response = new CinnamonResponse(HttpResponseStatus.NOT_ACCEPTABLE);
 		
 		// Send the response
 		writeResponse(requestContext, response);
@@ -334,13 +326,13 @@ public class RestContainer {
 	static public void writeResponse(RequestContext request, CinnamonResponse response) {
 		if (response == null)
 			return; 
-		
+		// TODO Handle other encoding types than UTF-8
 		HttpRequest httpRequest = request.getHttpRequest();
 		if (response.getEntity() != null) {
 			String header = httpRequest.getHeader(org.jboss.netty.handler.codec.http.HttpHeaders.Names.ACCEPT);
-			String encodingTerms[] = header.split("; ");
+			String encodingTerms[] = header.split(";");
 			if (response.getEntity() != null) {
-				CinnamonEncoder encoder = encoders.get(encodingTerms[0]);
+				CinnamonEncoder encoder = encoders.get(encodingTerms[0].trim());
 				if (encoder == null) {
 					response.setStatus(HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE);
 					return;
@@ -397,7 +389,8 @@ public class RestContainer {
 	private static String calcResponseContentType(RequestContext request) {
 		String[] types = request.getHttpRequest().getHeader("Accept").split(",");
 		for (String type : types) {
-			if (encoders.containsKey(type)) {
+			String[] terms = type.split(";");
+			if (encoders.containsKey(terms[0].trim())) {
 				return type;
 			}
 		}

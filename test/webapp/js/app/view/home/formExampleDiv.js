@@ -4,7 +4,7 @@ define([
     'text!js/app/view/home/formExampleDiv.html'
 ], function($, Cajeta, formExampleDiv) {
 
-    // Create an alias for shortening namespace.
+    // Create an alias for namespace brevity.
     var Html4 = Cajeta.View.Html4;
 
     var div = new Html4.Div({ componentId: 'formExampleDiv' });
@@ -12,7 +12,7 @@ define([
 
     var form = new Html4.Form({ componentId: 'testForm',
         onHtmlSubmit: function() {
-            // Make an AJAX (need to rename this.  Who uses XML anymore?) call to
+            // Make an AJAX (they need to rename this.  Who uses XML anymore for Javascript?) call to
             // the server, use headers as opposed to query args.  Query arguments are usually
             // stored in server logs, and are not a good place for protected data (such as form posts).
             var myData = Cajeta.theApplication.model.get('testForm');
@@ -22,9 +22,11 @@ define([
                 'Content-Type' : "application/x-www-form-urlencoded; charset=UTF-8" },
                 'application/json'
             );
-            ajax.exec('POST', 'http://localhost:8080/application/createUser', myData, function(event) {
-                var x = this.responseText;
-                console.log("received: '" + this.responseText + "', readyState: " + this.readyState);
+            ajax.exec('GET', 'http://localhost:8080/application/createUser', myData, function(event) {
+                if (this.readyState == 4) {
+                    if (this.readyState == 4)
+                        console.log("received: '" + this.responseText + "', readyState: " + this.readyState);
+                }
             });
             return false;
         }
