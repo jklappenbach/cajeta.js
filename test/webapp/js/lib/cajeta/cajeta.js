@@ -559,6 +559,8 @@ define([
             this.modelPath = properties.modelPath === undefined ? this.componentId : properties.modelPath;
             this.parent = null;
             this.attributes = new Object();
+            this.properties = new Object();
+            this.cssAttributes = new Object();
             this.children = new Object();
             this.hotKeys = new Object();
             this.viewStateId = '';
@@ -595,18 +597,37 @@ define([
                 if (this.isDocked()) {
                     return this.dom.attr(name);
                 } else if (this.template !== undefined) {
-                    //return this.template.attr(name);
+                    return this.template.attr(name);
                 } else {
-                    return this.attributes['attr' + name.substr(0, 1).toUpperCase() + name.substr(1)];
+                    return this.attributes[name];
                 }
             } else {
                 if (this.isDocked()) {
                     this.dom.attr(name, value);
-                } else if (this.template !== undefined) {
-                    //this.template.attr(name, value);
-                } else {
-                    this.attributes['attr' + name.substr(0, 1).toUpperCase() + name.substr(1)] = value;
                 }
+                if (this.template !== undefined) {
+                    this.template.attr(name, value);
+                }
+                this.attributes[name] = value;
+            }
+        },
+        prop: function(name, value) {
+            if (value === undefined) {
+                if (this.isDocked()) {
+                    return this.dom.prop(name);
+                } else if (this.template !== undefined) {
+                    return this.template.prop(name);
+                } else {
+                    return this.properties[name];
+                }
+            } else {
+                if (this.isDocked()) {
+                    this.dom.attr(name, value);
+                }
+                if (this.template !== undefined) {
+                    this.template.prop(name, value);
+                }
+                this.properties[name] = value;
             }
         },
         css: function(name, value) {
@@ -616,27 +637,35 @@ define([
                 } else if (this.template !== undefined) {
                     return this.template.css(name);
                 } else {
-                    return this.attributes['css' + name.substr(0, 1).toUpperCase() + name.substr(1)] = value;
+                    return this.cssAttributes[name] = value;
                 }
             } else {
                 if (this.isDocked()) {
                     this.dom.css(name, value);
-                } else if (this.template !== undefined) {
-                    this.template.css(name, value);
-                } else {
-                    this.attributes['css' + name.substr(0, 1).toUpperCase() + name.substr(1)] = value;
                 }
+                if (this.template !== undefined) {
+                    this.template.css(name, value);
+                }
+                this.cssAttributes[name] = value;
             }
         },
-        setElementContent: function(elementContent) {
-            this.elementText = elementContent;
-            if (this.isDocked)
-                this.dom.html(elementContent);
-        },
-        getElementContent: function() {
-            if (!this.isDocked)
-                return this.elementText;
-            return this.dom.html();
+        html: function(value) {
+            if (value === undefined) {
+                if (this.isDocked() !== undefined) {
+                    return this.dom.html();
+                } else if (this.template !== undefined) {
+                    return this.template.html();
+                } else
+                    return this.html;
+            } else {
+
+                if (this.isDocked())
+                    this.dom.html(value);
+                if (this.template !== undefined)
+                    this.template.html(value);
+
+                this.html = value;
+            }
         },
         setModelPath: function(modelPath) {
             this.modelPath = modelPath;
@@ -724,35 +753,27 @@ define([
                 } else if (domElement.length > 1) {
                     throw 'Dock failed: more than one component was found with componentId "' + this.componentId + '".';
                 }
-                if (this.template !== undefined) {
-//                    domElement.replaceWith(this.template);
+                if (this.template === undefined) {
+                    this.dom = domElement;
+                    // Synchronize with any settings made before dock
+                    for (var name in this.attributes) {
+                        if (name !== undefined)
+                            this.dom.attr(name, this.attributes[name]);
+                    }
+                    for (var name in this.properties) {
+                        if (name !== undefined)
+                            this.dom.prop(name, this.properties[name]);
+                    }
+                    for (var name in this.cssAttributes) {
+                        if (name !== undefined)
+                            this.dom.css(name, this.cssAttributes[name]);
+                    }
+                } else {
+                    // Should replace with template, but this is blowing away a huge portion of the dom
                 }
 
-                this.dom = domElement;
-
-                // Set the element's attributes.  The component is set, as well as any properties
-                // with the attr prefix...
+                // Finally, ensure we have assigned the component ID to the fragment
                 this.attr('cajeta:componentId', this.componentId);
-                for (var name in this.attributes) {
-                    var index = name.indexOf('attr');
-                    // See if we have a property matching our convention, and not 'type', which can't be changed
-                    if (index >= 0) {
-                        this.dom.attr(name.substring(4).toLowerCase(), this.attributes[name]);
-                        continue;
-                    }
-
-                    index = name.indexOf('prop');
-                    if (index >= 0) {
-                        this.dom.prop(name.substring(4).toLowerCase(), this.attributes[name]);
-                        continue;
-                    }
-
-                    index = name.indexOf('css');
-                    if (index >= 0) {
-                        this.dom.css(name.substring(3).toLowerCase(), this.attributes[name])
-                        continue;
-                    }
-                }
 
                 // Add to the application component map at this point.
                 Cajeta.theApplication.getComponentMap()[this.componentId] = this;
