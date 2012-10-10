@@ -282,8 +282,9 @@ define([
          * 6.  For each child, a check will be made to see if the entry for that node exists in the bindMap
          * 7.  If the entry exists, the reference to the current object is updated, and the bindMap
          *
-         * @param key The key used to store and reference the data
-         * @param value The data to store
+         * @param key
+         * @param value
+         * @param committor
          */
         set: function(key, value, committor) {
             this.createSnapshot();
@@ -309,8 +310,9 @@ define([
          * the binding map is checked to see if any ModelEntries are dependent.  If so, their onModelUpdate methods
          * are triggered, causing values to be populated into the view.
          *
-         * @param modelPath The path to an object property
-         * @param value The value to assign to the property
+         * @param modelPath
+         * @param value
+         * @param committor
          */
         setByPath: function(modelPath, value, committor) {
             var paths = modelPath.split('.');
@@ -556,11 +558,11 @@ define([
                 throw 'A componentId must be defined';
             this.modelPath = properties.modelPath === undefined ? this.componentId : properties.modelPath;
             this.parent = null;
+            this.attributes = new Object();
             this.children = new Object();
-            this.template = null;
-            this.viewStateId = '';
             this.hotKeys = new Object();
-            this.htmlEventBound = false;
+            this.viewStateId = '';
+            this.domEventBound = false;
             if (this.visible === undefined)
                 this.visible = true;
         },
@@ -577,10 +579,10 @@ define([
             return this.defaultValue;
         },
         setValue: function(value) {
-            this.template.attr('value', value);
+            this.dom.attr('value', value);
         },
         getValue: function() {
-            return this.template.attr('value');
+            return this.dom.attr('value');
         },
         setElementType: function(elementType) {
             this.elementType = elementType;
@@ -588,29 +590,53 @@ define([
         getElementType: function() {
             return this.elementType;
         },
-        setAttribute: function(name, value) {
-            if (this.isDocked()) {
-                this.template.attr(name, value);
+        attr: function(name, value) {
+            if (value === undefined) {
+                if (this.isDocked()) {
+                    return this.dom.attr(name);
+                } else if (this.template !== undefined) {
+                    //return this.template.attr(name);
+                } else {
+                    return this.attributes['attr' + name.substr(0, 1).toUpperCase() + name.substr(1)];
+                }
             } else {
-                this['attr' + name.substr(0, 1).toUpperCase() + name.substr(1)] = value;
+                if (this.isDocked()) {
+                    this.dom.attr(name, value);
+                } else if (this.template !== undefined) {
+                    //this.template.attr(name, value);
+                } else {
+                    this.attributes['attr' + name.substr(0, 1).toUpperCase() + name.substr(1)] = value;
+                }
             }
         },
-        getAttribute: function(name) {
-            if (this.isDocked()) {
-                return this.template.attr(name);
+        css: function(name, value) {
+            if (value === undefined) {
+                if (this.isDocked()) {
+                    return this.dom.css(name);
+                } else if (this.template !== undefined) {
+                    return this.template.css(name);
+                } else {
+                    return this.attributes['css' + name.substr(0, 1).toUpperCase() + name.substr(1)] = value;
+                }
             } else {
-                return this['attr' + name.substr(0, 1).toUpperCase() + name.substr(1)];
+                if (this.isDocked()) {
+                    this.dom.css(name, value);
+                } else if (this.template !== undefined) {
+                    this.template.css(name, value);
+                } else {
+                    this.attributes['css' + name.substr(0, 1).toUpperCase() + name.substr(1)] = value;
+                }
             }
         },
         setElementContent: function(elementContent) {
             this.elementText = elementContent;
             if (this.isDocked)
-                this.template.html(elementContent);
+                this.dom.html(elementContent);
         },
         getElementContent: function() {
             if (!this.isDocked)
                 return this.elementText;
-            return this.template.html();
+            return this.dom.html();
         },
         setModelPath: function(modelPath) {
             this.modelPath = modelPath;
@@ -627,13 +653,18 @@ define([
             component.parent = this;
         },
         removeChild: function(componentId) {
-            delete this.children[componentId];
+            if (this.children[componentId] !== undefined) {
+                this.children[componentId].undock();
+                delete this.children[componentId];
+            }
         },
-        setVisible: function(visible) {
-            this.visible = visible;
-        },
-        isVisible: function() {
-            return this.visible;
+        removeAllChildren: function() {
+            for (var name in this.children) {
+                if (name !== undefined) {
+                    this.children[name].undock();
+                    delete this.children[name];
+                }
+            }
         },
         /**
          * A template may be assigned to a component, which will be used to override
@@ -644,8 +675,7 @@ define([
          * @param template The template source, may contain many templates.
          */
         setTemplate: function(templateId, template) {
-            this.template = null;
-            this.htmlEventBound = false;
+            this.domEventBound = false;
             var temp = $(template);
             if (temp.length > 0) {
                 for (var i = 0; i < temp.length; i++) {
@@ -663,7 +693,7 @@ define([
                     }
                 }
             }
-            if (this.template == null) {
+            if (this.template === undefined) {
                 throw 'Invalid template for ' + this.getComponentId() +
                     ', must contain an element with the attribute templateId having the value ' + templateId + '.';
             }
@@ -681,14 +711,7 @@ define([
          * @return {Boolean}
          */
         isDocked: function() {
-            if (this.template == null)
-                return false;
-
-            if (this.template[0].parentNode === undefined ||
-                    this.template[0].parentNode instanceof DocumentFragment) {
-                return false;
-            }
-            return true;
+            return (this.dom !== undefined);
         },
         dock: function() {
             if (!this.isDocked()) {
@@ -701,24 +724,33 @@ define([
                 } else if (domElement.length > 1) {
                     throw 'Dock failed: more than one component was found with componentId "' + this.componentId + '".';
                 }
-                if (this.template == null) {
-                    this.template = domElement;
-                } else {
-                    domElement.replaceWith(this.template);
+                if (this.template !== undefined) {
+//                    domElement.replaceWith(this.template);
                 }
+
+                this.dom = domElement;
 
                 // Set the element's attributes.  The component is set, as well as any properties
                 // with the attr prefix...
-                this.template.attr('cajeta:componentId', this.componentId);
-                for (var name in this) {
+                this.attr('cajeta:componentId', this.componentId);
+                for (var name in this.attributes) {
                     var index = name.indexOf('attr');
                     // See if we have a property matching our convention, and not 'type', which can't be changed
-                    if (index >= 0 && name != 'attrType') {
-                        this.template.attr(name.substring(4).toLowerCase(), this[name]);
-                    } else {
-                        index = name.indexOf('prop');
-                        if (index >= 0)
-                            this.template.prop(name.substring(4).toLowerCase(), this[name]);
+                    if (index >= 0) {
+                        this.dom.attr(name.substring(4).toLowerCase(), this.attributes[name]);
+                        continue;
+                    }
+
+                    index = name.indexOf('prop');
+                    if (index >= 0) {
+                        this.dom.prop(name.substring(4).toLowerCase(), this.attributes[name]);
+                        continue;
+                    }
+
+                    index = name.indexOf('css');
+                    if (index >= 0) {
+                        this.dom.css(name.substring(3).toLowerCase(), this.attributes[name])
+                        continue;
                     }
                 }
 
@@ -740,12 +772,11 @@ define([
                 this.children[componentId].undock();
 
             if (this.isDocked()) {
-                this.template[0].parentNode = undefined;
-                this.htmlEventBound = false;
+                delete this.dom;
+                this.domEventBound = false;
             }
 
             Cajeta.theApplication.getModel().releaseComponent(this);
-
         },
 
         /**
@@ -754,7 +785,7 @@ define([
          * * events.  These include: change, mouseOver, mouseOut, focus, blur, and click.
          */
         bindHtmlEvents: function() {
-            if (this.htmlEventBound == false) {
+            if (this.domEventBound == false) {
                 for (var name in this) {
                     var index = name.indexOf('onHtml');
                     if (index >= 0) {
@@ -762,10 +793,10 @@ define([
                         var eventData = new Object();
                         eventData['that'] = this;
                         eventData['fnName'] = name;
-                        this.template.bind(eventName, eventData, Cajeta.View.Component.htmlEventDispatch);
+                        this.dom.bind(eventName, eventData, Cajeta.View.Component.htmlEventDispatch);
                     }
                 }
-                this.htmlEventBound = true;
+                this.domEventBound = true;
             }
         },
 
@@ -784,9 +815,7 @@ define([
                 Cajeta.theApplication.getModel().bindComponent(this);
 
                 // Dock starting from the top of the hierarchy down, then render children...
-                if (this.isDocked() == false) {
-                    this.dock.call(this);
-                }
+                this.dock.call(this);
 
                 for (var componentId in this.children) {
                     if (componentId !== undefined)
@@ -799,7 +828,7 @@ define([
                 this.onModelUpdate();
             } else {
                 if (this.template != undefined) {
-                    this.template.hide();
+                    this.dom.hide();
                 }
             }
         },
@@ -846,8 +875,8 @@ define([
             // The one that matches our current value gets set.
             for (var name in this.children) {
                 if (name !== undefined) {
-                    if (this.children[name].template.attr('value') == this.value) {
-                        this.children[name].template.prop('checked', true);
+                    if (this.children[name].dom.attr('value') == this.value) {
+                        this.children[name].dom.prop('checked', true);
                     }
                 }
             }
@@ -861,14 +890,14 @@ define([
             }
         },
         bindHtmlEvents: function() {
-            if (this.htmlEventBound == false) {
-                this.htmlEventBound = true;
+            if (this.domEventBound == false) {
+                this.domEventBound = true;
                 var eventData = new Object();
                 eventData['that'] = this;
                 eventData['fnName'] = 'onChildChange';
                 for (var name in this.children) {
                     if (name !== undefined) {
-                        this.children[name].template.bind('change', eventData, Cajeta.View.Component.htmlEventDispatch);
+                        this.children[name].dom.bind('change', eventData, Cajeta.View.Component.htmlEventDispatch);
                     }
                 }
             }
@@ -912,11 +941,11 @@ define([
         },
 
         dock: function() {
-            var body = $('body');
+            this.dom = $('body');
 
             // First, remove any children of body...
-            body.empty();
-            body.append(this.template);
+            this.dom.empty();
+            this.dom.append(this.template);
         },
 
         /**
@@ -1075,7 +1104,6 @@ define([
          *  (for simple cases), or be used as a key into an existing database, cookie, or remote service to
          *  recall larger datasets.
          *
-         * @param stateAnchor A string encoding application state
          */
         render: function() {
             this.currentPage.render();

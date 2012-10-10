@@ -19,7 +19,7 @@
 
     function m(a) {
         var b, c;
-        a.setAttribute("data-orderloaded", "loaded");
+        a.attr("data-orderloaded", "loaded");
         for (a = 0; c = h[a]; a++)if ((b = i[c]) && b.getAttribute("data-orderloaded") === "loaded")delete i[c], require.addScriptToDom(b); else break;
         a > 0 && h.splice(0,
             a)

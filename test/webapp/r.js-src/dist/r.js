@@ -1933,8 +1933,8 @@ var requirejs, require, define;
             node.charset = 'utf-8';
             node.async = true;
 
-            node.setAttribute('data-requirecontext', context.contextName);
-            node.setAttribute('data-requiremodule', moduleName);
+            node.attr('data-requirecontext', context.contextName);
+            node.attr('data-requiremodule', moduleName);
 
             //Set up load listener. Test attachEvent first because IE9 has
             //a subtle issue in its addEventListener and script onload firings

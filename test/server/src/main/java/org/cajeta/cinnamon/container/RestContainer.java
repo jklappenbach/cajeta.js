@@ -76,6 +76,7 @@ public class RestContainer {
 	private String documentRoot = ""; 
 	private static final String DOCUMENT_ROOT = "document.root";
 	private static final String DOCUMENT_EXTENSIONS = "document.extensions";
+	private static final String CACHE_ENABLED = "filecache.enabled";
 	private static Map<String, String> extensions = new HashMap<String, String>();
 	private static final Map<String, CinnamonEncoder> encoders = new HashMap<String, CinnamonEncoder>();
 
@@ -214,6 +215,7 @@ public class RestContainer {
 	private void loadDocuments() {
     	try {
     		documentRoot = prop.getProperty(DOCUMENT_ROOT, "");
+    		DocumentCacheEntry.setFileCacheEnabled(prop.getProperty(CACHE_ENABLED, "true").equals("true"));
     		if (documentRoot.length() > 0) {
     			if (prop.containsKey(DOCUMENT_EXTENSIONS)) {
     				String[] keys = prop.getProperty(DOCUMENT_EXTENSIONS).split(":");
@@ -267,10 +269,6 @@ public class RestContainer {
 			if (child.isDirectory()) {
 				loadDirectory(child);
 			} else {
-				DataInputStream dis = new DataInputStream(new FileInputStream(child));
-		        byte[] bytes = new byte[dis.available()];
-		        dis.read(bytes, 0, dis.available());
-		        dis.close();	
 		        String path = child.getAbsolutePath();
 		        String name = child.getName();
 		        String contentType = "";
@@ -285,7 +283,7 @@ public class RestContainer {
 		        if (index >= 0) {
 		        	DocumentCacheEntry cacheEntry = new DocumentCacheEntry();
 		        	cacheEntry.setContentType(contentType);
-		        	cacheEntry.setBuffer(bytes);
+		        	cacheEntry.setFile(child);
 		        	path = path.substring(index + documentRoot.length() + 1);
 		        	documents.put("/" + path, cacheEntry);
 		        	logger.debug("Added document: " + "/" + path + " to cache");
@@ -305,7 +303,12 @@ public class RestContainer {
 		if (cacheEntry != null) {
 			response = new CinnamonResponse(requestContext, HttpResponseStatus.OK);
 			response.setHeader(CONTENT_TYPE, cacheEntry.getContentType());
-			response.setContent(ChannelBuffers.copiedBuffer(cacheEntry.getBuffer()));
+			try {
+				response.setContent(ChannelBuffers.copiedBuffer(cacheEntry.getBuffer()));
+			} catch (IOException e) {
+				logger.error("Could not load document cache file, possible file system corruption! " + e.getMessage());
+				response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+			}
 		} else {
 			// If not, then recurse the segments to find our target method
 			String[] uriSegments = requestContext.getUriSegments();
@@ -315,18 +318,12 @@ public class RestContainer {
 			}
 		}
 		
-		// If we've not found a suitable response, use not acceptable
-		//if (response == null)
-		//	response = new CinnamonResponse(HttpResponseStatus.NOT_ACCEPTABLE);
-		
-		// Send the response
-		writeResponse(requestContext, response);
+		// Send the response, if we have one at present.  AsyncRequestHandlers will return "null" at this point.
+		if (response != null)
+			writeResponse(requestContext, response);
 	}
 	
 	static public void writeResponse(RequestContext request, CinnamonResponse response) {
-		if (response == null)
-			return; 
-		
 		// TODO Handle other encoding types than UTF-8
 		HttpRequest httpRequest = request.getHttpRequest();
 		if (response.getEntity() != null) {

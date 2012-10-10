@@ -183,7 +183,7 @@ if(window["dojo"]){
 				var gn = getGroupNode(groupName);
 				if(gn){
 					//two lines will be added, scroll the second line into view
-					gn.getElementsByTagName("td")[2].setAttribute('_target',_loggedMsgLen+1);
+					gn.getElementsByTagName("td")[2].attr('_target',_loggedMsgLen+1);
 				}
 				os.apply(doh,arguments);
 			}
@@ -206,7 +206,7 @@ if(window["dojo"]){
 					cell.innerHTML="Result";
 					cell = row.insertCell(-1);
 					cell.innerHTML=this._testCount+" tests in "+this._groupCount+" groups /<span class='failure'>"+this._errorCount+"</span> errors, <span class='failure'>"+this._failureCount+"</span> failures";
-					cell.setAttribute('_target',_loggedMsgLen+1);
+					cell.attr('_target',_loggedMsgLen+1);
 					row.insertCell(-1).innerHTML=doh._totalTime+"ms";
 				}
 
@@ -527,13 +527,13 @@ if(window["dojo"]){
 				gdiv=document.createElement('div');
 				outerContainer.appendChild(gdiv);
 				gdiv.className='success';
-				gdiv.setAttribute('_target',group);
+				gdiv.attr('_target',group);
 			}
 			if(!success && !gdiv._failure){
 				gdiv._failure=true;
 				gdiv.className='failure';
 				if(group){
-					gdiv.setAttribute('title','failed group '+group);
+					gdiv.attr('title','failed group '+group);
 				}
 			}
 			var tp=parseInt(p*10000)/100;
@@ -546,7 +546,7 @@ if(window["dojo"]){
 			if(fn){
 				fn.getElementsByTagName("td")[3].innerHTML = elapsed+"ms";
 				fn.className = (success) ? "success" : "failure";
-				fn.getElementsByTagName("td")[2].setAttribute('_target', _loggedMsgLen);
+				fn.getElementsByTagName("td")[2].attr('_target', _loggedMsgLen);
 				if(!success){
 					_playSound("doh");
 					var gn = getGroupNode(group);
