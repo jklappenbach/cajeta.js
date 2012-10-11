@@ -5,5 +5,4 @@ target
 .settings
 .idea
 test/server/target/maven-archiver/pom.properties
-
-*.log
+*.log*
