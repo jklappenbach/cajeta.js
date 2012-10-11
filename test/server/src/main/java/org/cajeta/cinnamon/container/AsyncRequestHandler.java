@@ -16,7 +16,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
  * @author Julian Klappenbach jklappenbach@gmail.com
  *
  */
-public abstract class AsyncRequestHandler extends RequestHandler implements Runnable {
+public abstract class AsyncRequestHandler extends RequestMethod implements Runnable {
 	private static final ExecutorService threadPool = Executors.newCachedThreadPool();
 	protected RequestContext requestContext = null;
 	

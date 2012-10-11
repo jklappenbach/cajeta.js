@@ -29,13 +29,13 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
  */
 public class PathSegmentEntry {
 	
-	private Map<String, RequestHandler> methods = new HashMap<String, RequestHandler>();
-	private Map<String, RequestHandler> lookupCache = new HashMap<String, RequestHandler>();
+	private Map<String, RequestMethod> methods = new HashMap<String, RequestMethod>();
+	private Map<String, RequestMethod> lookupCache = new HashMap<String, RequestMethod>();
 	private Map<String, PathSegmentEntry> pathSegments = new HashMap<String, PathSegmentEntry>();
 	private PathSegmentEntry wildcard = null;
 	
 	public PathSegmentEntry() { }	
-	public PathSegmentEntry(RequestHandler restMethod, String[] segments, int level) {
+	public PathSegmentEntry(RequestMethod restMethod, String[] segments, int level) {
 		populate(restMethod, segments, level);
 	}
 	
@@ -56,7 +56,7 @@ public class PathSegmentEntry {
 			if (consumes == null) consumes = MediaType.WILDCARD;
 			
 			// Make a check against our cached method map...
-			RequestHandler restMethod = lookupCache.get(httpMethod.getName() + consumes);
+			RequestMethod restMethod = lookupCache.get(httpMethod.getName() + consumes);
 			
 			// If not, execute the logic to resolve the method
 			if (restMethod == null) {
@@ -88,25 +88,25 @@ public class PathSegmentEntry {
 	 * @param produces
 	 * @return
 	 */
-	private RequestHandler resolveMethod(HttpMethod httpMethod, String consumes) {
+	private RequestMethod resolveMethod(HttpMethod httpMethod, String consumes) {
 		// First, if consumes and produces are both supported without wildcards		
-		RequestHandler restMethod = null;
+		RequestMethod restMethod = null;
 		
 		// Check first for wildcard entries on the request.  We remove these from the key
 		// In anticipation, the map has been populated with partial key entries for each method to support this. 
 		if (consumes.equals(MediaType.WILDCARD)) {
 			String key = httpMethod.getName();
 			if (!consumes.equals(MediaType.WILDCARD)) {
-				key += RequestHandler.CONSUMES + consumes; 
+				key += RequestMethod.CONSUMES + consumes; 
 			}
 			restMethod = methods.get(key);
 		}
 			
 		// Still unresolved?  We may have wildcard entries on the method
 		if (restMethod == null) {
-			restMethod = methods.get(httpMethod.getName() + RequestHandler.CONSUMES + MediaType.WILDCARD);
+			restMethod = methods.get(httpMethod.getName() + RequestMethod.CONSUMES + MediaType.WILDCARD);
 			if (restMethod == null) {
-				restMethod = methods.get(httpMethod.getName() + RequestHandler.CONSUMES + consumes);
+				restMethod = methods.get(httpMethod.getName() + RequestMethod.CONSUMES + consumes);
 				if (restMethod == null)
 					restMethod = methods.get(httpMethod.getName() + MediaType.WILDCARD + MediaType.WILDCARD);
 			}				
@@ -138,7 +138,7 @@ public class PathSegmentEntry {
 	 * @param segments 
 	 * @param level 
 	 */
-	public void populate(RequestHandler restMethod, String[] segments, int level) {
+	public void populate(RequestMethod restMethod, String[] segments, int level) {
 		// First, recurse out until we've populated the path...
 		if (level < segments.length) {
 			PathSegmentEntry childEntry = this.pathSegments.get(segments[level]);
@@ -153,7 +153,7 @@ public class PathSegmentEntry {
 			Set<String> setConsumption = restMethod.getConsumes();
 			for (String consumes : setConsumption) {
 				methods.put(restMethod.getHttpMethod().getName(), restMethod);
-				methods.put(restMethod.getHttpMethod().getName() + RequestHandler.CONSUMES + consumes , restMethod);
+				methods.put(restMethod.getHttpMethod().getName() + RequestMethod.CONSUMES + consumes , restMethod);
 			}
 		}
 	}

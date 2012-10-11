@@ -16,15 +16,15 @@ import org.jboss.netty.handler.codec.http.HttpMethod;
  * @author julian
  *
  */
-public abstract class RequestHandler {
+public abstract class RequestMethod {
 	public static final String CONSUMES = ":consumes=";
 	private HttpMethod httpMethod;	
 	private Set<String> consumes = new HashSet<String>();
 	private String path;
 	
-	public RequestHandler() { }
+	public RequestMethod() { }
 	
-	public RequestHandler(HttpMethod httpMethod) {
+	public RequestMethod(HttpMethod httpMethod) {
 		this.httpMethod = httpMethod;
 	}
 	

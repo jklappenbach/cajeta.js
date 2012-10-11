@@ -9,7 +9,7 @@ import org.cajeta.cinnamon.api.annotation.Get;
 import org.cajeta.cinnamon.api.annotation.Path;
 import org.cajeta.cinnamon.api.message.CinnamonResponse;
 import org.cajeta.cinnamon.api.message.RequestContext;
-import org.cajeta.cinnamon.container.RequestHandler;
+import org.cajeta.cinnamon.container.RequestMethod;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 
 /**
@@ -20,7 +20,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 @Path("restApi") 
 @Get
 @Consumes("application/x-www-form-urlencoded; charset=UTF-8")
-public class GetPageMethod extends RequestHandler {
+public class GetPageMethod extends RequestMethod {
 
 	@Override
 	public CinnamonResponse execute(RequestContext httpRequestContext) {

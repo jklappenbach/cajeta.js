@@ -71,7 +71,7 @@ public class RestContainer {
 	private final Properties prop = new Properties();
 	private final static Logger logger = LoggerFactory.getLogger(RestContainer.class);
 	private final Map<String, PathSegmentEntry> segmentEntries = new HashMap<String, PathSegmentEntry>();
-	private final Map<Class<? extends RequestHandler>, RequestHandler> typeMap = new HashMap<Class<? extends RequestHandler>, RequestHandler>();
+	private final Map<Class<? extends RequestMethod>, RequestMethod> typeMap = new HashMap<Class<? extends RequestMethod>, RequestMethod>();
 	private final Map<String, DocumentCacheEntry> documents = new HashMap<String, DocumentCacheEntry>();
 	private String documentRoot = ""; 
 	private static final String DOCUMENT_ROOT = "document.root";
@@ -139,19 +139,19 @@ public class RestContainer {
 			// Path annotation search
 			classes = reflections.getTypesAnnotatedWith(Path.class);	
 			for (Class<?> c : classes) {
-				RequestHandler handlerEntry = (RequestHandler) c.newInstance();
+				RequestMethod handlerEntry = (RequestMethod) c.newInstance();
 				handlerEntry.setPath(c.getAnnotation(Path.class).value());
-				typeMap.put((Class<? extends RequestHandler>) c, handlerEntry);
+				typeMap.put((Class<? extends RequestMethod>) c, handlerEntry);
 			}
 			
 			// Consumes annotation search
 			classes = reflections.getTypesAnnotatedWith(Consumes.class);	
 			for (Class<?> c : classes) {
 				// First check to see if the entry already exists.  If not, create it
-				RequestHandler handlerEntry = typeMap.get(c);
+				RequestMethod handlerEntry = typeMap.get(c);
 				if (handlerEntry == null) {
-					handlerEntry = (RequestHandler) c.newInstance();
-					typeMap.put((Class<? extends RequestHandler>) c, handlerEntry);
+					handlerEntry = (RequestMethod) c.newInstance();
+					typeMap.put((Class<? extends RequestMethod>) c, handlerEntry);
 				}
 				handlerEntry.addConsumes(c.getAnnotation(Consumes.class).value());
 			}
@@ -177,9 +177,9 @@ public class RestContainer {
 				
 				// Get the owning class, if it currently exists in the map.  If not,
 				// create a new entry.
-				RequestHandler handlerEntry = typeMap.get(c);
+				RequestMethod handlerEntry = typeMap.get(c);
 				if (handlerEntry == null) {
-					handlerEntry = (RequestHandler) c.newInstance();
+					handlerEntry = (RequestMethod) c.newInstance();
 				}
 				handlerEntry.setHttpMethod(HttpMethod.valueOf(annotationClass.getSimpleName()));			
 				pathKey = buildPath(pathKey, handlerEntry.getPath());
