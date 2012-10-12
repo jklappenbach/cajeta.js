@@ -1,4 +1,4 @@
-package org.cajeta.cinnamon.test;
+package org.cajeta.server.test;
 
 import junit.framework.Test;
 import junit.framework.TestCase;

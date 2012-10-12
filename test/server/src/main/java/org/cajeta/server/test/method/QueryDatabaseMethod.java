@@ -1,16 +1,16 @@
 /**
  * 
  */
-package org.cajeta.cinnamon.test.method;
+package org.cajeta.server.test.method;
 
+import org.cajeta.cinnamon.api.AsyncRequestHandler;
 import org.cajeta.cinnamon.api.annotation.ApplicationRootPath;
 import org.cajeta.cinnamon.api.annotation.Consumes;
 import org.cajeta.cinnamon.api.annotation.Path;
 import org.cajeta.cinnamon.api.annotation.Post;
 import org.cajeta.cinnamon.api.message.CinnamonResponse;
-import org.cajeta.cinnamon.container.AsyncRequestHandler;
 import org.cajeta.cinnamon.container.RestContainer;
-import org.cajeta.cinnamon.test.entity.User;
+import org.cajeta.server.test.entity.User;
 
 /**
  * @author julian

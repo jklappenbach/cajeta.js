@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.cajeta.cinnamon.test.entity;
+package org.cajeta.server.test.entity;
 
 /**
  * @author Julian Klappenbach jklappenbach@gmail.com

@@ -12,7 +12,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
 
-import org.cajeta.cinnamon.test.entity.User;
+import org.cajeta.server.test.entity.User;
 import org.codehaus.jackson.map.ObjectMapper;
 
 @Provider

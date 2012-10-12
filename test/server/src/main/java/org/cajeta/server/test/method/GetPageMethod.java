@@ -1,15 +1,15 @@
 /**
  * 
  */
-package org.cajeta.cinnamon.test.method;
+package org.cajeta.server.test.method;
 
+import org.cajeta.cinnamon.api.RequestContext;
+import org.cajeta.cinnamon.api.RequestMethod;
 import org.cajeta.cinnamon.api.annotation.ApplicationRootPath;
 import org.cajeta.cinnamon.api.annotation.Consumes;
 import org.cajeta.cinnamon.api.annotation.Get;
 import org.cajeta.cinnamon.api.annotation.Path;
 import org.cajeta.cinnamon.api.message.CinnamonResponse;
-import org.cajeta.cinnamon.api.message.RequestContext;
-import org.cajeta.cinnamon.container.RequestMethod;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 
 /**
