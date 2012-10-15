@@ -116,6 +116,51 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         }
     });
 
+    Cajeta.View.Html4.Img = Cajeta.View.Component.extend({
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            this.elementType = 'span';
+        },
+        height: function(value) {
+            if (value !== undefined) {
+                this.attr('height', value);
+            } else {
+                return this.attr('height');
+            }
+        },
+        width: function(value) {
+            if (value !== undefined) {
+                this.attr('width', value);
+            } else {
+                return this.attr('width');
+            }
+        },
+        ismap: function(value) {
+            if (value !== undefined) {
+                this.attr('ismap', value);
+            } else {
+                return this.attr('ismap');
+            }
+        },
+        src: function(value) {
+            if (value !== undefined) {
+                this.attr('src', value);
+            } else {
+                return this.attr('src');
+            }
+        },
+        usemap: function(value) {
+            if (value !== undefined) {
+                this.attr('usemap', value);
+            } else {
+                return this.attr('usemap');
+            }
+        }
+
+    });
+
     Cajeta.View.Html4.Label = Cajeta.View.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
