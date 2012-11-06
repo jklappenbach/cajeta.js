@@ -3,13 +3,13 @@
  */
 package org.cajeta.server.test.method;
 
-import org.cajeta.cinnamon.api.AsyncRequestHandler;
-import org.cajeta.cinnamon.api.annotation.ApplicationRootPath;
-import org.cajeta.cinnamon.api.annotation.Consumes;
-import org.cajeta.cinnamon.api.annotation.Path;
-import org.cajeta.cinnamon.api.annotation.Post;
-import org.cajeta.cinnamon.api.message.CinnamonResponse;
 import org.cajeta.cinnamon.container.RestContainer;
+import org.cajeta.cinnamon.rest.AsyncRequestHandler;
+import org.cajeta.cinnamon.rest.annotation.ApplicationRootPath;
+import org.cajeta.cinnamon.rest.annotation.Consumes;
+import org.cajeta.cinnamon.rest.annotation.Path;
+import org.cajeta.cinnamon.rest.annotation.Post;
+import org.cajeta.cinnamon.rest.message.CinnamonResponse;
 import org.cajeta.server.test.entity.User;
 
 /**
