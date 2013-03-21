@@ -321,7 +321,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                             var value = properties[name];
                             option.attr(name, value);
                             if (name == 'label')
-                                option.template(value);
+                                option.template = value;
                         }
                     }
                 }
@@ -332,7 +332,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                         element = $('<' + this.options[i].elementType + ' />');
                         if (this.options[i].elementType == 'optgroup') {
                             element.attr('label', this.options[i].label);
-                            element.template(this.options[i].label);
+                            element.template = this.options[i].label;
                             for (var j = 0; j < this.options[i].options.length; j++) {
                                 var option = $('<' + this.options[i].options[j].elementType + ' />');
                                 populateOption(option, this.options[i].options[j]);

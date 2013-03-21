@@ -5,6 +5,7 @@ requirejs.config({
         vcdiff: 'js/lib/vcdiff/vcdiff',
         jcookies: 'js/lib/jquery/jquery.cookies.amd',
         cajeta: 'js/lib/cajeta/cajeta',
+        cajetaHtml4: 'js/lib/cajeta/cajeta.html4',
         cajetaHtml5: 'js/lib/cajeta/cajeta.html5',
         cajetaSvg: 'js/lib/cajeta/cajeta.html5.svg',
         text: 'js/lib/require/plugin/text',

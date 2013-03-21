@@ -1024,7 +1024,7 @@ define([
          */
         execute: function() {
             if (this.executing == false) {
-                if (("onhashchange" in window) && !($.browser.msie)) {
+                if ("onhashchange" in window) { //&& !($.browser.msie)) {
                     window.onhashchange = Cajeta.Application.onAnchorChanged;
                 } else {
                     // Quick and dirty to detect anchor hash change for primitive browsers
