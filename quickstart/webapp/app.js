@@ -20,6 +20,16 @@ requirejs.config({
 
 define(['cajetaHtml5', 'homePage'], function(Cajeta, homePage) {
     Cajeta.theApplication = new Cajeta.Application();
+    var readEnpoint = Cajeta.Model.AbstractRestEndpointAdaptor.extend({
+        urlTemplate: 'http://localhost:8080/api/states/{id}',
+        method: 'GET'
+    });
+
+    var writeEndpoint = Cajeta.Model.AbstractRestEndpointAdaptor.extend({
+        urlTemplate: 'http://localhost:8080/api/states/{id}',
+        method: 'POST'
+    });
+
     Cajeta.theApplication.addPage(homePage);
     Cajeta.theApplication.execute();
 });

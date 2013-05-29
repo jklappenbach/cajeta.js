@@ -1,7 +1,7 @@
 /**
  * cajeta.js
  *
- * Copyright (c) 2012 Julian Bach
+ * Copyright (c) 2012 Julian Klappenbach
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -57,9 +57,11 @@ define([
         // A proxy constructor for objects, avoids calling constructors (initialize)
         // when object definition logic is executed.
         var child = function() {
-            if (!Cajeta.Class.defining)
-                if (this.initialize !== undefined)
+            if (!Cajeta.Class.defining) {
+                if (this.initialize !== undefined) {
                     this.initialize.apply(this, arguments);
+                }
+            }
         }
 
         // Create the prototype for the new class, and populate it...
@@ -74,10 +76,11 @@ define([
     };
 
     Cajeta.Ajax = Cajeta.Class.extend({
-        initialize: function(header, encoding) {
-            this.header = header !== undefined ? header : {};
+        initialize: function(properties) {
+            this.header = properties.header !== undefined ? header : {};
+            // TODO utilize encoding
         },
-        createAjax: function() {
+        createHxr: function() {
             if (window.XMLHttpRequest) {
                 return new XMLHttpRequest();
             } else if (window.ActiveXObject) {
@@ -87,117 +90,55 @@ define([
         onError: function(event) {
             console.log("An error occured: " + event);
         },
-        exec: function(method, url, data, callback, header) {
-            var ajax = this.createAjax();
-            header = (header !== undefined) ? header : this.header;
+        exec: function(method, url, data, callback, headers) {
+            var hxr = this.createHxr();
+            var headers = (headers !== undefined) ? headers : this.headers;
             
 
-            ajax.open(method, url, true);
-
-            ajax.onerror = this.onError;
+            hxr.open(method, url, true);
+            hxr.onerror = this.onError;
 
             if (callback !== undefined) {
-                ajax.onreadystatechange = callback;
+                hxr.onreadystatechange = callback;
             }
 
-            for (var name in header) {
+            for (var name in headers) {
                 if (name !== undefined)
-                    ajax.setRequestHeader(name, header[name]);
+                    hxr.setRequestHeader(name, headers[name]);
             }
 
             if (data !== undefined) {
                 data = $.param(data, true);
-                ajax.send(data);
+                hxr.send(data);
             } else {
-                ajax.send();
+                hxr.send();
             }
         }
     });
 
 
-// Declaration for namespace
-    Cajeta.Cache = {};
-
     /**
-     * Abstract base class for CacheStrategy.  The API defined here will be called by the framework in response
-     * to Model updates.  Override these methods to hook up to local database, or even back end services.
+     * The Model, as in traditional MVC architectures, defines the architecture and interfaces for how data is managed,
+     * and how components in an application are updated when the model changes.  Like Wicket, each component maintains
+     * a reference to a model object.  In addition, a component leverages a ModelAdaptor class to convert between model
+     * state, and the underlying template and html.
+     *
+     * To support both local and server based data sources, Component Model objects are maintained in a map by an
+     * AbstractDataSource object.  This serves as a base class for both server and client-only architectures.
+     * @type {Object}
      */
-    Cajeta.Cache.AbstractCacheStrategy = Cajeta.Class.extend({
-        initialize: function(cacheId) {
-            this.cacheId = cacheId
-        },
-        put: function(key, value) { alert('This abstract method must be overridden.'); },
-        get: function(key) { alert('This abstract method must be overridden.'); return null; },
-        del: function(pattern) { }
-    });
+    Cajeta.Model = {};
 
-    /**
-     * DefaultCacheStrategy will attempt to store information as a cookie, and if cookies aren't
-     * enabled, in-memory. If single url function is acceptable (games, local content editors, etc),
-     * then this implementation should suffice. If possible lack of cookie support is an issue,
-     * then subclassing AbstractCacheStrategy to provide server interaction is recommended.
-     */
-    Cajeta.Cache.DefaultCacheStrategy = Cajeta.Cache.AbstractCacheStrategy.extend({
-        initialize: function(cacheId) {
-            var self = arguments.length > 1 ? arguments[1] : this;
-            self.super.initialize.call(this, cacheId);
-            if (!jCookies.test())
-                this.cache = new Object();
+    Cajeta.Model.StateEntry = Cajeta.Class.extend({
+        initialize: function(properties) {
+            $.extend(this, properties);
+            if (this.id === undefined)
+                throw "ModelHistoryEntry constructor requires stateId property";
+            if (this.model === undefined)
+                this.model = $.extend(true, {}, Cajeta.theApplication.cache);
         },
-        /**
-         * First, attempt to use cookies.  If they're not available, go to an in-memory store
-         * The former is more desirable as in-memory is flushed for every url change.
-         *
-         * @param key The key of the entry to store in cache.
-         * @param value The value of the entry to store in cache.
-         */
-        put: function(key, value) {
-            // Make sure that a ":" isn't in the key, which would cause issues for document name parsing.
-            if (key.indexOf(':') >= 0)
-                throw 'The ":" character is not allowed in cache key values.';
-
-            if (this.cache === undefined) {
-                jCookies.set(this.cacheId + ':' + key, value);
-            } else {
-                this.cache[this.cacheId + ':' + key] = value;
-            }
-        },
-        get: function(key) {
-            if (this.cache === undefined)
-                return jCookies.get(this.cacheId + ':' + key);
-            else
-                return this.cache[this.cacheId + ':'  + key];
-        },
-        del: function(pattern) {
-            if (this.cache === undefined) {
-                var cookies = jCookies.filter(pattern);
-                for (var name in cookies) {
-                    if (name !== undefined) {
-                        jCookies.del(name);
-                    }
-                }
-            } else {
-                // Include the ':' in the pattern, reducing the chance of false positives.
-                pattern = (pattern.indexOf(':') >= 0) ? pattern : pattern + ':';
-                var regExp = new RegExp(pattern);
-                for (var name in this.cache) {
-                    if (name !== undefined && name.match(regExp)) {
-                        delete this.cache.name;
-                    }
-                }
-            }
-        }
-    });
-
-    Cajeta.Cache.ModelHistoryEntry = Cajeta.Class.extend({
-        initialize: function(stateId, jsonDelta, model) {
-            this.stateId = stateId;
-            this.jsonDelta = jsonDelta;
-            if (model !== undefined)
-                this.modelCopy = $.extend(true, {}, model);
-        },
-        getStateId: function() {
-            return this.stateId;
+        getId: function() {
+            return this.id;
         },
         getJsonDelta: function() {
             return this.jsonDelta;
@@ -207,12 +148,107 @@ define([
         }
     });
 
+    Cajeta.Model.stateCache = new Object();
+
+    Cajeta.Model.AbstractDatasourceAdaptor = Cajeta.Class.extend({
+        initialize: function(properties) {
+            $.extend(this, properties);
+            if (this.id === undefined)
+                throw 'Cajeta.Model.AbstractDatasourceAdaptor.id is undefined.';
+        },
+        getId: function() {
+            return this.id;
+        },
+        setComponent: function(component) {
+            this.component = component;
+        },
+        put: function(data) { throw 'Cajeta.Model.AbstractEndpointAdaptor.put requires an implementation'; },
+        get: function() { throw 'Cajeta.Model.AbstractEndpointAdaptor.get requires an implementation'; },
+        del: function() { throw 'Cajeta.Model.AbstractEndpointAdaptor.del requires an implementation'; },
+    });
+
+    /**
+     * An adaptor class used by model entries to interace with a data source.
+     * API methods are designed to support REST based communication.
+     */
+    Cajeta.Model.AbstractRestAdaptor = Cajeta.Model.AbstractDatasourceAdaptor.extend({
+        /**
+         * The properties argument for the adaptor must contain an entry for the model.  Any data returned from get
+         * or post methods will be stored in the model.
+         * @param properties
+         */
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+
+            if (this.uriTemplate === undefined) {
+                throw 'Cajeta.Model.AbstractRestAdaptor.uriTemplate is undefined.';
+            }
+        },
+        post: function(data) { throw 'Cajeta.Model.AbstractEndpointAdaptor.post requires an implementation'; },
+        onComplete: function(data) { throw 'Cajeta.Model.AbstractEndpointAdaptor.onComplete requires an implementation'; },
+
+        /**
+         * This method takes the uriTemplate assigned to this object and parses it for references to ids.
+         * These ids are assumed to reference elements in the application cache.
+         * @return {*}
+         */
+        uri: function() {
+            var result = this.uriTemplate;
+            var startIndex = result.indexOf('{');
+
+            while (startIndex >= 0) {
+                var endIndex = result.indexOf('}');
+                var key = result.substring(startIndex + 1, endIndex - 1);
+                result = result.replace('{' + key + '}', Cajeta.Model.stateCache[key]);
+                startIndex = result.indexOf('{');
+            }
+
+            return result;
+        }
+    });
+
+    Cajeta.Model.MemoryDatasourceAdaptor = Cajeta.Model.AbstractDatasourceAdaptor.extend({
+        intialize: function(properties) {
+            var self = (properties.super === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(self.super, properties);
+        },
+        put: function(data) { Cajeta.theApplication.cache[this.id] = data },
+        get: function() { return this.component.update(Cajeta.theApplication.cache[this.id]); },
+        del: function() { delete Cajeta.theApplication.cache[this.id]; }
+    });
+
+    Cajeta.Model.HttpRestAdaptor = Cajeta.Model.AbstractRestAdaptor.extend({
+        initialize: function(properties) {
+            var self = properties.self === undefined ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(self.super, properties);
+            this.ajax = new Cajeta.Ajax();
+            if (!this.uri().contains('http'))
+                throw 'Cajeta.Model.AbstractRestAdaptor.uri must be a valid url';
+        },
+        put: function(data) {
+            this.ajax.exec('PUT', this.url(), data, this.onComplete, this.headers);
+        },
+        get: function() {
+            this.ajax.exec('GET', this.url(), null, this.onComplete, this.headers);
+        },
+        post: function(data) {
+            this.ajax.exec('POST', this.url(), data, this.onComplete, this.headers);
+        },
+        del: function() {
+            this.ajax.exec('DELETE', this.url(), null, this.onComplete, this.headers);
+        },
+    });
+
     /**
      * Cajeta.Model provides container services for an application's data model.  These services include storage of the
      * current image, associating an image with a state ID, managing image history through delta compression, and
      * component binding and notification.
      */
-    Cajeta.Model = Cajeta.Class.extend({
+    Cajeta.Model.Cache = Cajeta.Class.extend({
         /**
          * Supported attributes:
          *      enableHistory:  Enables the ability of applications to keep a history of model state,
@@ -226,25 +262,33 @@ define([
          * @param properties
          */
         initialize: function(properties) {
-            this.enableHistory = (properties.enableHistory !== undefined) ? properties.enableHistory : false;
-            this.documentName = properties.documentName !== undefined ? properties.documentName : 'app';
+            $.extend(this, properties);
+            if (this.cache === undefined)
+                throw "Constructor properties for AbstractDataSource must provide a dataSourceId";
+
+            this.cacheReads = false;
+            this.readCache = new Object();
+            this.appName = this.appName !== undefined ? this.appName : 'app';
             this.pathMap = new Object();
             this.dataMap = new Object();
-            this.cacheStrategy = new Cajeta.Cache.DefaultCacheStrategy(this.documentName);
-            if (properties.enableSession !== undefined && properties.enableSession)
-                this.sessionId = new Date().getTime();
-            else
-                this.sessionId = '';
+            this.dataSourceMap = new Object();
+
+            // Check to see if we've been initialized, if not, see if we have a stateId stored as a cookie.
+            // Otherwise, initialize to 0
+            if (this.id === undefined) {
+                this.id = jCookies.get("id");
+                if (this.id === undefined || this.id === null)
+                    this.id = 0;
+            }
 
             this.versionId = 0;
 
-            if (this.enableHistory) {
-                this.stateId = (this.enableSession) ? this.sessionId + '.' : '';
-                this.stateId += this.versionId;
-            } else {
-                this.stateId = '';
+            if (this.stateRestAdaptor === undefined) {
+                this.stateRestAdaptor = new Cajeta.Model.MemoryRestAdaptor({});
             }
-            this.enableJsonDelta = (properties.enableJsonDelta !== undefined) ? properties.enableJsonDelta : false;
+
+            if (this.enableJsonDelta === undefined) this.enableJsonDelta = false;
+
             this.modelJson = null;
             this.vcd = null;
             if (this.enableJsonDelta == true) {
@@ -256,6 +300,16 @@ define([
             this.historySize = 0;
         },
 
+        addDataSource: function(dataSource) {
+            this.dataSourceMap[dataSource.getId()] = dataSource;
+        },
+
+        getDataSource: function(id) {
+            return this.dataSourceMap[id];
+        },
+
+
+
         /**
          * True, if history is enabled
          * @return {*}
@@ -264,87 +318,163 @@ define([
             return this.enableHistory;
         },
 
-        clearHistory: function(documentName) {
+        saveState: function(stateId) {
+            if (this.enableHistory == false)
+                return;
+
+            var cacheEntry;
+            if (this.enableJsonDelta == true) {
+                var updatedModelJson = JSON.stringify(this.dataMap);
+                var jsonDelta = vcDiff.encode(updatedModelJson, this.modelJson);
+                this.modelJson = updatedModelJson;
+                cacheEntry = new Cajeta.Model.StateEntry(this.id, jsonDelta, null);
+            } else {
+                cacheEntry = new Cajeta.Model.StateEntry(this.id, null, this.dataMap);
+
+            }
+            this.stateRestAdaptor.put(cacheEntry);
+            this.id = ++this.versionId;
+            Cajeta.Model.stateCache['id'] = this.id;
+        },
+
+        /**
+         * Change the model to the history state indicated by stateId
+         *
+         * @param stateId The id of the history snapshot to restore and make current
+         */
+        loadState: function(stateId) {
+            // First, check to see that the session ID matches our current...
+            if (stateId == this.id)
+                return;
+
+            // We're going backward, so set the state ID to that requested
+            this.id = stateId;
+            this.stateRestAdaptor.onComplete = this.onStateReadComplete;
+            this.stateRestAdaptor.get(stateId);
+        },
+
+        /**
+         * TODO FIGURE THIS OUT!
+         * @param data
+         */
+        onStateReadComplete: function(data) {
+            var entryToRestore = data;
+            if (entryToRestore !== undefined) {
+                // Save state as a copy, not a delta, if it's not already in our map...
+                if (this.cacheStrategy.get(stateId) == undefined)
+                    this.cacheStrategy.put(stateId, new Cajeta.Cache.PageHistoryEntry(this.id,
+                        null, $.extend(true, {}, this.dataMap)));
+                if (entryToRestore.modelCopy != null) {
+                    this.dataMap = entryToRestore.modelCopy;
+                } else {
+                    // Figure this out:  json delta recovery
+                    // Algorithm:  Start at our versionId, and iterate over the set of cache entries until we find one
+                    // with an intact model.  Then, generate the complete JSON from that.  Finally, iterate down to our current
+                    // image, applying the deltas for each.  Finally, convert the resulting JSON back into a model
+                }
+                this.updateBoundComponents();
+            }
+        },
+
+        /**
+         * TODO FIGURE THIS OUT!!!
+         * @param documentName
+         */
+        clearAll: function(documentName) {
             if (documentName === undefined)
                 documentName = 'app';
-            this.cacheStrategy.del(documentName);
+            this.del(documentName);
         },
 
-        /**
-         * Call this method with an object to update and save the model with a key value pair.
-         * When called, the following logic will be executed:
-         *
-         * 1.  The changes to the model are committed
-         * 2.  A new version ID is computed for the Model state.
-         * 3.  After which, the udpated model is exported to JSON.
-         * 4.  The delta between models is computed, and the delta to the previous version is stored on the history stack
-         * 5.  The object will be recursively iterated to evaluate all children.
-         * 6.  For each child, a check will be made to see if the entry for that node exists in the bindMap
-         * 7.  If the entry exists, the reference to the current object is updated, and the bindMap
-         *
-         * @param key
-         * @param value
-         * @param committor
-         */
-        set: function(key, value, committor) {
-            this.createSnapshot();
-            this.dataMap[key] = value;
-            this.onModelChanged(key, committor);
+        deleteState: function(stateId) {
+            this.stateRestAdaptor.del(stateId);
         },
 
-        /**
-         * Returns a data tree (an entire tree), from the map.
-         *
-         * @param key
-         * @return {*}
-         */
-        get: function(key) {
-            return this.dataMap[key];
-        },
 
         /**
-         * Set the value of an object in the model graph.  The model graph consists of a map of objects, each
-         * essentially a tree. Model paths consist of a series of property names, seperated by dots.
-         * Paths start with the key used to store a tree in the Model.  From there, the route is evaluated
-         * to the final element, where the value is applied as previousLookup[finalElement] = value.  After invocation
-         * the binding map is checked to see if any ModelEntries are dependent.  If so, their onModelUpdate methods
-         * are triggered, causing values to be populated into the view.
          *
-         * @param modelPath
-         * @param value
-         * @param committor
+         * @param enable
+         * @return {Function}
          */
-        setByPath: function(modelPath, value, committor) {
-            var paths = modelPath.split('.');
-            var obj = this.dataMap[paths[0]], temp;
-            for (var i = 1; i < paths.length - 1; i++) {
-                temp = obj[paths[i]];
-                obj = temp;
+        batchReads: function(enable) {
+            if (enable !== undefined) {
+                // If we've been caching, and are turning it off, we read whatever we've collected so far...
+                if (enable == false && this.cacheReads == true) {
+                    this.read(this.readCache);
+                }
+                this.cacheReads = enable;
+            } else {
+                return this.cacheReads;
             }
-            this.createSnapshot();
-            obj[paths[i]] = value;
-            this.onModelChanged(modelPath, committor);
-
         },
 
-        /**
-         * Return an object node in a data tree using a path address.
-         *
-         * @param modelPath
-         */
-        getByPath: function(modelPath) {
-            if (modelPath === undefined)
-                throw 'Invalid modelPath ' + modelPath;
 
-            var paths = modelPath.split('.');
-            var obj = this.dataMap[paths[0]];
-            if (obj !== undefined) {
-                var temp;
-                for (var i = 1; i < paths.length; i++) {
-                    temp = obj[paths[i]];
+        /**
+         * Call this method to invoke an update when either reading or writing data.  For writing data, provide
+         * a value and, optionally, a committor parameter to prevent cyclical bind calls.
+         *
+         * For reading data, provide only the key value.  A read will be executed (allowing subclassed overrides
+         * to implement transport), followed by an onModelChanged call to force bound components to update.
+         *
+         * During the render phase, read requests are cached and executed as a batch.
+         *
+         * @param key The key identifying the data.  This may be either a string id (which should be in canonical
+         *        format, or a component.  For writes, committing components will not receive update notifications,
+         *        preventing cycles.
+         * @param value The optional value to assign to the key.
+         */
+        update: function(key, value) {
+            var id = '';
+            var component = null;
+            if (key instanceof Cajeta.View.Component) {
+                id = key.getModelPath();
+                component = key;
+            } else {
+                id = key;
+            }
+            if (value !== undefined) {
+                this.write(id, value);
+            } else {
+                if (this.cacheReads == false) {
+                    this.read(id);
+                } else {
+                    if (key.contains('.')) {
+                        var paths = key.split('.');
+                        var obj = this.readCache;
+                        for (var i = 0; i < paths.length - 1; i++) {
+                            obj = obj[paths[i]];
+                            if (obj !== undefined) {
+                                var temp;
+                                for (var i = 1; i < paths.length; i++) {
+                                    temp = obj[paths[i]];
+                                }
+                            } else {
+                                obj[paths[i]] = new Object();
+                                obj = obj[paths[i]];
+                            }
+                        }
+                        obj[paths[paths.length - 1]] = "update";
+                    }
                 }
             }
-            return temp;
+        },
+
+        /**
+         * This method should be overridden to provide actual logic for accessing data sources
+         *
+         * @param key
+         */
+        read: function(key) {
+            this.onModelChanged(key);
+        },
+
+        /**
+         *
+         * @param key
+         * @param value
+         */
+        write: function(key, value) {
+            this.onModelChanged(key, value);
         },
 
         /**
@@ -355,45 +485,44 @@ define([
          */
         bindComponent: function(component) {
             var modelPath = component.getModelPath();
-            if (modelPath != undefined) {
-                var paths = modelPath.split('.');
+            var paths = modelPath.split('.');
 
-                // The binding map will keep entries both according to a dataMap key, as well as
-                // by entire path.  This will facilitate both the update of components due to the
-                // change of entire map entry, as well as an individual subnode.
-                var components = this.pathMap[paths[0]];
-                if (components == undefined) {
-                    components = new Object();
-                    this.pathMap[paths[0]] = components;
-                }
-                components[component.getComponentId()] = component;
-
-                components = this.pathMap[modelPath];
-                if (components == undefined) {
-                    components = new Object();
-                    this.pathMap[modelPath] = components;
-                }
-                components[component.getComponentId()] = component;
-
-                // Ensure that there's a dataMap entry to satisfy the binding...
-                var obj = this.dataMap[paths[0]];
-                var temp = null;
-                if (obj == undefined) {
-                    obj = new Object();
-                    this.dataMap[paths[0]] = obj;
-                }
-                for (var i = 1; i < paths.length - 1; i++) {
-                    temp = obj[paths[i]];
-                    if (temp == undefined) {
-                        temp = new Object();
-                        obj[paths[i]] = temp;
-                    }
-                    obj = temp;
-                }
-                // If there's no current value, use the default provided by the component
-                if (obj[paths[i]] === undefined)
-                    obj[paths[i]] = component.getDefaultValue();
+            // The binding map will keep entries both according to a dataMap key, as well as
+            // by entire path.  This will facilitate both the update of components due to the
+            // change of entire map entry, as well as an individual subnode.
+            var components = this.pathMap[paths[0]];
+            if (components === undefined) {
+                components = new Object();
+                this.pathMap[paths[0]] = components;
             }
+            components[component.getCanonicalId()] = component;
+
+            components = this.pathMap[modelPath];
+            if (components === undefined) {
+                components = new Object();
+                this.pathMap[modelPath] = components;
+            }
+            components[component.getCanonicalId()] = component;
+
+            // Ensure that there's a dataMap entry to satisfy the binding...
+            var obj = this.dataMap[paths[0]];
+            var temp = null;
+            if (obj === undefined) {
+                obj = new Object();
+                this.dataMap[paths[0]] = obj;
+            }
+
+            for (var i = 1; i < paths.length - 1; i++) {
+                temp = obj[paths[i]];
+                if (temp === undefined) {
+                    temp = new Object();
+                    obj[paths[i]] = temp;
+                }
+                obj = temp;
+            }
+            // If there's no current value, use the value of the component
+            if (obj[paths[i]] === undefined)
+                obj[paths[i]] = component.getValue();
         },
 
         /**
@@ -408,16 +537,16 @@ define([
                 var paths = component.getModelPath().split('.');
                 var components = this.pathMap[paths[0]];
                 if (components !== undefined)
-                    delete components[component.getComponentId()];
+                    delete components[component.getCanonicalId()];
 
                 components = this.pathMap[modelPath];
                 if (components !== undefined)
-                    delete components[component.getComponentId()];
+                    delete components[component.getCanonicalId()];
             }
         },
 
         getStateId: function() {
-            return this.stateId;
+            return this.id;
         },
 
         /**
@@ -431,8 +560,8 @@ define([
             if (modelPath !== undefined) {
                 var components = this.pathMap[modelPath];
                 if (components != undefined) {
-                    for (var componentId in components) {
-                        var component = components[componentId];
+                    for (var canonicalId in components) {
+                        var component = components[canonicalId];
                         if (component != undefined && component != committor)
                             component.onModelUpdate();
                     }
@@ -441,8 +570,8 @@ define([
                 for (var name in this.pathMap) {
                     var components = this.pathMap[name];
                     if (components != undefined) {
-                        for (var componentId in components) {
-                            var component = components[componentId];
+                        for (var canonicalId in components) {
+                            var component = components[canonicalId];
                             //if (committor !== undefined && component != committor)
                             component.onModelUpdate();
                         }
@@ -451,77 +580,29 @@ define([
             }
         },
 
-        createSnapshot: function() {
-            if (this.enableHistory == false)
-                return;
-
-            var cacheEntry;
-            if (this.enableJsonDelta == true) {
-                var updatedModelJson = JSON.stringify(this.dataMap);
-                var jsonDelta = vcd.encode(updatedModelJson, this.modelJson);
-                this.modelJson = updatedModelJson;
-                cacheEntry = new Cajeta.Cache.ModelHistoryEntry(this.stateId, jsonDelta, null);
-            } else {
-                cacheEntry = new Cajeta.Cache.ModelHistoryEntry(this.stateId, null, this.dataMap);
-
-            }
-            this.cacheStrategy.put(this.stateId, cacheEntry);
-
-            this.stateId = (this.enableSession) ? this.sessionId + '.' : '';
-            this.stateId += ++this.versionId;
-        },
-
         onModelChanged: function(modelPath, committor) {
             this.updateBoundComponents(modelPath, committor);
-            Cajeta.theApplication.onModelChanged(this.stateId);
+            Cajeta.theApplication.onModelChanged(this.id);
+        }
+    });
+
+    Cajeta.Model.CacheAdaptor = Cajeta.Class.extend({
+        initialize: function(properties) {
+            $.extend(this, properties, true);
+            if (this.path === undefined)
+                throw "Model.path must be defined";
         },
 
-        /**
-         * Change the model to the history state indicated by stateId
-         *
-         * @param stateId The id of the history snapshot to restore and make current
-         */
-        loadState: function(stateId) {
-            // First, check to see that the session ID matches our current...
-            if (stateId == this.stateId)
-                return;
+        onRead: function() {
+            // Use the rules established here to read data from the cache, and
 
-            var dotIndex = stateId.indexOf('.');
-            var sessionId = stateId.substring(0, dotIndex);
-            if (sessionId == this.sessionId) {
-                var versionId = stateId.substring(dotIndex + 1);
-                if (versionId > this.versionId) {
-                    stateId = this.stateId;
-                    return;
-                }
-
-                // Store the current model before loading a previous version, if it's not a
-                // snapshot...
-                if (this.cacheStrategy.hasOwnProperty(this.getStateId()) == false) {
-                    this.createSnapshot();
-                }
-
-                // We're going backward, so set the state ID to that requested
-                this.stateId = stateId;
-
-                var entryToRestore = this.cacheStrategy.get(stateId);
-                if (entryToRestore !== undefined) {
-                    // Save state as a copy, not a delta, if it's not already in our map...
-                    if (this.cacheStrategy.get(this.stateId) == undefined)
-                        this.cacheStrategy.put(this.stateId, new Cajeta.Cache.ModelHistoryEntry(this.stateId,
-                            null, $.extend(true, {}, this.dataMap)));
-                    if (entryToRestore.modelCopy != null) {
-                        this.dataMap = entryToRestore.modelCopy;
-                    } else {
-                        // Figure this out:  json delta recovery
-                        // Algorithm:  Start at our versionId, and iterate over the set of cache entries until we find one
-                        // with an intact model.  Then, generate the complete JSON from that.  Finally, iterate down to our current
-                        // image, applying the deltas for each.  Finally, convert the resulting JSON back into a model
-                    }
-                    this.updateBoundComponents();
-                }
-            }
+        },
+        onWrite: function(data) {
+            // Use the global scope cache (or provided cache) to
+            // write out the data
         }
+
+
     });
 
     Cajeta.View = {
@@ -556,11 +637,11 @@ define([
             $.extend(this, properties);
             if (this.componentId === undefined)
                 throw 'A componentId must be defined';
-            this.modelPath = properties.modelPath === undefined ? this.componentId : properties.modelPath;
+            this.modelPath = (this.modelPath === undefined) ? this.getCanonicalId() : this.modelPath;
             this.parent = null;
-            this.attributes = new Object();
-            this.properties = new Object();
-            this.cssAttributes = new Object();
+            this.attributes = this.attributes === undefined ? {} : this.attributes;
+            this.properties = this.properties === undefined ? {} : this.properties;
+            this.cssAttributes = this.cssAttributes === undefined ? {} : this.cssAttributes;
             this.children = new Object();
             this.hotKeys = new Object();
             this.viewStateId = '';
@@ -568,30 +649,69 @@ define([
             if (this.visible === undefined)
                 this.visible = true;
         },
-        setComponentId: function(componentId) {
-            this.componentId = componentId;
-        },
+
+        /**
+         *
+         * @return {*}
+         */
         getComponentId: function() {
             return this.componentId;
         },
-        setDefaultValue: function(defaultValue) {
-            this.defaultValue = defaultValue;
+
+        /**
+         *
+         * @param componentId
+         */
+        setComponentId: function(componentId) {
+            if (componentId !== undefined) {
+                this.componentId = componentId;
+            }
         },
-        getDefaultValue: function() {
-            return this.defaultValue;
+
+        /**
+         *
+         * @return {*}
+         */
+        getCanonicalId: function() {
+            if (parent !== undefined && parent.getCanonicalId !== undefined)
+                return parent.getCanonicalId() + '.' + this.componentId;
+            else
+                return this.componentId;
         },
-        setValue: function(value) {
-            this.dom.attr('value', value);
+
+        /**
+         *
+         * @param value
+         */
+        value: function(value) {
+            if (value !== undefined)
+                this.attr('value', value);
+            else
+                return this.attr('value');
         },
-        getValue: function() {
-            return this.dom.attr('value');
-        },
-        setElementType: function(elementType) {
-            this.elementType = elementType;
-        },
+
+        /**
+         *
+         * @return {*|String|String|String}
+         */
         getElementType: function() {
             return this.elementType;
         },
+
+        /**
+         *
+         * @param elementType
+         */
+        setElementType: function(elementType) {
+            this.elementType = type;
+        },
+
+        /**
+         *
+         * @param name
+         * @param value
+         * @return {*}
+         */
         attr: function(name, value) {
             if (value === undefined) {
                 if (this.isDocked()) {
@@ -611,6 +731,13 @@ define([
                 this.attributes[name] = value;
             }
         },
+
+        /**
+         *
+         * @param name
+         * @param value
+         * @return {*}
+         */
         prop: function(name, value) {
             if (value === undefined) {
                 if (this.isDocked()) {
@@ -630,6 +757,13 @@ define([
                 this.properties[name] = value;
             }
         },
+
+        /**
+         *
+         * @param name
+         * @param value
+         * @return {*}
+         */
         css: function(name, value) {
             if (value === undefined) {
                 if (this.isDocked()) {
@@ -667,26 +801,53 @@ define([
                 this.html = value;
             }
         },
+
+        /**
+         *
+         * @param modelPath
+         */
         setModelPath: function(modelPath) {
             this.modelPath = modelPath;
         },
+
+        /**
+         *
+         * @return {*}
+         */
         getModelPath: function() {
             return this.modelPath;
         },
+
+        /**
+         *
+         * @param component
+         */
         addChild: function(component) {
             var componentId = component.getComponentId();
             if (componentId == undefined || componentId == '') {
                 throw 'A component must have a valid componentId to be added as a child';
             }
             this.children[componentId] = component;
+            if (component.endpointId === undefined) {
+                component.endpointId = this.endpointId;
+            }
             component.parent = this;
         },
+
+        /**
+         *
+         * @param componentId
+         */
         removeChild: function(componentId) {
             if (this.children[componentId] !== undefined) {
                 this.children[componentId].undock();
                 delete this.children[componentId];
             }
         },
+
+        /**
+         *
+         */
         removeAllChildren: function() {
             for (var name in this.children) {
                 if (name !== undefined) {
@@ -695,6 +856,7 @@ define([
                 }
             }
         },
+
         /**
          * A template may be assigned to a component, which will be used to override
          * the markup existing in the DOM. If no template has been assigned, the exsting markup
@@ -742,6 +904,10 @@ define([
         isDocked: function() {
             return (this.dom !== undefined);
         },
+
+        /**
+         *
+         */
         dock: function() {
             if (!this.isDocked()) {
                 var type = this.getElementType();
@@ -821,6 +987,10 @@ define([
             }
         },
 
+        /**
+         *
+         * @return {*}
+         */
         getHotKeys: function() {
             return this.hotKeys;
         },
@@ -853,14 +1023,27 @@ define([
                 }
             }
         },
+
+        /**
+         *
+         */
         reset: function() {
 
         },
+
+        /**
+         *
+         */
         onModelUpdate: function() {
             if (this.isDocked() && this.modelPath) {
                 this.setValue(Cajeta.theApplication.getModel().getByPath(this.modelPath));
             }
         },
+
+        /**
+         *
+         * @return {String}
+         */
         getViewState: function() {
             var stateId = '';
             if (this.viewStateId !== undefined && this.viewStateId != '') {
@@ -873,14 +1056,25 @@ define([
             }
             return stateId;
         },
+
+        /**
+         *
+         * @param viewState
+         */
         setViewStateId: function(viewState) {
 
         }
     });
 
+    /**
+     *
+     * @param event
+     * @return {*}
+     */
     Cajeta.View.Component.htmlEventDispatch = function(event) {
         return event.data.that[event.data.fnName].call(event.data.that, event);
     };
+
 
     Cajeta.View.ComponentGroup = Cajeta.View.Component.extend({
         initialize: function(properties) {
@@ -940,7 +1134,7 @@ define([
 
     /**
      *
-     * @type {*}
+     *
      */
     Cajeta.View.Page = Cajeta.View.Component.extend({
         initialize: function(properties) {
@@ -980,7 +1174,7 @@ define([
 
     /**
      *
-     * @type {Function}
+     *
      */
     Cajeta.Application = Cajeta.Class.extend({
         initialize: function(properties) {
@@ -990,13 +1184,15 @@ define([
             this.viewStateId = '';
             this.modelStateId = '';
 
-            // Use history, but not session or JSON delta compression
-            this.model = new Cajeta.Model({
-                enableHistory: true,
-                enableSession: false,
-                enableJsonDelta: false,
-                documentName: 'testApp'
-            });
+            if (this.cache !== undefined) {
+                this.cache = new Cajeta.Model.Cache({
+                    enableHistory: true,
+                    enableSession: false,
+                    enableJsonDelta: false,
+                    appName: 'testApp'
+                });
+            }
+
             this.componentMap = new Object();
             this.stringResourceMap = new Object();
             this.currentPage = null;
@@ -1031,7 +1227,7 @@ define([
                     var prevHash = window.location.hash;
                     window.setInterval(function () {
                         if (window.location.hash != prevHash) {
-                            Cajeta.Application.onAnchorChanged;
+                            Cajeta.Application.onAnchorChanged();
                         }
                     }, 200);
                 }

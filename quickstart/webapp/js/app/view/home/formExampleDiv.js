@@ -1,16 +1,16 @@
 define([
     'jquery',
-    'cajetaHtml4',
+    'cajetaHtml5',
     'text!js/app/view/home/formExampleDiv.html'
 ], function($, Cajeta, formExampleDiv) {
 
     // Create an alias for namespace brevity.
-    var Html4 = Cajeta.View.Html4;
+    var Html5 = Cajeta.View.Html5;
 
-    var div = new Html4.Div({ componentId: 'formExampleDiv' });
+    var div = new Html5.Div({ componentId: 'formExampleDiv' });
     div.setTemplate('formExampleDiv', formExampleDiv);
 
-    var form = new Html4.Form({ componentId: 'testForm',
+    var form = new Html5.Form({ componentId: 'testForm',
         onHtmlSubmit: function() {
             // Make an AJAX (they need to rename this.  Who uses XML anymore for Javascript?) call to
             // the server, use headers as opposed to query args.  Query arguments are usually
@@ -18,10 +18,12 @@ define([
             var myData = Cajeta.theApplication.model.get('testForm');
 
             var ajax = new Cajeta.Ajax({
-                'Accept' : "application/json; charset=UTF-8",
-                'Content-Type' : "application/x-www-form-urlencoded; charset=UTF-8" },
-                'application/json'
-            );
+                'header' : {
+                    'Accept' : "application/json; charset=UTF-8",
+                    'Content-Type' : "application/x-www-form-urlencoded; charset=UTF-8"
+                },
+                'encoding' : 'application/json'
+            });
             ajax.exec('POST', 'http://localhost:8080/application/createUser', myData, function(event) {
                 if (this.readyState == 4) {
                     console.log("received: '" + this.responseText + "', readyState: " + this.readyState);
@@ -31,63 +33,63 @@ define([
         }
     });
 
-    form.addChild(new Html4.Label({ componentId: 'firstLabel',
-        modelPath: 'testForm.firstLabelField', defaultValue: 'Label Text' }));
-    form.addChild(new Html4.TextInput({ componentId: 'firstTextField',
-        modelPath: 'testForm.firstTextField', defaultValue: 'First Example Text' }));
-    form.addChild(new Html4.TextInput({ componentId: 'secondTextField',
-        modelPath: 'testForm.secondTextField', defaultValue: 'Second Example Text' }));
+    form.addChild(new Html5.Label({ componentId: 'firstLabel', model: {
+        path: 'testForm.firstLabelField', attributes: { value: 'Label Text' }}}));
+    form.addChild(new Html5.TextInput({ componentId: 'firstTextField',
+        modelPath: 'testForm.firstTextField', attributes: { value: 'First Example Text' }}));
+    form.addChild(new Html5.TextInput({ componentId: 'secondTextField',
+        modelPath: 'testForm.secondTextField', attributes: { value: 'Second Example Text' }}));
 
     // Add Checkboxes
-    form.addChild(new Html4.CheckboxInput({ componentId: 'greenColor',
-        modelPath: 'testForm.greenColor', defaultValue: true }));
-    form.addChild(new Html4.CheckboxInput({ componentId: 'blueColor',
-        modelPath: 'testForm.blueColor', defaultValue: false }));
-    form.addChild(new Html4.CheckboxInput({ componentId: 'redColor',
-        modelPath: 'testForm.redColor', defaultValue: true }));
+    form.addChild(new Html5.CheckboxInput({ componentId: 'greenColor',
+        modelPath: 'testForm.greenColor', model: { properties: { checked: 'true' }}));
+    form.addChild(new Html5.CheckboxInput({ componentId: 'blueColor',
+        modelPath: 'testForm.blueColor' }));
+    form.addChild(new Html5.CheckboxInput({ componentId: 'redColor',
+        modelPath: 'testForm.redColor', properties: { checked: 'true' }}));
 
     // Add RadioGroup
     var radioGroup = new Cajeta.View.ComponentGroup({ componentId: 'dietGroup',
-        modelPath: 'testForm.diet', defaultValue: 'omnivore' });
-    radioGroup.addChild(new Html4.RadioInput({ componentId: 'vegetarian' }));
-    radioGroup.addChild(new Html4.RadioInput({ componentId: 'pescatarian' }));
-    radioGroup.addChild(new Html4.RadioInput({ componentId: 'omnivore' }));
+        modelPath: 'testForm.diet', model: { attributes: { value: 'omnivore' }}});
+    radioGroup.addChild(new Html5.RadioInput({ componentId: 'vegetarian' }));
+    radioGroup.addChild(new Html5.RadioInput({ componentId: 'pescatarian' }));
+    radioGroup.addChild(new Html5.RadioInput({ componentId: 'omnivore' }));
 
     // TextArea
-    form.addChild(new Html4.TextArea({ componentId: 'textArea',
-        modelPath: 'testForm.description', defaultValue: 'Enter a description here.',
-        attrCols: 50, attrRows: 5 }));
+    form.addChild(new Html5.TextArea({ componentId: 'textArea',
+        modelPath: 'testForm.description', model: { attributes: { cols: 100, rows: 5 },
+        properties: { value: 'Enter a description here.' }}}));
 
-    form.addChild(new Html4.Select({ componentId: 'selectStatic',
+    form.addChild(new Html5.Select({ componentId: 'selectStatic',
         modelPath: 'testForm.selectStatic' }));
 
-    form.addChild(new Html4.Select({ componentId: 'selectProgrammatic',
+    form.addChild(new Html5.Select({ componentId: 'selectProgrammatic',
         modelPath: 'testForm.selectProgrammatic', options: [
-            { elementType: 'option', label: 'First Option', value: 'firstOption' },
-            { elementType: 'option', label: 'Second Option', value: 'secondOption'},
-            { elementType: 'option', label: 'Third Option', value: 'thirdOption' }
+            { type: 'option', label: 'First Option', value: 'firstOption' },
+            { type: 'option', label: 'Second Option', value: 'secondOption'},
+            { type: 'option', label: 'Third Option', value: 'thirdOption' }
         ],
         onHtmlChange: function(event) {
-            alert('Programmatic is programmed.');
+            alert('Programmatic is changed.');
         }
     }));
 
-    form.addChild(new Html4.Select({ componentId: 'selectProgrammaticOption',
+    form.addChild(new Html5.Select({ componentId: 'selectProgrammaticOption',
         modelPath: 'testForm.selectProgrammaticOption', options: [
-            { elementType: 'optgroup', label: 'First Option', options: [
-                { elementType: 'option', label: 'First Child Option', value: 'firstChildOption'},
-                { elementType: 'option', label: 'Second Child Option', value: 'secondChildOption' }] },
-            { elementType: 'option', label: 'Second Option', value: 'secondOption'},
-            { elementType: 'option', label: 'Third Option', value: 'thirdOption' }
+            { type: 'optgroup', label: 'First Option', options: [
+                { type: 'option', label: 'First Child Option', value: 'firstChildOption'},
+                { type: 'option', label: 'Second Child Option', value: 'secondChildOption' }]},
+            { type: 'option', label: 'Second Option', value: 'secondOption'},
+            { type: 'option', label: 'Third Option', value: 'thirdOption' }
         ]
     }));
 
-    form.addChild(new Html4.Select({ componentId: 'selectMultiProgrammatic',
+    form.addChild(new Html5.Select({ componentId: 'selectMultiProgrammatic',
         modelPath: 'testForm.selectMultiProgrammatic',
         options: [
-            { elementType: 'option', label: 'First Multi Option', value: 'firstMultiOption' },
-            { elementType: 'option', label: 'Second Multi Option', value: 'secondMultiOption' },
-            { elementType: 'option', label: 'Third Multi Option', value: 'thirdMultiOption' }
+            { type: 'option', label: 'First Multi Option', value: 'firstMultiOption' },
+            { type: 'option', label: 'Second Multi Option', value: 'secondMultiOption' },
+            { type: 'option', label: 'Third Multi Option', value: 'thirdMultiOption' }
         ]
     }));
 
