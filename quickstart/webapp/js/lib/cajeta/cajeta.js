@@ -31,6 +31,12 @@ define([
     'jcookies'
 ], function($, vcDiff, jCookies) {
 
+    /**
+     * Runtime info, including author, verison, and license information.
+     * Supports Cajeta.theApplication, which needs to be initialized with the
+     * instance of the application.  This variable is used internally for framework
+     * operation.
+     */
     var Cajeta = {
         author: 'Julian Klappenbach',
         version: '0.0.1',
@@ -42,14 +48,17 @@ define([
     // strategies to enable polymorphism.
     Cajeta.Class = function() { };
 
-    // A global flag to prevent the execution of constructors when defining
-    // the object.
+    // A global flag to prevent the execution of constructors when in the class
+    // definition phase.
     Cajeta.Class.defining = new Boolean();
 
     /**
+     * Use this method to extend an existing class.  While mixins are supported,
+     * inheritance and proper OO design still provide the best mechanisms for
+     * code reuse, extension, and long term maintenance.
      *
-     * @param definition
-     * @return {*}
+     * @param definition The definition with which to extend the base object.
+     * @return The extended object.
      */
     Cajeta.Class.extend = function(definition) {
         Cajeta.Class.defining = true;
@@ -75,9 +84,12 @@ define([
         return child;
     };
 
-    Cajeta.Ajax = Cajeta.Class.extend({
+    Cajeta.Datasource = {};
+
+    Cajeta.Datasource.Ajax = Cajeta.Class.extend({
         initialize: function(properties) {
-            this.header = properties.header !== undefined ? header : {};
+            $.extend(this, properties);
+            this.header == this.header !== undefined ? this.header : {};
             // TODO utilize encoding
         },
         createHxr: function() {
@@ -90,16 +102,26 @@ define([
         onError: function(event) {
             console.log("An error occured: " + event);
         },
+
+        /**
+         * Do nothing method.  Override if you want to store or act upon data results.
+         * @param data
+         */
+        onComplete: function(data) {
+        },
+
         exec: function(method, url, data, callback, headers) {
             var hxr = this.createHxr();
             var headers = (headers !== undefined) ? headers : this.headers;
-            
+
 
             hxr.open(method, url, true);
             hxr.onerror = this.onError;
 
             if (callback !== undefined) {
                 hxr.onreadystatechange = callback;
+            } else {
+                hxr.onreadystatechange = this.onComplete;
             }
 
             for (var name in headers) {
@@ -116,6 +138,41 @@ define([
         }
     });
 
+    /**
+     * An adaptor class used by model entries to interace with a data source.
+     * API methods are designed to support REST based communication.
+     */
+    Cajeta.Datasource.RestAjax = Cajeta.Datasource.Ajax.extend({
+        /**
+         * The properties argument for the adaptor must contain an entry for the model.  Any data returned from get
+         * or post methods will be stored in the model.
+         * @param properties
+         */
+        initialize: function(properties) {
+            if (this.uriTemplate === null) {
+                throw 'A "urlTemplate" property must be defined in the constructor';
+            }
+        },
+        put: function(data) { throw 'Cajeta.Model.AbstractEndpointAdaptor.put requires an implementation'; },
+        get: function() { throw 'Cajeta.Model.AbstractEndpointAdaptor.get requires an implementation'; },
+        post: function(data) { throw 'Cajeta.Model.AbstractEndpointAdaptor.post requires an implementation'; },
+        del: function() { throw 'Cajeta.Model.AbstractEndpointAdaptor.del requires an implementation'; },
+        onComplete: function(data) { throw 'Cajeta.Model.AbstractEndpointAdaptor.onComplete requires an implementation'; },
+        uri: function() {
+            var result = this.uriTemplate;
+            var startIndex = result.indexOf('{');
+
+            while (startIndex >= 0) {
+                var endIndex = result.indexOf('}');
+                var key = result.substring(startIndex + 1, endIndex - 1);
+                // TODO FIXME! result = result.replace('{' + key + '}', Cajeta.Model.theModelCache.modelCache[key]);
+                startIndex = result.indexOf('{');
+            }
+
+            return result;
+        }
+    });
+
 
     /**
      * The Model, as in traditional MVC architectures, defines the architecture and interfaces for how data is managed,
@@ -129,7 +186,7 @@ define([
      */
     Cajeta.Model = {};
 
-    Cajeta.Model.StateEntry = Cajeta.Class.extend({
+    Cajeta.Model.Snapshot = Cajeta.Class.extend({
         initialize: function(properties) {
             $.extend(this, properties);
             if (this.id === undefined)
@@ -145,116 +202,76 @@ define([
         },
         getModelCopy: function() {
             return this.modelCopy;
+        },
+        compress: function(previousState) {
+
+        },
+        decompress: function(previousState) {
+
         }
     });
 
-    Cajeta.Model.stateCache = new Object();
-
-    Cajeta.Model.AbstractDatasourceAdaptor = Cajeta.Class.extend({
+    /**
+     * Cajeta.ModelSnapshotCache must support the following use cases:
+     *  1.  Add a new snapshot to the collection, using Snapshot's compress
+     *      function (currently delta compression) to reduce overhead
+     *  2.  Maintain a set of "key frame" snapshots, so that the number of delta-decompression
+     *      steps is kept under some maximum limit (perhaps every 10 frames).
+     *  3.  Support state restoration of an arbitrary snapshot entry.
+     *      a.  While individual snapshot elements will know how to reconstruct themselves given the
+     *          previous state, it will be up to the Cache to know how to walk back to a "key frame",
+     *          as well as how to iterate through each element in the list, to restore state.
+     *  4.  Delete an existing state entry (or the entire cache)
+     *  5.  Support an API that can easily be overridden for remote server implementation.  It would be cool
+     *      to have application snapshot state stored centrally for mobile applications.
+     */
+    Cajeta.Model.SnapshotCache = Cajeta.Class.extend({
         initialize: function(properties) {
             $.extend(this, properties);
-            if (this.id === undefined)
-                throw 'Cajeta.Model.AbstractDatasourceAdaptor.id is undefined.';
-        },
-        getId: function() {
-            return this.id;
-        },
-        setComponent: function(component) {
-            this.component = component;
-        },
-        put: function(data) { throw 'Cajeta.Model.AbstractEndpointAdaptor.put requires an implementation'; },
-        get: function() { throw 'Cajeta.Model.AbstractEndpointAdaptor.get requires an implementation'; },
-        del: function() { throw 'Cajeta.Model.AbstractEndpointAdaptor.del requires an implementation'; },
-    });
+            if (this.enableJsonDelta === undefined) this.enableJsonDelta = false;
 
-    /**
-     * An adaptor class used by model entries to interace with a data source.
-     * API methods are designed to support REST based communication.
-     */
-    Cajeta.Model.AbstractRestAdaptor = Cajeta.Model.AbstractDatasourceAdaptor.extend({
-        /**
-         * The properties argument for the adaptor must contain an entry for the model.  Any data returned from get
-         * or post methods will be stored in the model.
-         * @param properties
-         */
-        initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
-            properties.self = self.super;
-            self.super.initialize.call(this, properties);
-
-            if (this.uriTemplate === undefined) {
-                throw 'Cajeta.Model.AbstractRestAdaptor.uriTemplate is undefined.';
+            this.modelJson = null;
+            this.vcd = null;
+            if (this.enableJsonDelta == true) {
+                this.modelJson = JSON.stringify(this.dataMap);
+                this.vcd = new Diffable.Vcdiff();
+                this.vcd.blockSize = 3;
             }
+            this.maxHistorySize = 30;
+            this.historySize = 0;
+            this.cache = {};
         },
-        post: function(data) { throw 'Cajeta.Model.AbstractEndpointAdaptor.post requires an implementation'; },
-        onComplete: function(data) { throw 'Cajeta.Model.AbstractEndpointAdaptor.onComplete requires an implementation'; },
+        addState: function(id, model) {
 
-        /**
-         * This method takes the uriTemplate assigned to this object and parses it for references to ids.
-         * These ids are assumed to reference elements in the application cache.
-         * @return {*}
-         */
-        uri: function() {
-            var result = this.uriTemplate;
-            var startIndex = result.indexOf('{');
+        },
+        restoreState: function(id) {
 
-            while (startIndex >= 0) {
-                var endIndex = result.indexOf('}');
-                var key = result.substring(startIndex + 1, endIndex - 1);
-                result = result.replace('{' + key + '}', Cajeta.Model.stateCache[key]);
-                startIndex = result.indexOf('{');
-            }
+        },
+        deleteState: function(id) {
 
-            return result;
         }
     });
 
-    Cajeta.Model.MemoryDatasourceAdaptor = Cajeta.Model.AbstractDatasourceAdaptor.extend({
-        intialize: function(properties) {
-            var self = (properties.super === undefined) ? this : properties.self;
-            properties.self = self.super;
-            self.super.initialize.call(self.super, properties);
-        },
-        put: function(data) { Cajeta.theApplication.cache[this.id] = data },
-        get: function() { return this.component.update(Cajeta.theApplication.cache[this.id]); },
-        del: function() { delete Cajeta.theApplication.cache[this.id]; }
-    });
-
-    Cajeta.Model.HttpRestAdaptor = Cajeta.Model.AbstractRestAdaptor.extend({
-        initialize: function(properties) {
-            var self = properties.self === undefined ? this : properties.self;
-            properties.self = self.super;
-            self.super.initialize.call(self.super, properties);
-            this.ajax = new Cajeta.Ajax();
-            if (!this.uri().contains('http'))
-                throw 'Cajeta.Model.AbstractRestAdaptor.uri must be a valid url';
-        },
-        put: function(data) {
-            this.ajax.exec('PUT', this.url(), data, this.onComplete, this.headers);
-        },
-        get: function() {
-            this.ajax.exec('GET', this.url(), null, this.onComplete, this.headers);
-        },
-        post: function(data) {
-            this.ajax.exec('POST', this.url(), data, this.onComplete, this.headers);
-        },
-        del: function() {
-            this.ajax.exec('DELETE', this.url(), null, this.onComplete, this.headers);
-        },
-    });
 
     /**
-     * Cajeta.Model provides container services for an application's data model.  These services include storage of the
-     * current image, associating an image with a state ID, managing image history through delta compression, and
-     * component binding and notification.
+     * Cajeta.ModelCache provides a centralized container and services for an application's data model.
+     * By placing the data for the application's model in a single tree, it can easily be stored in snapshots.
+     * A set of snapshots can be leveraged for undo-redo functionality, as well as revert and restore, and
+     * are stored in Cajeta.Model.snapshotCache.
+     *
+     * The ModelCache was designed around the concept of storing data from multiple datasources, each
+     * keyed by a URI (natively supporting REST).  Cajeta.Model.ModelCache.dataMap stores key-value pairs
+     * where the URI key is mapped to a JSON result set returned by a remote (or local) server endpoint
+     * GET or POST invocation.
+     *
+     * For snapshot instances, Cajeta.
+     *
      */
-    Cajeta.Model.Cache = Cajeta.Class.extend({
+    Cajeta.Model.ModelCache = Cajeta.Class.extend({
         /**
          * Supported attributes:
          *      enableHistory:  Enables the ability of applications to keep a history of model state,
          *                      which allows for either component-state based undo, or navigation
-         *      documentName:   Allows applications to manage multiple discrete model states, each representing
-         *                      a separate 'document'
          *      enableSession:  Generates unique session IDs for access, and ensures that urls for one session
          *                      are not used for another.  Without sessions, applications have a timeless and
          *                      locationless state that *may* be shared between instances.  The latter is
@@ -268,10 +285,8 @@ define([
 
             this.cacheReads = false;
             this.readCache = new Object();
-            this.appName = this.appName !== undefined ? this.appName : 'app';
             this.pathMap = new Object();
             this.dataMap = new Object();
-            this.dataSourceMap = new Object();
 
             // Check to see if we've been initialized, if not, see if we have a stateId stored as a cookie.
             // Otherwise, initialize to 0
@@ -283,32 +298,29 @@ define([
 
             this.versionId = 0;
 
-            if (this.stateRestAdaptor === undefined) {
-                this.stateRestAdaptor = new Cajeta.Model.MemoryRestAdaptor({});
+            if (this.snapshotCache === undefined) {
+                this.snapshotCache = new Cajeta.Model.SnapshotCache({});
             }
-
-            if (this.enableJsonDelta === undefined) this.enableJsonDelta = false;
-
-            this.modelJson = null;
-            this.vcd = null;
-            if (this.enableJsonDelta == true) {
-                this.modelJson = JSON.stringify(this.dataMap);
-                this.vcd = new Diffable.Vcdiff();
-                this.vcd.blockSize = 3;
-            }
-            this.maxHistorySize = 30;
-            this.historySize = 0;
         },
 
+        /**
+         * For now, the dataSourceMap is only a convenience collection.  It allows a
+         * configured datasource to be shared over the application.  A more fitting location
+         * might be the application itself, freeing developers to use datasources without
+         * being tied to this particular model implementation.
+         *
+         * @param dataSource The datasource to add to the internal map.
+         */
         addDataSource: function(dataSource) {
+            if (dataSource.getId() === undefined)
+                throw "dataSource must have a valid ID";
+
             this.dataSourceMap[dataSource.getId()] = dataSource;
         },
 
         getDataSource: function(id) {
             return this.dataSourceMap[id];
         },
-
-
 
         /**
          * True, if history is enabled
@@ -377,53 +389,43 @@ define([
         },
 
         /**
-         * TODO FIGURE THIS OUT!!!
-         * @param documentName
+         * Clear all entries from the map
          */
-        clearAll: function(documentName) {
-            if (documentName === undefined)
-                documentName = 'app';
-            this.del(documentName);
+        clearAll: function() {
+            delete this.dataMap;
+            this.dataMap = {};
         },
-
-        deleteState: function(stateId) {
-            this.stateRestAdaptor.del(stateId);
-        },
-
 
         /**
+         * This method is designed to be called by components that have updated their internal DOM values, and their
+         * state needs to be mirrored in the corresponding model.  This method will use the internal state of the
+         * component's ModelAdaptor for the list of arguments to provide to update(datasourceId, key, value).
          *
-         * @param enable
-         * @return {Function}
+         * In addition, this method will use the provided component as an argument to updateBoundComponents to prevent
+         * reduntant updates.
+         *
+         * @param component
          */
-        batchReads: function(enable) {
-            if (enable !== undefined) {
-                // If we've been caching, and are turning it off, we read whatever we've collected so far...
-                if (enable == false && this.cacheReads == true) {
-                    this.read(this.readCache);
-                }
-                this.cacheReads = enable;
-            } else {
-                return this.cacheReads;
-            }
+        update: function(component) {
+
         },
 
-
         /**
-         * Call this method to invoke an update when either reading or writing data.  For writing data, provide
-         * a value and, optionally, a committor parameter to prevent cyclical bind calls.
+         * This method should be called by datasources updating the model with new data, presumably when
+         * asynchronous callbacks have been invoked with new data.  Components that have been updated with new
+         * data, through user interaction, should call update(component)
          *
-         * For reading data, provide only the key value.  A read will be executed (allowing subclassed overrides
-         * to implement transport), followed by an onModelChanged call to force bound components to update.
-         *
-         * During the render phase, read requests are cached and executed as a batch.
-         *
-         * @param key The key identifying the data.  This may be either a string id (which should be in canonical
-         *        format, or a component.  For writes, committing components will not receive update notifications,
-         *        preventing cycles.
-         * @param value The optional value to assign to the key.
+         * @param datasourceId The id of the datasource providing the data.  This is defined uniquely for
+         * each datasource, and will likely be the uri of a remote API. The model is designed to handle
+         * resultsets from multiple datasources, providing a unique "namespace" per source.  This ensures that
+         * id collisions are avoided with resultsets.
+         * @param key The key identifying the data.  When a datasource returns a resultset, it may likely be in
+         * the format of an object graph.  In this context, the framework supports dot-delimited paths
+         * forming an address to the key-value pair to be targeted.  If the data is a simple string, this parameter
+         * may be null, or an empty string.
+         * @param value The value to assign to the key.
          */
-        update: function(key, value) {
+        update: function(datasourceId, key, value) {
             var id = '';
             var component = null;
             if (key instanceof Cajeta.View.Component) {
@@ -460,40 +462,34 @@ define([
         },
 
         /**
-         * This method should be overridden to provide actual logic for accessing data sources
+         * Bind a component to the data model, using information from its Cajeta.View.ModelAdaptor assignment.
+         * Changes to the data model (using setters defined here) will result in updates to
+         * 1:* dependent components.
          *
-         * @param key
-         */
-        read: function(key) {
-            this.onModelChanged(key);
-        },
-
-        /**
+         * Binding involves several different mappings to ensure that a simple bijection between a component and
+         * a model entry can quickly be derived.  First, we store references in the pathMap for the component,
+         * one for the
+         * the component and a complete modelPath (my.path.to.data) in a pathMap variable.  This allows
+         * the framework to quickly check to see if there's any dependencies for data updates for an arbitrary
+         * entry.
          *
-         * @param key
-         * @param value
-         */
-        write: function(key, value) {
-            this.onModelChanged(key, value);
-        },
-
-        /**
-         * Bind a component to the data model.  Changes to the data model (using setters defined here)
-         * will result in updates to dependent components.
+         * Next, we create a walk for the entry, ensuring that there's a connected graph entry for each
+         * element in the path.
+         *
          *
          * @param component
          */
         bindComponent: function(component) {
-            var modelPath = component.getModelPath();
+            var modelPath = component.modelAdaptor.getModelPath();
             var paths = modelPath.split('.');
 
             // The binding map will keep entries both according to a dataMap key, as well as
             // by entire path.  This will facilitate both the update of components due to the
             // change of entire map entry, as well as an individual subnode.
-            var components = this.pathMap[paths[0]];
+            var components = this.pathMap[component.modelAdaptor.getDatasourceId()];
             if (components === undefined) {
                 components = new Object();
-                this.pathMap[paths[0]] = components;
+                this.pathMap[component.modelAdaptor.getDatasourceId()] = components;
             }
             components[component.getCanonicalId()] = component;
 
@@ -556,9 +552,9 @@ define([
          * @param modelPath The path that was changed
          * @param committor Optional, passed in to avoid circular calls when changes are authored by components
          */
-        updateBoundComponents: function(modelPath, committor) {
+        updateBoundComponents: function(datasourceId, modelPath, committor) {
             if (modelPath !== undefined) {
-                var components = this.pathMap[modelPath];
+                var components = this.pathMap[datasourceId + modelPath];
                 if (components != undefined) {
                     for (var canonicalId in components) {
                         var component = components[canonicalId];
@@ -586,28 +582,46 @@ define([
         }
     });
 
-    Cajeta.Model.CacheAdaptor = Cajeta.Class.extend({
+    Cajeta.View = {
+        homePage: 'homePage'
+    };
+
+    /**
+     * ModelAdaptor keeps a component and its corresponding model entry synchronized.  Changes to model
+     * entries are directed to onModelUpdate.  Conversely, changes to the component are handled by OnComponentUpdate.
+     * This class maintains variables that resolve (and bind) a component to a model entry.  While the developer
+     * must provide a modelPath declaration, as well as additional information about a (TODO we probably could
+     * keep that information in the component!!!) Component's targe, the framework will populate the entry for the
+     * Component in the call to either the constructor (if a ModelAdaptor is provided), or in
+     * Component.setModelAdaptor.
+     */
+    Cajeta.View.ModelAdaptor = Cajeta.Class.extend({
         initialize: function(properties) {
             $.extend(this, properties, true);
-            if (this.path === undefined)
-                throw "Model.path must be defined";
+            if (this.datasourceId === undefined)
+                throw "Cajeta.View.ModelAdaptor.datasourceId must be defined";
+            if (this.modelPath === undefined)
+                throw "Cajeta.View.ModelAdaptor.modelpath must be defined";
+            if (this.elementTarget === undefined)
+                this.elementTarget = "value";
         },
-
-        onRead: function() {
+        getDatasourceId: function() {
+            return this.datasourceId;
+        },
+        getModelPath: function() {
+            return this.modelPath;
+        },
+        onModelUpdate: function(data) {
             // Use the rules established here to read data from the cache, and
 
         },
-        onWrite: function(data) {
+        onComponentUpdate: function(data) {
             // Use the global scope cache (or provided cache) to
             // write out the data
         }
 
 
     });
-
-    Cajeta.View = {
-        homePage: 'homePage'
-    };
 
     Cajeta.View.EventCallback = $.extend(true, Function.prototype, {
         setInstance: function(instance) { this.instance = instance; }
@@ -637,7 +651,6 @@ define([
             $.extend(this, properties);
             if (this.componentId === undefined)
                 throw 'A componentId must be defined';
-            this.modelPath = (this.modelPath === undefined) ? this.getCanonicalId() : this.modelPath;
             this.parent = null;
             this.attributes = this.attributes === undefined ? {} : this.attributes;
             this.properties = this.properties === undefined ? {} : this.properties;
@@ -648,6 +661,10 @@ define([
             this.domEventBound = false;
             if (this.visible === undefined)
                 this.visible = true;
+            this.valueTarget = "attr:value"; // Could be attr:*, prop:*, or elemVal
+            if (this.modelAdaptor !== undefined) {
+                this.setModelAdaptor(this.modelAdaptor);
+            }
         },
 
         /**
@@ -679,6 +696,11 @@ define([
                 return this.componentId;
         },
 
+        setModelAdaptor: function(modelAdaptor) {
+            this.modelAdaptor = modelAdaptor;
+            this.modelAdaptor.component = this;
+        },
+
         /**
          *
          * @param value
@@ -707,6 +729,12 @@ define([
         },
 
         /**
+         * Safe method of assigning a value to an element attribute.  If the element in question has not been
+         * instantiated (not in the DOM), the value will be held in a map until the element has been instantiated
+         * and added to the DOM, at which point the value will be used to initialize the element attribute.
+         *
+         * If no value is provided, the method acts as an accessor.  If the element has not been instantiated, the
+         * value held in the Component's attribute map will be returned.
          *
          * @param name
          * @param value
@@ -733,6 +761,12 @@ define([
         },
 
         /**
+         * Safe method of assigning a value to an element property.  If the element in question has not been
+         * instantiated (not in the DOM), the value will be held in a map until the element has been instantiated
+         * and added to the DOM, at which point the value will be used to initialize the element property.
+         *
+         * If no value is provided, the method acts as an accessor.  If the element has not been instantiated, the
+         * value held in the Component's property map will be returned.
          *
          * @param name
          * @param value
@@ -759,6 +793,12 @@ define([
         },
 
         /**
+         * Safe method of assigning a value to an element css attribute.  If the element in question has not been
+         * instantiated (not in the DOM), the value will be held in a map until the element has been instantiated
+         * and added to the DOM, at which point the value will be used to initialize the element.
+         *
+         * If no value is provided, the method acts as an accessor.  If the element has not been instantiated, the
+         * value held in the Component's css map will be returned.
          *
          * @param name
          * @param value
