@@ -254,18 +254,45 @@ define([
 
 
     /**
+     * <h1>Cajeta.Model.ModelCache</h1>
+     *
      * Cajeta.ModelCache provides a centralized container and services for an application's data model.
-     * By placing the data for the application's model in a single tree, it can easily be stored in snapshots.
-     * A set of snapshots can be leveraged for undo-redo functionality, as well as revert and restore, and
-     * are stored in Cajeta.Model.snapshotCache.
+     * By placing the data for the application's model in a tree under a single element, we gain some significant
+     * benefits.  First, it becomes a simple matter to bind components to data, ensuring that any changes are reflected
+     * in a mapped two-way relationship.  Second, we gain the ability to easily distil application state into the
+     * population of the underlying tree.  This state data can be snapshotted, converted to JSON, stored remotely, and
+     * even shared with other clients.  With snapshots, we also gain the ability to easily implement undo, redo, and
+     * restore operations.  Finally, we gain a degree of simplicity with this architecture. If there are data related
+     * issues with the application, there's a clear place to start for diagnosis and maintenance efforts.
      *
-     * The ModelCache was designed around the concept of storing data from multiple datasources, each
-     * keyed by a URI (natively supporting REST).  Cajeta.Model.ModelCache.dataMap stores key-value pairs
-     * where the URI key is mapped to a JSON result set returned by a remote (or local) server endpoint
-     * GET or POST invocation.
+     * <h2>Cache to Component Surjection</h2>
+     * In providing bindings between components and values in the cache, the framework supports a surjection, or a
+     * one-to-many (1:*) between a model node value and a set of components.  Components map their internal DOM
+     * state to the model using a contained Cajeta.View.ModelAdaptor instance.  When one component's state is modified,
+     * it's changes are persisted to the model, which then uses its internal mappings to identify the other components
+     * to notify.
      *
-     * For snapshot instances, Cajeta.
+     * <h2>Datasources</h2>
+     * While components will play a role in model state changes, datasources are also well supported
+     * by the framework.
      *
+     * In addition to supporting local edits, the ModelCache is designed to support multiple remote datasources,
+     * allocating seperate caches for each one.  When a resultset is entered from a datasource, the ModelCache mapping
+     * strategy for notification of all components bound to the subgraph of updated cache elements.
+     *
+     * <h2>Cache Structure</h2>
+     * While the cache has been envisioned to be a set of connected graphs, one per datasource, the application
+     * developer is free to assign an arbitrary structure for the application model.  By default, a "local" datasource
+     * is populated in the model, and can handle most transient data requirements.  For remote PUT requests, the
+     * developer can create an entry for the datasource, using the URI for an ID, and add elements to the cache that
+     * will serialize out to the JSON HTML body entity, or at least contain placeholders for query or URI arguments.
+     * In the case of a POST, where data is bidirectional, the datasource entry in the cache can be populated with a
+     * "request" and "response" root elements to separate outgoing from incoming data. For remote GET requests, JSON
+     * result sets can be evaluated and placed directly under the datasource entry.
+     *
+     * Again, all of these are simply suggestions. The developer is free to structure their data, and the adaption
+     * logic of that data to components, however they see fit.  The important
+     *      *
      */
     Cajeta.Model.ModelCache = Cajeta.Class.extend({
         /**
@@ -287,6 +314,7 @@ define([
             this.readCache = new Object();
             this.pathMap = new Object();
             this.dataMap = new Object();
+            this.datasourceMap = new Object();
 
             // Check to see if we've been initialized, if not, see if we have a stateId stored as a cookie.
             // Otherwise, initialize to 0
@@ -311,15 +339,15 @@ define([
          *
          * @param dataSource The datasource to add to the internal map.
          */
-        addDataSource: function(dataSource) {
-            if (dataSource.getId() === undefined)
+        addDatasource: function(datasource) {
+            if (datasource.getId() === undefined)
                 throw "dataSource must have a valid ID";
 
-            this.dataSourceMap[dataSource.getId()] = dataSource;
+            this.datasourceMap[dataSource.getId()] = datasource;
         },
 
-        getDataSource: function(id) {
-            return this.dataSourceMap[id];
+        getDatasource: function(id) {
+            return this.datasourceMap[id];
         },
 
         /**
