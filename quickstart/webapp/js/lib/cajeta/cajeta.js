@@ -187,6 +187,13 @@ define([
     Cajeta.Model = {};
 
     /**
+     * Centralized cache for Datasources
+     *
+     * @type {*}
+     */
+     Cajeta.Model.datasourceMap = new Object();
+
+    /**
      * Cajeta.ModelSnapshotCache must support the following use cases:
      *  1.  Add a new snapshot to the collection, using Snapshot's compress
      *      function (currently delta compression) to reduce overhead
@@ -200,27 +207,31 @@ define([
      *  5.  Support an API that can easily be overridden for remote server implementation.  It would be cool
      *      to have application snapshot state stored centrally for mobile applications.
      */
-    Cajeta.Model.SnapshotCache = Cajeta.Class.extend({
+    Cajeta.Model.StateCache = Cajeta.Class.extend({
         initialize: function(properties) {
             $.extend(this, properties);
-            this.modelJson = null;
             this.modelJson = JSON.stringify(this.dataMap);
             this.vcd = new Diffable.Vcdiff();
             this.vcd.blockSize = 3;
             this.cache = {};
-            this.snapshotId = 0;
-            if (this.tweenEntries === undefined)
-                this.tweenEntries = 10;
+            this.stateId = 0;
+            if (this.keyPeriod === undefined)
+                this.keyPeriod = 10;
         },
+        getId: function() {
+            return this.stateId;
+        },
+
         addState: function(model) {
             var json = JSON.stringify(model);
-            if (this.snapshotId % this.tweenEntries > 0) {
-                this.cache[this.snapshotId++] = this.vcd.encode(this.modelJson, json);
+            if (this.stateId % this.keyPeriod > 0) {
+                this.cache[this.stateId++] = this.vcd.encode(this.modelJson, json);
 
             } else {
-                this.cache[this.snapshotId++] = json;
+                this.cache[this.stateId++] = json;
             }
             this.modelJson = json;
+            return this.stateId;
         },
 
         /**
@@ -228,13 +239,13 @@ define([
          *
          * @param snapshotId
          */
-        restoreState: function(snapshotId) {
-            var start = snapshotId - (snapshotId % this.tweenEntries);
+        restoreState: function(stateId) {
+            var start = stateId - (stateId % this.keyPeriod);
             var json = this.cache[start];
-            for (var i = start + 1; i <= snapshotId; i++) {
+            for (var i = start + 1; i <= stateId; i++) {
                 json = this.vcd.decode(json, this.cache[i]);
             }
-            this.snapshotId = snapshotId;
+            this.stateId = stateId;
             return json;
         },
 
@@ -245,7 +256,7 @@ define([
          */
         clearAll: function() {
             this.cache = {};
-            this.snapshotId = 0;
+            this.stateId = 0;
         }
     });
 
@@ -291,69 +302,45 @@ define([
      */
     Cajeta.Model.ModelCache = Cajeta.Class.extend({
         /**
-         * Supported attributes:
-         *      enableHistory:  Enables the ability of applications to keep a history of model state,
-         *                      which allows for either component-state based undo, or navigation
-         *      enableSession:  Generates unique session IDs for access, and ensures that urls for one session
-         *                      are not used for another.  Without sessions, applications have a timeless and
-         *                      locationless state that *may* be shared between instances.  The latter is
-         *                      highly dependent on implementation.
          * @param properties
          */
         initialize: function(properties) {
             $.extend(this, properties);
 
-            // Associates a set of components with a node in the dataMap.  When a node is updated, check
-            // this datastructure for components to notify
-            this.componentMap = new Object();
+            if (this.application === undefined) {
+                throw 'Cajeta.Model.application must be defined';
+            }
 
-            // Associates each node in the dataMap with its canonical path entry.  This allows
-            // external actors (components via ModelAdaptors) to quickly access a dataMap node given
-            // a canonical path
-            this.pathMap = new Object();
+            if (this.data == undefined) {
+                this.data = new Object();
+                // Associates a set of components with a node in the dataMap.  When a node is updated, check
+                // this datastructure for components to notify
+                this.data.componentMap = new Object();
+                // Associates each node in the dataMap with its canonical path entry.  This allows
+                // external actors (components via ModelAdaptors) to quickly access a dataMap node given
+                // a canonical path
+                this.data.pathMap = new Object();
+                // Stores the actual data, as a set of connected graphs.  The 1st order associations are by
+                // datasourceId.
+                this.data.dataMap = new Object();
+            }
 
-            // Stores the actual data, as a set of connected graphs.  The 1st order associations are by
-            // datasourceId.
-            this.dataMap = new Object();
 
-            // Stores references to actual datasources, providing a central location for ease of sharing
-            this.datasourceMap = new Object();
+            if (this.stateCache === undefined) {
+                this.stateCache = new Cajeta.Model.StateCache({});
+            }
 
             // Check to see if we've been initialized, if not, see if we have a stateId stored as a cookie.
             // Otherwise, initialize to 0
+            // TODO Make sure that we use the StateCache to restore a state if we have a valid ID
             if (this.stateId === undefined) {
                 this.stateId = jCookies.get("stateId");
                 if (this.stateId === undefined || this.stateId === null)
                     this.stateId = 0;
             }
 
-            this.versionId = 0;
-
-            if (this.snapshotCache === undefined) {
-                this.snapshotCache = new Cajeta.Model.SnapshotCache({});
-            }
-
-            if (this.autoSnaphot === undefined)
+            if (this.autoSnapshot === undefined)
                 this.autoSnapshot = false;
-        },
-
-        /**
-         * For now, the dataSourceMap is only a convenience collection.  It allows a
-         * configured datasource to be shared over the application.  A more fitting location
-         * might be the application itself, freeing developers to use datasources without
-         * being tied to this particular model implementation.
-         *
-         * @param dataSource The datasource to add to the internal map.
-         */
-        addDatasource: function(datasource) {
-            if (datasource.getId() === undefined)
-                throw "dataSource must have a valid ID";
-
-            this.datasourceMap[datasource.getId()] = datasource;
-        },
-
-        getDatasource: function(id) {
-            return this.datasourceMap[id];
         },
 
         /**
@@ -377,17 +364,15 @@ define([
          */
         loadState: function(stateId) {
             // First, check to see that the session ID matches our current...
-            if (stateId == this.id)
+            if (stateId == this.stateCache.getId())
                 return;
 
-            // We're going backward, so set the state ID to that requested
-            this.id = stateId;
-            this.stateRestAdaptor.onComplete = this.onStateReadComplete;
-            this.stateRestAdaptor.get(stateId);
+            this.data = this.stateCache.restoreState(stateId);
+            // TODO Need to notify the application that things have been updated.
         },
 
         /**
-         * TODO FIGURE THIS OUT!
+         * TODO Need to adjust this after the refactor!
          * @param data
          */
         onStateReadComplete: function(data) {
@@ -554,6 +539,9 @@ define([
                 this.addPathMapEntries(datasourceId, modelPath, data, component);
             }
 
+            if (this.autoSnapshot == true)
+                this.stateCache.addState(this);
+
             Cajeta.theApplication.onModelChanged(this.stateId);
 
         },
@@ -646,7 +634,7 @@ define([
         },
 
         getStateId: function() {
-            return this.id;
+            return this.stateCache.getId();
         },
 
         /**
@@ -729,10 +717,7 @@ define([
     /**
      * ModelAdaptor keeps a component and its corresponding model entry synchronized.  Changes to model
      * entries are directed to onModelUpdate.  Conversely, changes to the component are handled by OnComponentUpdate.
-     * This class maintains variables that resolve (and bind) a component to a model entry.  While the developer
-     * must provide a modelPath declaration, as well as additional information about a (TODO we probably could
-     * keep that information in the component!!!) Component's targe, the framework will populate the entry for the
-     * Component in the call to either the constructor (if a ModelAdaptor is provided), or in
+     * This class maintains variables that resolve (and bind) a component to a model entry.
      * Component.setModelAdaptor.
      */
     Cajeta.View.ModelAdaptor = Cajeta.Class.extend({
