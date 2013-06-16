@@ -376,22 +376,23 @@ define([
          * @param data
          */
         onStateReadComplete: function(data) {
-            var entryToRestore = data;
-            if (entryToRestore !== undefined) {
-                // Save state as a copy, not a delta, if it's not already in our map...
-                if (this.cacheStrategy.get(stateId) == undefined)
-                    this.cacheStrategy.put(stateId, new Cajeta.Cache.PageHistoryEntry(this.id,
-                        null, $.extend(true, {}, this.dataMap)));
-                if (entryToRestore.modelCopy != null) {
-                    this.dataMap = entryToRestore.modelCopy;
-                } else {
-                    // Figure this out:  json delta recovery
-                    // Algorithm:  Start at our versionId, and iterate over the set of cache entries until we find one
-                    // with an intact model.  Then, generate the complete JSON from that.  Finally, iterate down to our current
-                    // image, applying the deltas for each.  Finally, convert the resulting JSON back into a model
-                }
-                this.updateBoundComponents();
-            }
+            throw 'Unimplemented!';
+//            var entryToRestore = data;
+//            if (entryToRestore !== undefined) {
+//                // Save state as a copy, not a delta, if it's not already in our map...
+//                if (this.stateCache.get(this.stateId) == undefined)
+//                    this.stateCache.put(this.stateId, new Cajeta.Cache.PageHistoryEntry(this.id,
+//                        null, $.extend(true, {}, this.data.dataMap)));
+//                if (entryToRestore.modelCopy != null) {
+//                    this.data.dataMap = entryToRestore.modelCopy;
+//                } else {
+//                    // Figure this out:  json delta recovery
+//                    // Algorithm:  Start at our versionId, and iterate over the set of cache entries until we find one
+//                    // with an intact model.  Then, generate the complete JSON from that.  Finally, iterate down to our current
+//                    // image, applying the deltas for each.  Finally, convert the resulting JSON back into a model
+//                }
+//                this.updateBoundComponents();
+//            }
         },
 
         /**
@@ -400,7 +401,7 @@ define([
          * @param data The existing child tree
          */
         removePathMapEntries: function(datasourceId, path, data) {
-            var dsEntries = this.pathMap[datasourceId];
+            var dsEntries = this.data.pathMap[datasourceId];
             if (dsEntries !== undefined) {
                 delete dsEntries[path];
                 if (!(data instanceof String)) {
@@ -414,10 +415,10 @@ define([
         },
 
         addPathMapEntries: function(datasourceId, path, data, componentSource) {
-            var dsEntries = this.pathMap[datasourceId];
+            var dsEntries = this.data.pathMap[datasourceId];
             if (dsEntries === undefined) {
                 dsEntries = new Object();
-                this.pathMap[datasourceId] = dsEntries;
+                this.data.pathMap[datasourceId] = dsEntries;
             }
 
             dsEntries[path] = data;
@@ -426,7 +427,7 @@ define([
             // in the process of recursing through the set of new data nodes.  This is a
             // good place to notify components (after we've made the path entry for the node),
             // preventing duplicate transversals.
-            var components = this.componentMap[path];
+            var components = this.data.componentMap[path];
             for (var id in components) {
                 if (id !== undefined) {
                     var component = components[id];
@@ -446,10 +447,10 @@ define([
         },
 
         addDataMapEntry: function(datasourceId, path, data) {
-            var dsEntries = this.dataMap[datasourceId];
+            var dsEntries = this.data.dataMap[datasourceId];
             if (dsEntries === undefined) {
                 dsEntries = new Object();
-                this.dataMap[datasourceId] = dsEntries;
+                this.data.dataMap[datasourceId] = dsEntries;
             }
 
             var paths = path.split('.');
@@ -467,7 +468,7 @@ define([
         },
 
         removeDataMapEntry: function(datasourceId, path, data) {
-            var dsEntries = this.dataMap[datasourceId];
+            var dsEntries = this.data.dataMap[datasourceId];
             if (dsEntries !== undefined) {
                 var paths = path.split('.');
                 var parent = dsEntries;
@@ -509,10 +510,10 @@ define([
                 if (i < paths.length - 1)
                     path += '.';
             }
-            var dsEntries = this.pathMap[datasourceId];
+            var dsEntries = this.data.pathMap[datasourceId];
             if (dsEntries === undefined) {
                 dsEntries = new Object();
-                this.pathMap[datasourceId] = dsEntries;
+                this.data.pathMap[datasourceId] = dsEntries;
             }
             // This is the parent node.
             var parent = dsEntries[path];
@@ -547,7 +548,7 @@ define([
         },
 
         getNode: function(datasourceId, modelPath) {
-            var dsEntries = this.pathMap[datasourceId];
+            var dsEntries = this.data.pathMap[datasourceId];
             if (dsEntries === undefined)
                 throw 'Cajeta.Model.ModelCache.pathMap has no datasource entry for ' + datasourceId;
 
@@ -558,10 +559,11 @@ define([
          * Clear all entries from the map
          */
         clearAllNodes: function() {
-            delete this.dataMap;
-            this.dataMap = {};
-            delete this.pathMap;
-            this.pathMap = {};
+            delete this.data;
+            this.data = {};
+            this.data.dataMap = {};
+            this.data.pathMap = {};
+            this.data.componentMap = {};
         },
 
         /**
@@ -600,10 +602,10 @@ define([
         bindComponent: function(component) {
             var modelPath = component.modelAdaptor.getModelPath();
             var datasourceId = component.modelAdaptor.getDatasourceId();
-            var dsEntries = this.componentMap[datasourceId];
+            var dsEntries = this.data.componentMap[datasourceId];
             if (dsEntries === undefined) {
                 dsEntries = new Object();
-                this.componentMap[datasourceId] = dsEntries;
+                this.data.componentMap[datasourceId] = dsEntries;
             }
             var components = dsEntries[modelPath];
             if (components === undefined) {
@@ -652,7 +654,7 @@ define([
 
             // First, look to see if there's any bindings between the node addressed by the modelPath
             // and components
-            var paths = this.pathMap[datasourceId];
+            var paths = this.data.pathMap[datasourceId];
             if (paths !== undefined) {
                 var components = paths[modelPath];
                 if (components !== undefined) {
@@ -662,8 +664,6 @@ define([
                             if (component !== committor)
                                 component.onModelUpdate();
                         }
-
-
                     }
                 }
             }
@@ -671,7 +671,7 @@ define([
 
             // Next, look at the node referenced by the address, see if it has children
             var walk = (modelPath.contains('.') ? modelPath.split('.') : modelPath);
-            var node = this.dataMap[datasourceId];
+            var node = this.data.dataMap[datasourceId];
 
             // First, iterate to the node addressed by modelPath
             for (var path in walk) {
@@ -682,12 +682,12 @@ define([
 
             // Then recurse through the dataMap under our referenced node, checking for bound components
             if (modelPath !== undefined) {
-                paths = this.pathMap[datasourceId];
+                paths = this.data.pathMap[datasourceId];
 
                 if (paths !== undefined) {
                     var components = paths[modelPath];
                 }
-                var components = this.pathMap[datasourceId + modelPath];
+                var components = this.data.pathMap[datasourceId + modelPath];
                 if (components != undefined) {
                     for (var canonicalId in components) {
                         var component = components[canonicalId];
@@ -697,7 +697,7 @@ define([
                 }
             } else {
                 for (var name in this.pathMap) {
-                    var components = this.pathMap[name];
+                    var components = this.data.pathMap[name];
                     if (components != undefined) {
                         for (var canonicalId in components) {
                             var component = components[canonicalId];
@@ -781,6 +781,7 @@ define([
             this.attributes = this.attributes === undefined ? {} : this.attributes;
             this.properties = this.properties === undefined ? {} : this.properties;
             this.cssAttributes = this.cssAttributes === undefined ? {} : this.cssAttributes;
+            this.text = this.text === undefined ? {} : this.text;
             this.children = new Object();
             this.hotKeys = new Object();
             this.viewStateId = '';
@@ -836,6 +837,18 @@ define([
          * @param value
          */
         value: function(value) {
+            var params = this.valueTarget.split(':');
+            switch (params[0]) {
+                case 'attr' :
+                    this.attr(params[1], value);
+                    break;
+                case 'prop' :
+                    this.prop(params[1], value);
+                    break;
+                case 'text' :
+                    this.text(value);
+                    break;
+            }
             if (value !== undefined)
                 this.attr('value', value);
             else
@@ -946,29 +959,48 @@ define([
             } else {
                 if (this.isDocked()) {
                     this.dom.css(name, value);
-                }
-                if (this.template !== undefined) {
+                } else if (this.template !== undefined) {
                     this.template.css(name, value);
+                } else {
+                    this.cssAttributes[name] = value;
                 }
-                this.cssAttributes[name] = value;
             }
         },
         html: function(value) {
             if (value === undefined) {
-                if (this.isDocked() !== undefined) {
+                if (this.isDocked()) {
                     return this.dom.html();
                 } else if (this.template !== undefined) {
                     return this.template.html();
                 } else
                     return this.html;
             } else {
-
-                if (this.isDocked())
+                if (this.isDocked()) {
                     this.dom.html(value);
-                if (this.template !== undefined)
+                } else if (this.template !== undefined) {
                     this.template.html(value);
-
-                this.html = value;
+                } else {
+                    this.html = value;
+                }
+            }
+        },
+        text: function(value) {
+            if (value === undefined) {
+                if (this.isDocked() == true) {
+                    return this.dom.text();
+                } else if (this.template !== undefined) {
+                    return this.template.text();
+                } else {
+                    return this.text;
+                }
+            } else {
+                if (this.isDocked()) {
+                    this.dom.text(value);
+                } else if (this.template !== undefined) {
+                    this.template.text(value);
+                } else {
+                    this.text = value;
+                }
             }
         },
 
@@ -1088,6 +1120,8 @@ define([
                         if (name !== undefined)
                             this.dom.css(name, this.cssAttributes[name]);
                     }
+                    if (this.text)
+                        this.dom.text(this.text);
                 } else {
                     // Should replace with template, but this is blowing away a huge portion of the dom
                 }
@@ -1189,7 +1223,7 @@ define([
          *
          */
         onModelUpdate: function() {
-            if (this.isDocked() && this.modelPath) {
+            if (this.isDocked()) {
                 // TODO FIX THIS STATEMENT!!!  Should call into the ModelAdaptor
                 this.setValue(Cajeta.theApplication.getModel().getByPath(this.modelPath));
             }
