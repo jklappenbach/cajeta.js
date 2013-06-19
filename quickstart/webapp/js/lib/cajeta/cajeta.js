@@ -86,11 +86,16 @@ define([
 
     Cajeta.Datasource = {};
 
+    // TODO Should we support multiple encoding formats?
     Cajeta.Datasource.Ajax = Cajeta.Class.extend({
         initialize: function(properties) {
             $.extend(this, properties);
             this.header == this.header !== undefined ? this.header : {};
-            // TODO utilize encoding
+            if (this.datasourceId === undefined)
+                throw 'Cajeta.Datasource.Ajax.datasourceId must be defined.';
+            if (this.modelPath === undefined)
+                throw 'Cajeta.Datasource.Ajax.modelPath must be defined.';
+
         },
         createHxr: function() {
             if (window.XMLHttpRequest) {
@@ -108,6 +113,7 @@ define([
          * @param data
          */
         onComplete: function(data) {
+            Cajeta.theApplication.getModel().setNode(this.datasourceId, this.modelPath, data);
         },
 
         exec: function(method, url, data, callback, headers) {
@@ -118,7 +124,7 @@ define([
             hxr.open(method, url, true);
             hxr.onerror = this.onError;
 
-            if (callback !== undefined) {
+            if (callback != null && callback !== undefined) {
                 hxr.onreadystatechange = callback;
             } else {
                 hxr.onreadystatechange = this.onComplete;
@@ -153,11 +159,18 @@ define([
                 throw 'A "urlTemplate" property must be defined in the constructor';
             }
         },
-        put: function(data) { throw 'Cajeta.Model.AbstractEndpointAdaptor.put requires an implementation'; },
-        get: function() { throw 'Cajeta.Model.AbstractEndpointAdaptor.get requires an implementation'; },
-        post: function(data) { throw 'Cajeta.Model.AbstractEndpointAdaptor.post requires an implementation'; },
-        del: function() { throw 'Cajeta.Model.AbstractEndpointAdaptor.del requires an implementation'; },
-        onComplete: function(data) { throw 'Cajeta.Model.AbstractEndpointAdaptor.onComplete requires an implementation'; },
+        put: function(data) {
+            this.exec('PUT', this.uri(), data, this.onComplete, this.headers);
+        },
+        get: function() {
+            this.exec('GET', this.uri(), null, this.onComplete, this.headers);
+        },
+        post: function(data) {
+            this.exec('POST', this.uri(), data, this.onComplete, this.headers);
+        },
+        del: function() {
+            this.exec('DELETE', this.uri(), null, this.onComplete, this.headers);
+        },
         uri: function() {
             var result = this.uriTemplate;
             var startIndex = result.indexOf('{');
@@ -486,8 +499,13 @@ define([
             return dsEntries[modelPath];
         },
 
-        removeNode: function(datasourceId, parentPath, key) {
-            var modelPath = parentPath + (parentPath == '' ? '' : '.') + key;
+        removeNode: function(datasourceId, modelPath, key) {
+            var paths = modelPath.split('.');
+            var parentPath = null;
+
+            for (var i = 0; i < paths.length - 2; i++)
+                parentPath = (parentPath == null ? paths[i] : parentPath + '.' + paths[i]);
+            var key = paths[paths.length - 1];
             this.removePathMapEntries(datasourceId, modelPath);
 
             // Remove the actual mapping from the parent node, if it exists
@@ -637,16 +655,14 @@ define([
         getModelPath: function() {
             return this.modelPath;
         },
-        onModelChange: function() {
+        onModelChanged: function() {
             var data = Cajeta.theApplication.getModel().getNode(this.datasourceId, this.modelPath);
             this.component.setValue(data);
         },
-        onComponentChange: function() {
+        onComponentChanged: function() {
             var data = this.component.getValue();
             Cajeta.theApplication.getModel().setNode(this.datasourceId, this.modelPath, data);
         }
-
-
     });
 
     Cajeta.View.EventCallback = $.extend(true, Function.prototype, {
@@ -1124,7 +1140,7 @@ define([
          */
         onModelChanged: function() {
             if (this.isDocked()) {
-                this.modelAdaptor.// TODO FIX THIS STATEMENT!!!  Should call into the ModelAdaptor
+                this.modelAdaptor.onModelChanged();
                 this.setValue(Cajeta.theApplication.getModel().getByPath(this.modelPath));
             }
         },
