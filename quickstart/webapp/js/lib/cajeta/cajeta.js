@@ -171,6 +171,14 @@ define([
         del: function() {
             this.exec('DELETE', this.uri(), null, this.onComplete, this.headers);
         },
+
+        /**
+         * This method takes the uriTemplate maintained by this instance, and replaces
+         * key tags '{[KEY_NAME]}' with values from the current model, using 'local'
+         * for the datasourceId.
+         *
+         * @return The string of the computed URI
+         */
         uri: function() {
             var result = this.uriTemplate;
             var startIndex = result.indexOf('{');
@@ -178,7 +186,8 @@ define([
             while (startIndex >= 0) {
                 var endIndex = result.indexOf('}');
                 var key = result.substring(startIndex + 1, endIndex - 1);
-                // TODO FIXME! result = result.replace('{' + key + '}', Cajeta.Model.theModelCache.modelCache[key]);
+                var value = Cajeta.theApplication.getModel().getNode('local', key);
+                result = result.replace('{' + key + '}', value);
                 startIndex = result.indexOf('{');
             }
 
@@ -342,14 +351,18 @@ define([
                 this.stateCache = new Cajeta.Model.StateCache({});
             }
 
-            // Check to see if we've been initialized, if not, see if we have a stateId stored as a cookie.
-            // Otherwise, initialize to 0
-            // TODO Make sure that we use the StateCache to restore a state if we have a valid ID
+            // First, see if we've been initialized with a desired stateId.  If not,
+            // check to see if we have one in a cookie.  Otherwise, set it to zero.
+            // TODO:  See if we can move this logic into the StateCache, without being difficult to intialize from the outside.
             if (this.stateId === undefined) {
                 this.stateId = jCookies.get("stateId");
                 if (this.stateId === undefined || this.stateId === null)
                     this.stateId = 0;
             }
+
+            if (this.stateId != 0)
+                this.stateCache.load(this.stateId);
+
 
             if (this.autoSnapshot === undefined)
                 this.autoSnapshot = false;
