@@ -33,8 +33,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'div';
+            self.super.initialize.call(this, properties);
         },
         getValue: function() {
             if (this.isDocked())
@@ -54,8 +54,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'ul';
+            self.super.initialize.call(this, properties);
         },
         dock: function() {
             var self = (arguments.length > 0) ? arguments[0] : this;
@@ -97,8 +97,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'span';
+            self.super.initialize.call(this, properties);
         },
         getValue: function() {
             if (this.isDocked())
@@ -118,8 +118,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'span';
+            self.super.initialize.call(this, properties);
         },
         height: function(value) {
             if (value !== undefined) {
@@ -163,8 +163,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'label';
+            self.super.initialize.call(this, properties);
         },
         getValue: function() {
             if (this.isDocked())
@@ -187,14 +187,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'input';
-            if (this.attrValue === undefined) {
-                if (properties.defaultValue !== undefined)
-                    this.attrValue = properties.defaultValue;
-                else
-                    this.attrValue = this.componentId;
-            }
+            self.super.initialize.call(this, properties);
         }
     });
 
@@ -206,8 +200,6 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
-            if (this.defaultValue !== undefined)
-                this.attrValue = this.defaultValue;
         },
         $onHtmlChange: function(event) {
             Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
@@ -276,8 +268,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'textarea';
+            self.super.initialize.call(this, properties);
         },
         $onHtmlChange: function(event) {
             Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
@@ -286,27 +278,27 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
 
     /**
      *
-     * @type {*}
+     *
      */
     Cajeta.View.Html5.Legend = Cajeta.View.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'legend';
+            self.super.initialize.call(this, properties);
         }
     });
 
     /**
      *
-     * @type {*}
+     *
      */
     Cajeta.View.Html5.Select = Cajeta.View.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'select';
+            self.super.initialize.call(this, properties);
         },
         dock: function() {
             if (!this.isDocked()) {
@@ -315,11 +307,9 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
 
                 var populateOption = function(option, properties) {
                     for (var name in properties) {
-                        if (name !== undefined && name != 'elementType') {
+                        if (name !== undefined && name != null && name != 'type') {
                             var value = properties[name];
                             option.attr(name, value);
-                            if (name == 'label')
-                                option.template(value);
                         }
                     }
                 }
@@ -327,12 +317,11 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                 // Add Options and Option Groups
                 if (this.options !== undefined) {
                     for (var i = 0; i < this.options.length; i++) {
-                        element = $('<' + this.options[i].elementType + ' />');
-                        if (this.options[i].elementType == 'optgroup') {
+                        var element = $('<' + this.options[i].type + ' />');
+                        if (this.options[i].type == 'optgroup') {
                             element.attr('label', this.options[i].label);
-                            element.template(this.options[i].label);
                             for (var j = 0; j < this.options[i].options.length; j++) {
-                                var option = $('<' + this.options[i].options[j].elementType + ' />');
+                                var option = $('<' + this.options[i].options[j].type + ' />');
                                 populateOption(option, this.options[i].options[j]);
                                 element.append(option);
                             }
@@ -354,46 +343,55 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                 }
             }
         },
-        isMultiple: function() {
-            return (!this.isDocked()) ? this.attrMultiple : (this.dom.attr('multiple') !== undefined);
-        },
-        setMultiple: function(multiple) {
-            this.propMultiple = multiple;
-            if (this.isDocked())
-                this.dom.prop('multiple', multiple);
-        },
-        setValue: function(value) {
-            if (this.isDocked()) {
-                if (this.isMultiple()) {
-                    if (value == null) {
-                        this.dom.find('option').map(function() { this.selected = false; });
-                    } else {
-                        var options = this.dom.find('option');
-                        var values = {};
-                        value.split(',').map(function() {
-                            values[arguments[0]] = true;
-                        });
-                        for (var i = 0; i < options.length; i++) {
-                            options[i].selected = (values[options[i].value] !== undefined);
-                        }
-                    }
-                }
-                else {
-                    this.dom.val(value);
-                }
+        multiple: function(value) {
+            if (value === undefined) {
+                return (!this.isDocked()) ? this.attrMultiple : (this.dom.attr('multiple') !== undefined);
+            } else {
+                this.propMultiple = multiple;
+                if (this.isDocked())
+                    this.dom.prop('multiple', multiple);
             }
         },
-        getValue: function() {
-            if (this.isDocked()) {
-                var value;
-                if (this.isMultiple()) {
-                    value = this.dom.find("option:selected").map(function() { return this.value; }).get().join(",");
+        selectedIndex: function(value) {
+            if (value === undefined) {
+                if (this.isDocked()) {
+                    if (this.multiple()) {
+                        if (value == null) {
+                            this.dom.find('option').map(function() { this.selected = false; });
+                        } else {
+                            var options = this.dom.find('option');
+                            var values = {};
+                            value.split(',').map(function() {
+                                values[arguments[0]] = true;
+                            });
+                            for (var i = 0; i < options.length; i++) {
+                                options[i].selected = (values[options[i].value] !== undefined);
+                            }
+                        }
+                    }
+                    else {
+                        this.dom.selectedIndex = value;
+                    }
                 } else {
-                    value = this.dom.val();
+                    if (this.multiple()) {
+
+                    } else {
+                        this.properties['selectedIndex'] = value;
+                    }
                 }
-                return value;
             } else {
-                throw 'The component must be docked and active to make this call.';
+                if (this.isDocked()) {
+                    var value;
+                    if (this.isMultiple()) {
+                        value = this.dom.find("option:selected").map(function() { return this.value; }).get().join(",");
+                    } else {
+                        value = this.dom.val();
+                    }
+                    return value;
+                } else {
+                    return this.attributes['value'];
+                }
+
             }
         },
         $onHtmlChange: function(event) {
@@ -408,8 +406,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'img';
+            self.super.initialize.call(this, properties);
         },
         dock: function() {
             if (!this.isDocked()) {
@@ -520,8 +518,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'form';
+            self.super.initialize.call(this, properties);
         }
     });
 
