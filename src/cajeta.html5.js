@@ -33,20 +33,9 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            this.elementType = 'div';
             self.super.initialize.call(this, properties);
-        },
-        getValue: function() {
-            if (this.isDocked())
-                return this.dom.text();
-            else
-                return this.elementText;
-        },
-        setValue: function(value) {
-            if (this.isDocked())
-                this.dom.text(value);
-            else
-                this.elementText = value;
+            this.elementType = 'div';
+            this.valueTarget = 'text';
         }
     });
 
@@ -54,8 +43,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            this.elementType = 'ul';
             self.super.initialize.call(this, properties);
+            this.elementType = 'ul';
         },
         dock: function() {
             var self = (arguments.length > 0) ? arguments[0] : this;
@@ -77,19 +66,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'a';
-        },
-        getValue: function() {
-            if (this.isDocked())
-                return this.dom.attr('href');
-            else
-                return this.attrHref;
-        },
-        setValue: function(value) {
-            if (this.isDocked()) {
-                this.dom.attr('href', value);
-            } else {
-                this.attrHref = value;
-            }
+            this.valueTarget = "attr:href";
         }
     });
 
@@ -97,86 +74,19 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            this.elementType = 'span';
             self.super.initialize.call(this, properties);
-        },
-        getValue: function() {
-            if (this.isDocked())
-                return this.dom.html();
-            else
-                return this.elementText;
-        },
-        setValue: function(value) {
-            if (this.isDocked())
-                this.dom.html(value);
-            else
-                this.elementText = value;
-        }
-    });
-
-    Cajeta.View.Html5.Img = Cajeta.View.Component.extend({
-        initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
-            properties.self = self.super;
             this.elementType = 'span';
-            self.super.initialize.call(this, properties);
-        },
-        height: function(value) {
-            if (value !== undefined) {
-                this.attr('height', value);
-            } else {
-                return this.attr('height');
-            }
-        },
-        width: function(value) {
-            if (value !== undefined) {
-                this.attr('width', value);
-            } else {
-                return this.attr('width');
-            }
-        },
-        ismap: function(value) {
-            if (value !== undefined) {
-                this.attr('ismap', value);
-            } else {
-                return this.attr('ismap');
-            }
-        },
-        src: function(value) {
-            if (value !== undefined) {
-                this.attr('src', value);
-            } else {
-                return this.attr('src');
-            }
-        },
-        usemap: function(value) {
-            if (value !== undefined) {
-                this.attr('usemap', value);
-            } else {
-                return this.attr('usemap');
-            }
+            this.valueTarget = "text";
         }
-
     });
 
     Cajeta.View.Html5.Label = Cajeta.View.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            this.elementType = 'label';
             self.super.initialize.call(this, properties);
-        },
-        getValue: function() {
-            if (this.isDocked())
-                return this.dom.text();
-            else
-                return this.elementText;
-        },
-        setValue: function(value) {
-            if (this.isDocked())
-                this.dom.text(value);
-            else
-                this.elementText = value;
+            this.elementType = 'label';
+            this.valueTarget = 'text';
         }
     });
 
@@ -268,8 +178,9 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            this.elementType = 'textarea';
             self.super.initialize.call(this, properties);
+            this.elementType = 'textarea';
+            this.valueTarget = 'text';
         },
         $onHtmlChange: function(event) {
             Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
@@ -284,8 +195,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            this.elementType = 'legend';
             self.super.initialize.call(this, properties);
+            this.elementType = 'legend';
         }
     });
 
@@ -406,8 +317,9 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            this.elementType = 'img';
             self.super.initialize.call(this, properties);
+            this.elementType = 'img';
+            this.valueTarget = 'attr:src';
         },
         dock: function() {
             if (!this.isDocked()) {
@@ -518,8 +430,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            this.elementType = 'form';
             self.super.initialize.call(this, properties);
+            this.elementType = 'form';
         }
     });
 
