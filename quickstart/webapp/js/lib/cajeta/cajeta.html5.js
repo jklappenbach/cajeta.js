@@ -220,7 +220,10 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                     for (var name in properties) {
                         if (name !== undefined && name != null && name != 'type') {
                             var value = properties[name];
-                            option.attr(name, value);
+                            if (name == 'label')
+                                option.text(value);
+                            else
+                                option.attr(name, value);
                         }
                     }
                 }
@@ -306,7 +309,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             }
         },
         $onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
+            // TODO Need to fix this, so that it works with a model adaptor.  Perhaps we need a special MA!
+            Cajeta.theApplication.getModel().setNode(this.modelPath, this.getValue(), this);
         }
     });
 
