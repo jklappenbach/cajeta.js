@@ -26,7 +26,7 @@ exclude = [
 
 // test results reporter to use
 // possible values: 'dots', 'progress', 'junit'
-reporters = ['progress'];
+reporters = ['progress', 'dots', 'junit', 'growl', 'coverage'];
 
 
 // web server port

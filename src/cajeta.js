@@ -480,15 +480,12 @@ define([
         },
 
         /**
-         * First, the algorithm will see if a map entry exists for the modelPath in the ModelCache's pathMap.
-         * If not, the walk from the datasource entry to the leaf node will be established, the value set at
-         * the leaf, and the map entry in pathMap will be created.
+         * Set the value of a node
          *
-         * @param datasourceId The id of the datasource providing the data.
-         * @param parentPath The dot delimited path defining the address of the parent node in which the mapping exists.
-         * @param key The key identifying the data.
-         * @param value The value to assign to the key.
-         * @param component An optional parameter, used to prevent cyclical component notification.
+         * @param datasourceId
+         * @param modelPath
+         * @param value
+         * @param component
          */
         setNode: function(datasourceId, modelPath, value, component) {
 
@@ -508,6 +505,12 @@ define([
             Cajeta.theApplication.onModelChanged();
         },
 
+        /**
+         *
+         * @param datasourceId
+         * @param modelPath
+         * @return {*}
+         */
         getNode: function(datasourceId, modelPath) {
             var dsEntries = this.state.pathMap[datasourceId];
             if (dsEntries === undefined)
@@ -516,6 +519,12 @@ define([
             return dsEntries[modelPath];
         },
 
+        /**
+         *
+         * @param datasourceId
+         * @param modelPath
+         * @param key
+         */
         removeNode: function(datasourceId, modelPath, key) {
             var paths = modelPath.split('.');
             var parentPath = null;
