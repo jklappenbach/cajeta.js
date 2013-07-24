@@ -201,6 +201,70 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
     });
 
     /**
+     * Given that forms really no longer play a role in the processing of server submission (there's nothing stopping
+     * you from using forms), the practice of choosing a shared 'name' attribute for elements is not the most
+     * practical method of assuring exclusive checked-state.  Cajeta.View.Html5.RadioGroup provides a container
+     * for the
+     *
+     */
+    Cajeta.View.Html5.RadioGroup = Cajeta.View.Component.extend({
+        initialize: function(properties) {
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            if (this.defaultValue !== undefined)
+                this.value = this.defaultValue;
+        },
+        onModelChanged: function() {
+            this.value =  Cajeta.theApplication.getModel().getByPath(this.modelPath);
+            // iterate through our set of children, looking for the value attribute of children.
+            // The one that matches our current value gets set.
+            for (var name in this.children) {
+                if (name !== undefined) {
+                    if (this.children[name].dom.attr('value') == this.value) {
+                        this.children[name].dom.prop('checked', true);
+                    }
+                }
+            }
+        },
+        onChildChange: function(event) {
+            if (this.modelPath !== undefined) {
+                var value = event.target.getModelValue();
+                if (value === undefined)
+                    throw 'Error: A ComponentGroup change event resulted in an undefined model value.';
+                this.modelAdaptor.onComponentChanged(this.modelPath, value, this);
+            }
+        },
+        bindHtmlEvents: function() {
+            if (this.domEventBound == false) {
+                this.domEventBound = true;
+                var eventData = new Object();
+                eventData['that'] = this;
+                eventData['fnName'] = 'onChildChange';
+                for (var name in this.children) {
+                    if (name !== undefined) {
+                        this.children[name].dom.bind('change', eventData, Cajeta.View.Component.htmlEventDispatch);
+                    }
+                }
+            }
+        },
+        /**
+         * There will be no corresponding markup in the template to support groups, so we override dock...
+         */
+        dock: function() {
+            if (!this.isDocked()) {
+                // Add to the application component map at this point.
+                Cajeta.theApplication.getComponentMap()[this.componentId] = this;
+
+                // Bind the component to the model if we have a valid path
+                if (this.modelPath !== undefined)
+                    Cajeta.theApplication.getModel().bindComponent(this);
+            }
+        }
+    });
+
+
+    /**
      *
      *
      */
@@ -220,7 +284,10 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                     for (var name in properties) {
                         if (name !== undefined && name != null && name != 'type') {
                             var value = properties[name];
-                            option.attr(name, value);
+                            if (name == 'label')
+                                option.text(value);
+                            else
+                                option.attr(name, value);
                         }
                     }
                 }
@@ -245,10 +312,10 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
 
                 // Bind the component to the model if we have a valid path
                 if (this.modelPath !== undefined) {
-                    if (this.defaultValue == undefined) {
-                        this.defaultValue = this.dom.val();
+                    if (this.modelValue == undefined) {
+                        this.modelValue = this.dom.val();
                     } else {
-                        this.dom.val(this.defaultValue);
+                        this.dom.val(this.modelValue);
                     }
                     Cajeta.theApplication.getModel().bindComponent(this);
                 }
@@ -305,8 +372,13 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
 
             }
         },
+        getValue: function() {
+            return this.selectedIndex();
+        },
+
         $onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
+            // TODO Need to fix this, so that it works with a model adaptor.  Perhaps we need a special MA!
+            Cajeta.theApplication.getModel().setNode(this.modelPath, this.getValue(), this);
         }
     });
 

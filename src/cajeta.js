@@ -427,7 +427,7 @@ define([
 
         addPathMapEntries: function(datasourceId, parentPath, key, value, componentSource) {
             var modelPath = parentPath + (parentPath == '' ? '' : '.') + key;
-            var dsEntries = this.getSafeMapEntries(datasourceId, map);
+            var dsEntries = this.getSafeMapEntries(datasourceId, this.state.pathMap);
 
             // Assignments:
             //  1. An assignment of parent:child relationship (if parent exists, which is not guaranteed)
@@ -644,7 +644,7 @@ define([
                     }
                 }
             }
-        },
+        }
     });
 
     Cajeta.View = {
@@ -676,10 +676,10 @@ define([
         },
         onModelChanged: function() {
             var data = Cajeta.theApplication.getModel().getNode(this.datasourceId, this.modelPath);
-            this.component.setValue(data);
+            this.component.setModelValue(data);
         },
         onComponentChanged: function() {
-            var data = this.component.getValue();
+            var data = this.component.getModelValue();
             Cajeta.theApplication.getModel().setNode(this.datasourceId, this.modelPath, data);
         }
     });
@@ -738,8 +738,8 @@ define([
                 this.modelAdaptor.component = this;
             }
 
-            if (this.defaultValue !== undefined)
-                this.setValue(this.defaultValue);
+            if (this.modelValue !== undefined)
+                this.setModelValue(this.modelValue);
         },
 
         /**
@@ -784,7 +784,19 @@ define([
          *
          * @param value
          */
-        value: function(value) {
+        getModelValue: function() {
+            var params = this.valueTarget.split(':');
+            switch (params[0]) {
+                case 'attr' :
+                    return this.attr(params[1]);
+                case 'prop' :
+                    return this.prop(params[1]);
+                case 'text' :
+                    return this.text();
+            }
+        },
+
+        setModelValue: function(value) {
             var params = this.valueTarget.split(':');
             switch (params[0]) {
                 case 'attr' :
@@ -797,10 +809,6 @@ define([
                     this.text(value);
                     break;
             }
-            if (value !== undefined)
-                this.attr('value', value);
-            else
-                return this.attr('value');
         },
 
         /**
@@ -1183,6 +1191,9 @@ define([
         },
 
         /**
+         * Returns the viewstate of this component.  A component should only have a contribution if it
+         * plays a role in conditional GUI display (pages, tab controls, media players, etc).  For the actual content
+         * of a control, the model state is determinant.
          *
          * @return {String}
          */
@@ -1217,63 +1228,6 @@ define([
         return event.data.that[event.data.fnName].call(event.data.that, event);
     };
 
-
-    Cajeta.View.ComponentGroup = Cajeta.View.Component.extend({
-        initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
-            properties.self = self.super;
-            self.super.initialize.call(this, properties);
-            if (this.defaultValue !== undefined)
-                this.value = this.defaultValue;
-        },
-        onModelChanged: function() {
-            this.value =  Cajeta.theApplication.getModel().getByPath(this.modelPath);
-            // iterate through our set of children, looking for the value attribute of children.
-            // The one that matches our current value gets set.
-            for (var name in this.children) {
-                if (name !== undefined) {
-                    if (this.children[name].dom.attr('value') == this.value) {
-                        this.children[name].dom.prop('checked', true);
-                    }
-                }
-            }
-        },
-        onChildChange: function(event) {
-            if (this.modelPath !== undefined) {
-                this.value = event.target.getAttribute('value');
-                if (this.value === undefined)
-                    throw 'Error: A ComponentGroup change event resulted in an undefined model value.';
-                Cajeta.theApplication.getModel().setByPath(this.modelPath, this.value, this);
-            }
-        },
-        bindHtmlEvents: function() {
-            if (this.domEventBound == false) {
-                this.domEventBound = true;
-                var eventData = new Object();
-                eventData['that'] = this;
-                eventData['fnName'] = 'onChildChange';
-                for (var name in this.children) {
-                    if (name !== undefined) {
-                        this.children[name].dom.bind('change', eventData, Cajeta.View.Component.htmlEventDispatch);
-                    }
-                }
-            }
-        },
-        /**
-         * There will be no corresponding markup in the template to support groups, so we override dock...
-         */
-        dock: function() {
-            if (!this.isDocked()) {
-                // Add to the application component map at this point.
-                Cajeta.theApplication.getComponentMap()[this.componentId] = this;
-
-                // Bind the component to the model if we have a valid path
-                if (this.modelPath !== undefined)
-                    Cajeta.theApplication.getModel().bindComponent(this);
-            }
-        }
-    });
-
     /**
      *
      *
@@ -1305,6 +1259,12 @@ define([
             this.dom.append(this.template);
         },
 
+        getViewState: function() {
+            var self = (arguments.length > 0) ? arguments[0] : this;
+            var viewState = self.super.getViewState.call(this, self.super);
+            return (viewState != '' ? this.getCanonicalId() : this.getCanonicalId() + ':' + viewState);
+        },
+
         /**
          * See Cajeta.Component.render for documentation on this method.
          */
@@ -1329,9 +1289,7 @@ define([
             if (this.model === undefined) {
                 this.model = new Cajeta.Model.ModelCache({
                     enableHistory: true,
-                    enableSession: false,
-                    enableJsonDelta: false,
-                    appName: 'testApp'
+                    enableJsonDelta: false
                 });
             }
 
@@ -1381,9 +1339,10 @@ define([
                 // bootstrapping the render.
                 if (this.anchor === undefined || this.anchor == '') {
                     var viewStateId = Cajeta.View.homePage;
-                    this.modelStateId = this.model.getStateId();
                     this.anchor = viewStateId;
-                    if (this.modelStateId != '') {
+
+                    if (this.model !== undefined && this.model.enableHistory == true) {
+                        this.modelStateId = this.model.getStateId();
                         this.anchor += '=' + this.modelStateId;
                     }
                     this.setUrlAnchor(this.anchor);
