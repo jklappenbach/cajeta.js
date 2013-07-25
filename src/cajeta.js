@@ -163,7 +163,7 @@ define([
          * @param properties
          */
         initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
+            var self = properties.self || this;
             properties.self = self.super;
             this.elementType = 'div';
             self.super.initialize.call(this, properties);
@@ -722,9 +722,9 @@ define([
             if (this.componentId === undefined)
                 throw 'A componentId must be defined';
             this.parent = null;
-            this.attributes = this.attributes === undefined ? {} : this.attributes;
-            this.properties = this.properties === undefined ? {} : this.properties;
-            this.cssAttributes = this.cssAttributes === undefined ? {} : this.cssAttributes;
+            this.attributes = this.attributes || {};
+            this.properties = this.properties || {};
+            this.cssAttributes = this.cssAttributes || {};
             this.children = new Object();
             this.hotKeys = new Object();
             this.viewStateId = '';
@@ -791,7 +791,7 @@ define([
 
         /**
          *
-         * @param value
+         *
          */
         getModelValue: function() {
             var params = this.valueTarget.split(':');
@@ -1243,7 +1243,7 @@ define([
      */
     Cajeta.View.Page = Cajeta.View.Component.extend({
         initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
+            var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             if (this.title === undefined)

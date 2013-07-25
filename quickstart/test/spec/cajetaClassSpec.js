@@ -2,7 +2,7 @@ define(
     ['cajeta'],
     function(Cajeta) {
         // First test classes and extend functionality
-        return describe('Cajeta Class Tests...', function() {
+        return describe('Cajeta Class Tests', function() {
             var Parent = Cajeta.Class.extend({
                 initialize: function(properties) {
                     properties = properties || {};
@@ -10,7 +10,6 @@ define(
                     this.name = properties.name;
                 },
                 one: 'one',
-                two: 'two',
                 getCannonical: function(properties) {
                     return this.cannonical;
                 },
@@ -29,8 +28,6 @@ define(
                     this.six = 'six';
                     this.cannonical += ':Child';
                 },
-                three: 'three',
-                four: 'four',
                 getCannonical: function(properties) {
                     properties = properties || {};
                     var self = properties.self || this;
@@ -45,8 +42,6 @@ define(
                     var self = properties.self || this;
                     properties.self = self.super;
                     self.super.initialize.call(this, properties);
-                    this.seven = 'seven';
-                    this.eight = 'eight';
                     this.cannonical += ':GrandChild';
                 },
                 getCannonical: function(properties) {
@@ -57,17 +52,24 @@ define(
                 }
             });
 
-            it('works for app', function() {
-                var parent = new Parent();
-                var child = new Child();
-                var grandChild = new GrandChild();
+            var parent = new Parent({ name: 'Tara' });
+            var child = new Child({ name: 'Jason' });
+            var grandChild = new GrandChild({ name: 'Aron' });
+
+            it('implements polymorphism', function() {
                 var cannonical = parent.getCannonical();
                 var name = parent.getName();
                 expect(parent.getCannonical()).toEqual('Parent');
                 expect(child.getCannonical()).toEqual('Parent:Child');
                 expect(grandChild.getCannonical()).toEqual('Parent:Child:GrandChild');
-                expect(child instanceof Parent).toEqual(true);
-                expect(grandChild instanceof Parent).toEqual(true);
+            });
+
+            it('supports inheritance', function() {
+                expect(child instanceof Parent).toBeTruthy();
+                expect(grandChild instanceof Parent).toBeTruthy();
+                expect(parent.getName()).toEqual('Tara');
+                expect(grandChild.getName()).toEqual('Aron');
+                expect(grandChild.one).toEqual('one');
             });
         });
     }

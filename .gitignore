@@ -8,3 +8,5 @@ test/server/target/maven-archiver/pom.properties
 logs
 coverage
 test-results.xml
+
+*.log
