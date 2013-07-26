@@ -37,22 +37,31 @@ define(['cajetaHtml5', 'homePage'], function(Cajeta, homePage) {
 
     Cajeta.theApplication.addPage(homePage);
 
-//    var data = {
-//        one: 'one',
-//        two: 'two',
-//        three: 'three',
-//        childOne: {
-//            four: 'four',
-//            five: 'five',
-//            six: 'six'
-//        },
-//        childTwo: {
-//            seven: 'seven',
-//            eight: 'eight',
-//            nine: 'nine',
-//            ten: 'ten'
-//        }
-//    };
-//    Cajeta.theApplication.model.set('dataPath', data);
+    var data = {
+        one: 'one',
+        two: 'two',
+        three: 'three',
+        childOne: {
+            four: 'four',
+            five: 'five',
+            six: 'six'
+        },
+        childTwo: {
+            seven: 'seven',
+            eight: 'eight',
+            nine: 'nine',
+            ten: 'ten'
+        }
+    };
+    Cajeta.theApplication.model.set('dataPath', data);
+
+    var subdata = {
+        eleven: 'eleven',
+        twelve: 'twelve',
+        thirteen: 'thirteen'
+    };
+
+    Cajeta.theApplication.model.set('dataPath.childOne.subdata', subdata);
+
     Cajeta.theApplication.execute();
 });

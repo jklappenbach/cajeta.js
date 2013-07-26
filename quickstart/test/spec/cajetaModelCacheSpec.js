@@ -2,7 +2,7 @@ define(
     ['cajeta', 'jquery'],
     function(Cajeta, $) {
         // First test classes and extend functionality
-        return describe('Cajeta StateCache', function() {
+        return describe('Cajeta ModelCache', function() {
 
             var modelCache = null;
             var dataGraph = {
@@ -28,36 +28,95 @@ define(
                 thirteen: 'thirteen'
             };
 
-            it('instantiates with no arguments', function() {
+            var subresult = {
+                one: 'one',
+                two: 'two',
+                three: 'three',
+                childOne: {
+                    four: 'four',
+                    five: 'five',
+                    six: 'six',
+                    subdata: {
+                        eleven: 'eleven',
+                        twelve: 'twelve',
+                        thirteen: 'thirteen'
+                    }
+                },
+                childTwo: {
+                    seven: 'seven',
+                    eight: 'eight',
+                    nine: 'nine',
+                    ten: 'ten'
+                }
+            };
+
+            var component = new Cajeta.View.Component({ componentId: 'test' });
+
+
+            it('can instantiate with no arguments', function() {
                 modelCache = new Cajeta.Model.ModelCache();
                 expect(modelCache).not.toBeNull();
                 expect(modelCache.getStateId()).toEqual(0);
             });
 
-            it('sets data at root node, without a component reference', function() {
+            it('can set data at root node, without a component reference', function() {
                 modelCache.set('testData', dataGraph);
 
             });
 
-            it('gets data from a path', function() {
+            it('can get data from a path root', function() {
                 var data = modelCache.get('testData');
                 expect(data).toEqual(dataGraph);
             });
+
+            it('can get data from an arbitrary path', function() {
+                var data = modelCache.get('testData.childOne');
+                expect(data).toEqual({ four: 'four', five: 'five', six: 'six' });
+            });
+
+            it('can store data off an existing node', function() {
+                modelCache.set('testData.childOne.subdata', subdata);
+                expect(modelCache.get('testData')).toEqual(subresult);
+            });
+
+            it('throws an exception when a get request can not be mapped to a datasource', function() {
+                expect(function() { var data = modelCache.get('testData', 'invalidDs'); }).toThrow();
+            });
+
+            it('returns [undefined] when a request can not be mapped to a valid entry', function() {
+                expect(modelCache.get('invalid.path')).not.toBeDefined();
+            });
+
+            it('can remove data at an existing path', function() {
+                modelCache.remove('testData.childOne.subdata');
+                expect(modelCache.get('testData')).toEqual({
+                    one: 'one',
+                    two: 'two',
+                    three: 'three',
+                    childOne: {
+                        four: 'four',
+                        five: 'five',
+                        six: 'six'
+                    },
+                    childTwo: {
+                        seven: 'seven',
+                        eight: 'eight',
+                        nine: 'nine',
+                        ten: 'ten'
+                    }
+                });
+            });
+
+            it('can clear all data', function() {
+                modelCache.clearAll();
+                expect(modelCache.get('testData')).not.toBeDefined();
+            });
+
+            it('can bind a component to an object', function() {
+                modelCache.set('testData', dataGraph);
+
+            });
 /*
-            it('stores another state entry and increments the state ID', function() {
-                modelCache.add(data01);
-                expect(data00).not.toEqual(data01);
-                expect(modelCache.getStateId()).toEqual(1);
-                expect(modelCache.modelJson).toEqual(JSON.stringify(data01));
-            });
-
-            it('retrieves state entries', function() {
-                var data = modelCache.load(0);
-                expect(data).toEqual(data00);
-                var data = modelCache.load(1);
-                expect(data).toEqual(data01);
-            });
-
             it('stores many entries', function() {
                 var data = {
                     one: 'one'

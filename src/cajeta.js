@@ -84,6 +84,90 @@ define([
         return child;
     };
 
+    /**
+     * A simple Exception class to provide information to developers and end-users
+     * when an error happens.  This is an application level exception, and should contain
+     * as much information as needed to help identify bugs and issues.  When this class is
+     * instantiated, a snapshot of the stack is taken for diagnostics.
+     *
+     * Supported properties for intialization:
+     *      message: A string value to describe the situation
+     *      causedBy: The triggering exception, to pass it on
+     */
+    Cajeta.Exception = Cajeta.Class.extend({
+        intitialize: function(properties) {
+            this.stackTrace = this._stackTrace();
+        },
+        getMessage: function() {
+            return this.message;
+        },
+        getStackTrace: function() {
+            return this.stackTrace;
+        },
+        getCausedBy: function() {
+            return this.causedBy;
+        },
+        _stackTrace: function() {
+            function processFrame(fn) {
+                return !fn ? [] :
+                    processFrame(fn.caller).concat([fn.toString().split('(')[0].substring(9) +
+                        '(' + fn.arguments.join(',') + ')']);
+            }
+            return processFrame(arguments.callee.caller);
+        }
+    });
+
+    Cajeta.Events = {};
+
+    Cajeta.Events.Event = Cajeta.Class.extend({
+        initialize: function(properties) {
+            if (properties !== undefined)
+                $.extend(true, this, properties);
+            if (this.eventId === undefined)
+                throw new Cajeta.Exception({ message: 'Cajeta.Events.Event.eventId is undefined' });
+        },
+        getId: function() {
+            return eventId;
+        },
+        getData: function() {
+            return data;
+        }
+    });
+
+    Cajeta.Events.EventDispatch = Cajeta.Class.extend({
+        initialize: function(properties) {
+            if (properties !== undefined)
+                $.extend(true, this, properties);
+            this.eventListenerMap = {};
+        },
+        dispatchEvent: function(event) {
+            var listeners = this.eventListenerMap[event.getId()];
+            if (listeners !== undefined) {
+                for (var listenerId in listeners) {
+                    if (listenerId !== undefined) {
+                        var listener = listener[listenerId];
+                        listener.onEvent(event);
+                    }
+                }
+            }
+        },
+        addListener: function(eventId, listener) {
+            var listeners = this.eventListenerMap[eventId];
+            if (listeners === undefined) {
+                listeners = {};
+                this.eventListenerMap[eventId] = listeners;
+            }
+
+            listeners[listener.getId()] = listener;
+        },
+        removeListener: function(eventId, listener) {
+            var listeners = this.eventListenerMap[eventId];
+            if (listeners !== undefined) {
+                delete listeners[listener.getId()];
+            }
+        }
+    });
+
     Cajeta.Datasource = {};
 
     /**
@@ -97,7 +181,8 @@ define([
     // TODO Should we support encoding formats (accept)?
     Cajeta.Datasource.Ajax = Cajeta.Class.extend({
         initialize: function(properties) {
-            $.extend(true, this, properties);
+            if (properties !== undefined)
+                $.extend(true, this, properties);
             this.header = this.header || {};
             if (this.datasourceId === undefined)
                 throw 'Cajeta.Datasource.Ajax.datasourceId must be defined.';
@@ -371,17 +456,18 @@ define([
         set: function(modelPath, value, component, datasourceId) {
             datasourceId = datasourceId || 'local';
             // First, remove existing entries for parentpath + key, and all children of value
-            var paths = modelPath.split('.');
-            var key = paths[paths.length - 1];
+            var keyIndex = modelPath.lastIndexOf('.');
             var parentPath = null;
+            var key = null;
 
-            if (paths.length > 2) {
-                for (var i = 0; i < paths.length - 2; i++) {
-                    parentPath = (parentPath == null ? paths[i] : parentPath + '.' + paths[i]);
-                }
-            } else if (paths.length > 1) {
-                parentPath = paths[0];
+            if (keyIndex >= 0) {
+                parentPath = modelPath.substring(0, keyIndex);
+                key = modelPath.substring(keyIndex + 1);
+            } else {
+                parentPath = null;
+                key = modelPath;
             }
+
             this._removePathMapEntries(datasourceId, parentPath, key);
             this._addPathMapEntries(datasourceId, parentPath, key, value);
 
@@ -415,12 +501,17 @@ define([
          */
         remove: function(modelPath, datasourceId) {
             datasourceId = datasourceId || 'local';
-            var paths = modelPath.split('.');
+            var keyIndex = modelPath.lastIndexOf('.');
             var parentPath = null;
+            var key = null;
 
-            for (var i = 0; i < paths.length - 2; i++)
-                parentPath = (parentPath == null ? paths[i] : parentPath + '.' + paths[i]);
-            var key = paths[paths.length - 1];
+            if (keyIndex >= 0) {
+                parentPath = modelPath.substring(0, keyIndex);
+                key = modelPath.substring(keyIndex + 1);
+            } else {
+                parentPath = null;
+                key = modelPath;
+            }
             this._removePathMapEntries(datasourceId, modelPath);
 
             // Remove the actual mapping from the parent node, if it exists
@@ -432,7 +523,8 @@ define([
                 }
             }
 
-            Cajeta.theApplication.onModelChanged();
+            if (this.theApplication !== undefined)
+                this.theApplication.onModelChanged();
         },
 
         /**
@@ -442,6 +534,7 @@ define([
             delete this.state;
             this.state = {};
             this.state.pathMap = {};
+            this.state.pathMap['local'] = {};
             this.state.componentMap = {};
         },
 
@@ -584,25 +677,30 @@ define([
          */
         _removePathMapEntries: function(datasourceId, parentPath, key) {
             var dsEntries = this.state.pathMap[datasourceId];
-            if (dsEntries !== undefined) {
-                var parent;
+            if (dsEntries === undefined)
+                return;
 
-                if (parentPath != null) {
-                    parent = dsEntries[parentPath]
-                } else {
-                    parent = dsEntries;
-                }
-                var value = parent[key];
-                if (value !== undefined) {
-                    if (!(value instanceof String)) {
-                        for (var name in value) {
-                            if (name !== undefined) {
-                                this._removePathMapEntries(datasourceId, parentPath + '.' + key, name);
-                            }
+            var parent;
+
+            if (parentPath != null) {
+                parent = dsEntries[parentPath]
+            } else {
+                parent = dsEntries;
+            }
+
+            if (parent === undefined)
+                return;
+
+            var value = parent[key];
+            if (value !== undefined) {
+                if (!(value instanceof String)) {
+                    for (var name in value) {
+                        if (name !== undefined) {
+                            this._removePathMapEntries(datasourceId, parentPath + '.' + key, name);
                         }
                     }
-                    delete parent[key];
                 }
+                delete parent[key];
             }
         },
 
@@ -641,11 +739,9 @@ define([
 
             // Now, iterate through the children mapped by this node, and recurse.  This will create
             // map entries for the entire tree to be added.
-            if (typeof value !== "string") {
-                for (var name in value) {
-                    if (name !== undefined) {
-                        this._addPathMapEntries(datasourceId, modelPath, name, value[name], componentSource);
-                    }
+            for (var name in value) {
+                if (name !== undefined && typeof value[name] !== "string") {
+                    this._addPathMapEntries(datasourceId, modelPath, name, value[name], componentSource);
                 }
             }
 
@@ -744,6 +840,7 @@ define([
          * @param properties
          */
         initialize: function(properties) {
+            properties = properties || {};
             $.extend(this, properties);
             if (this.componentId === undefined)
                 throw 'A componentId must be defined';
@@ -751,8 +848,8 @@ define([
             this.attributes = this.attributes || {};
             this.properties = this.properties || {};
             this.cssAttributes = this.cssAttributes || {};
-            this.children = new Object();
-            this.hotKeys = new Object();
+            this.children = {};
+            this.hotKeys = {};
             this.viewStateId = '';
             this.domEventBound = false;
             if (this.visible === undefined)
@@ -848,15 +945,15 @@ define([
 
         /**
          *
-         * @return {*|String|String|String}
+         * @return The type of element this targets, used to autogenerate markup.
          */
         getElementType: function() {
             return this.elementType;
         },
 
         /**
-         *
-         * @param elementType
+         * The type of element targeted by this component.  Used to autogenerate HTML for replacement
+         * @param elementType The new element type for this component.
          */
         setElementType: function(elementType) {
             this.elementType = elementType;
@@ -957,6 +1054,23 @@ define([
                 }
             }
         },
+
+        /**
+         * Sets or gets the html value of this component.
+         *
+         * If no argument is provided, the call is treated
+         * as a getter.  Returned value may depend on whether the
+         * component is docked.  If undocked, either the template or previously defined html member
+         * value is returned.
+         *
+         * If an argument is provided, the call is treated as a setter.  The effect of the call
+         * will depend on the state of the component.  If docked, this will directly replace the html
+         * of the component in the DOM.  If undocked, it will replace the HTML of an existing template.
+         * Otherwise, it will set the html member variable, to be utilized when the component is next
+         * docked.
+         * @param value The HTML to be applied (optional).
+         * @return The value of the existing HTML setting for the component, dependent on state.
+         */
         html: function(value) {
             if (value === undefined) {
                 if (this.isDocked()) {
