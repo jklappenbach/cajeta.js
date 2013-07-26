@@ -2,7 +2,7 @@ define(
     ['cajeta'],
     function(Cajeta) {
         // First test classes and extend functionality
-        return describe('Cajeta Class Tests', function() {
+        return describe('Cajeta Objects', function() {
             var Parent = Cajeta.Class.extend({
                 initialize: function(properties) {
                     properties = properties || {};
@@ -56,7 +56,7 @@ define(
             var child = new Child({ name: 'Jason' });
             var grandChild = new GrandChild({ name: 'Aron' });
 
-            it('implements polymorphism', function() {
+            it('implement polymorphism', function() {
                 var cannonical = parent.getCannonical();
                 var name = parent.getName();
                 expect(parent.getCannonical()).toEqual('Parent');
@@ -64,7 +64,7 @@ define(
                 expect(grandChild.getCannonical()).toEqual('Parent:Child:GrandChild');
             });
 
-            it('supports inheritance', function() {
+            it('support inheritance', function() {
                 expect(child instanceof Parent).toBeTruthy();
                 expect(grandChild instanceof Parent).toBeTruthy();
                 expect(parent.getName()).toEqual('Tara');

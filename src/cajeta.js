@@ -98,7 +98,7 @@ define([
     Cajeta.Datasource.Ajax = Cajeta.Class.extend({
         initialize: function(properties) {
             $.extend(true, this, properties);
-            this.header == this.header !== undefined ? this.header : {};
+            this.header = this.header || {};
             if (this.datasourceId === undefined)
                 throw 'Cajeta.Datasource.Ajax.datasourceId must be defined.';
             if (this.modelPath === undefined)
@@ -165,7 +165,6 @@ define([
         initialize: function(properties) {
             var self = properties.self || this;
             properties.self = self.super;
-            this.elementType = 'div';
             self.super.initialize.call(this, properties);
 
             if (this.uriTemplate === null) {
@@ -237,14 +236,15 @@ define([
      */
     Cajeta.Model.StateCache = Cajeta.Class.extend({
         initialize: function(properties) {
+            properties = properties || {};
             $.extend(this, properties);
-            this.modelJson = JSON.stringify(this.dataMap);
             this.vcd = new Diffable.Vcdiff();
             this.vcd.blockSize = 3;
             this.cache = {};
             this.stateId = 0;
-            if (this.keyPeriod === undefined)
-                this.keyPeriod = 10;
+            this.nextId = 0;
+            this.modelJson = "{ }";
+            this.keyPeriod = this.keyPeriod || 10;
         },
         getStateId: function() {
             return this.stateId;
@@ -252,12 +252,12 @@ define([
 
         add: function(model) {
             var json = JSON.stringify(model);
-            if (this.stateId % this.keyPeriod > 0) {
-                this.cache[this.stateId++] = this.vcd.encode(this.modelJson, json);
-
+            if (this.nextId % this.keyPeriod > 0) {
+                this.cache[this.nextId] = this.vcd.encode(this.modelJson, json);
             } else {
-                this.cache[this.stateId++] = json;
+                this.cache[this.nextId] = json;
             }
+            this.stateId = this.nextId++;
             this.modelJson = json;
             return this.stateId;
         },
@@ -265,22 +265,25 @@ define([
         /**
          * First, find the key frame, and then iterate to the desired ID, restoring along the way.
          *
-         * @param snapshotId
+         * @param stateId
          */
         load: function(stateId) {
             var start = stateId - (stateId % this.keyPeriod);
-            var json = this.cache[start];
+            this.modelJson = this.cache[start];
+            if (this.modelJson === undefined)
+                throw 'Error: Unable to restore state.';
+            var delta;
             for (var i = start + 1; i <= stateId; i++) {
-                json = this.vcd.decode(json, this.cache[i]);
+                if (this.cache[i] === undefined)
+                    throw 'Error: Unable to restore state.';
+                this.modelJson = this.vcd.decode(this.modelJson, this.cache[i]);
             }
             this.stateId = stateId;
-            return json;
+            return JSON.parse(this.modelJson);
         },
 
         /**
          * Clear all entries.
-         *
-         * @param snapshotId
          */
         clearAll: function() {
             this.cache = {};
@@ -333,43 +336,138 @@ define([
          * @param properties
          */
         initialize: function(properties) {
+            properties = properties || {};
             $.extend(this, properties);
 
-            if (this.state == undefined) {
-                this.state = new Object();
-                // Associates a set of components with a node in the dataMap.  When a node is updated, check
-                // this datastructure for components to notify
-                this.state.componentMap = new Object();
-                // Associates a canonical path entry with the node that it addresses.  This is provided for quick
-                // lookup, preventing the traversal of the tree from the root for the location of arbitrary nodes.
-                // This arrangement does necessitate the modification of the tree only through management APIs.
-                // Direct modification of the tree, without corresponding operations on the map, will lead to
-                // application fault.
-                this.state.pathMap = new Object();
-
-                this.state.pathMap['local'] = {};
-            }
-
-
-            if (this.stateCache === undefined) {
-                this.stateCache = new Cajeta.Model.StateCache({});
-            }
+            this.state = this.state || {};
+            this.state.componentMap = this.state.componentMap || {};
+            this.state.pathMap = this.state.pathMap || {};
+            this.state.pathMap['local'] = this.state.pathMap['local'] || {};
+            this.stateCache = this.stateCache || new Cajeta.Model.StateCache();
 
             // First, see if we've been initialized with a desired stateId.  If not,
             // check to see if we have one in a cookie.  Otherwise, set it to zero.
             // TODO:  See if we can move this logic into the StateCache, without being difficult to intialize from the outside.
             if (this.stateId === undefined) {
                 this.stateId = jCookies.get("stateId");
-                if (this.stateId === undefined || this.stateId === null)
-                    this.stateId = 0;
+                this.stateId = this.stateId || 0;
             }
 
             if (this.stateId != 0)
                 this.stateCache.load(this.stateId);
 
-
             if (this.autoSnapshot === undefined)
                 this.autoSnapshot = false;
+        },
+
+        /**
+         * Set the value of a node
+         *
+         * @param datasourceId
+         * @param modelPath
+         * @param value
+         * @param component
+         */
+        set: function(modelPath, value, component, datasourceId) {
+            datasourceId = datasourceId || 'local';
+            // First, remove existing entries for parentpath + key, and all children of value
+            var paths = modelPath.split('.');
+            var key = paths[paths.length - 1];
+            var parentPath = null;
+
+            if (paths.length > 2) {
+                for (var i = 0; i < paths.length - 2; i++) {
+                    parentPath = (parentPath == null ? paths[i] : parentPath + '.' + paths[i]);
+                }
+            } else if (paths.length > 1) {
+                parentPath = paths[0];
+            }
+            this._removePathMapEntries(datasourceId, parentPath, key);
+            this._addPathMapEntries(datasourceId, parentPath, key, value);
+
+            if (this.autoSnapshot == true)
+                this.stateCache.add(this.state);
+
+            if (this.theApplication !== undefined)
+                this.theApplication.onModelChanged();
+        },
+
+        /**
+         * Returns an object graph from the
+         * @param datasourceId
+         * @param modelPath
+         * @return {*}
+         */
+        get: function(modelPath, datasourceId) {
+            datasourceId = datasourceId || 'local';
+            var dsEntries = this.state.pathMap[datasourceId];
+            if (dsEntries === undefined)
+                throw 'Cajeta.Model.ModelCache.pathMap has no datasource entry for "' + datasourceId + '"';
+
+            return dsEntries[modelPath];
+        },
+
+        /**
+         * Removes a node from the model.
+         *
+         * @param modelPath The path to the parent node for removal
+         * @param datasourceId (optional) The ID of the datasource, defaults to 'local'
+         */
+        remove: function(modelPath, datasourceId) {
+            datasourceId = datasourceId || 'local';
+            var paths = modelPath.split('.');
+            var parentPath = null;
+
+            for (var i = 0; i < paths.length - 2; i++)
+                parentPath = (parentPath == null ? paths[i] : parentPath + '.' + paths[i]);
+            var key = paths[paths.length - 1];
+            this._removePathMapEntries(datasourceId, modelPath);
+
+            // Remove the actual mapping from the parent node, if it exists
+            if (parentPath != '') {
+                var dsEntries = this._getSafeMapEntries(datasourceId, this.state.pathMap);
+                var parent = dsEntries[parentPath];
+                if (parent !== undefined) {
+                    delete parent[key];
+                }
+            }
+
+            Cajeta.theApplication.onModelChanged();
+        },
+
+        /**
+         * Clear all entries from the map
+         */
+        clearAll: function() {
+            delete this.state;
+            this.state = {};
+            this.state.pathMap = {};
+            this.state.componentMap = {};
+        },
+
+        /**
+         * TODO: Establish if this is needed / saves time
+         * This method is designed to be called by components that have updated their internal DOM values, and their
+         * state needs to be mirrored in the corresponding model.  This method will use the internal state of the
+         * component's ModelAdaptor for the list of arguments to provide to update(datasourceId, key, value).
+         *
+         * In addition, this method will use the provided component as an argument to updateBoundComponents to prevent
+         * reduntant updates.
+         *
+         * @param component
+         */
+        setByComponent: function(component) {
+            var paths = component.getModelAdaptor().split('.');
+            var parentPath = null;
+            for (var i = 0; i < paths.length - 2; i++) {
+                parentPath = (parentPath == null ? paths[i] : parentPath + '.' + paths[i]);
+            }
+            this.set(parentPath, paths[paths.length - 1],
+                component.getValue(), component, component.getModelAdaptor().getDatasourceId());
+        },
+
+        getStateId: function() {
+            return this.stateCache.getStateId();
         },
 
         saveState: function(stateId) {
@@ -388,7 +486,7 @@ define([
             if (stateId == this.stateCache.getStateId())
                 return;
 
-            this.state = eval(this.stateCache.load(stateId));
+            this.state = this.stateCache.load(stateId);
 
             // Now notify all the things...
             for (var dsName in this.state.componentMap) {
@@ -401,179 +499,6 @@ define([
                     }
                 }
             }
-        },
-
-        /**
-         * Recursive utility method to remove entries for an existing tree in the dataMap
-         * @param path The starting canonical data path of the head to remove
-         * @param data The existing child tree
-         */
-        removePathMapEntries: function(datasourceId, modelPath) {
-            var dsEntries = this.state.pathMap[datasourceId];
-            if (dsEntries !== undefined) {
-                var value = dsEntries[modelPath];
-                if (value !== undefined) {
-                    if (!(value instanceof String)) {
-                        for (var name in value) {
-                            if (name !== undefined) {
-                                this.removePathMapEntries(datasourceId, modelPath + '.' + name);
-                            }
-                        }
-                    }
-                    delete dsEntries[modelPath];
-                }
-            }
-        },
-
-        addPathMapEntries: function(datasourceId, parentPath, key, value, componentSource) {
-            var modelPath = parentPath + (parentPath == '' ? '' : '.') + key;
-            var dsEntries = this.getSafeMapEntries(datasourceId, this.state.pathMap);
-
-            // Assignments:
-            //  1. An assignment of parent:child relationship (if parent exists, which is not guaranteed)
-            var parent = dsEntries[parentPath];
-            if (parent !== undefined)
-                parent[key] = value;
-
-            // 2. As assignment of the value in the full modelPath map
-            dsEntries[modelPath] = value;
-
-            // While this is a little outside of the direct role of this method, we're
-            // in the process of recursing through the set of new data nodes.  This is a
-            // good place to notify components (after we've made the path entry for the node),
-            // preventing a redundant traversal.
-            var components = this.state.componentMap[modelPath];
-            for (var id in components) {
-                if (id !== undefined) {
-                    var component = components[id];
-                    if (componentSource !== undefined && component != componentSource)
-                        component.onModelChanged();
-                }
-            }
-
-            // Now, iterate through the children mapped by this node, and recurse.  This will create
-            // map entries for the entire tree to be added.
-            if (!(value instanceof String)) {
-                for (var name in value) {
-                    if (name !== undefined) {
-                        this.addPathMapEntries(datasourceId, modelPath, name, value[name], componentSource);
-                    }
-                }
-            }
-        },
-
-        /**
-         * A safe method for accessing a map for the base, datasource entry.  If the ds entry
-         * does not exist, one is populated and returned.  May be used for both pathMap and componentMap.
-         *
-         * @param datasourceId
-         * @param map
-         * @return A map node for the datasourceId
-         */
-        getSafeMapEntries: function(datasourceId, map) {
-            var dsEntries = map[datasourceId];
-            if (dsEntries === undefined) {
-                dsEntries = new Object();
-                map[datasourceId] = dsEntries;
-            }
-            return dsEntries;
-        },
-
-        /**
-         * Set the value of a node
-         *
-         * @param datasourceId
-         * @param modelPath
-         * @param value
-         * @param component
-         */
-        setNode: function(datasourceId, modelPath, value, component) {
-
-            // First, remove existing entries for parentpath + key, and all children of value
-            var paths = modelPath.split('.');
-            var key = paths[paths.length - 1];
-            var parentPath = null;
-            for (var i = 0; i < paths.length - 2; i++) {
-                parentPath = (parentPath == null ? paths[i] : parentPath + '.' + paths[i]);
-            }
-            this.removePathMapEntries(datasourceId, modelPath);
-            this.addPathMapEntries(datasourceId, parentPath, key, value);
-
-            if (this.autoSnapshot == true)
-                this.stateCache.add(this.state);
-
-            Cajeta.theApplication.onModelChanged();
-        },
-
-        /**
-         *
-         * @param datasourceId
-         * @param modelPath
-         * @return {*}
-         */
-        getNode: function(datasourceId, modelPath) {
-            var dsEntries = this.state.pathMap[datasourceId];
-            if (dsEntries === undefined)
-                throw 'Cajeta.Model.ModelCache.pathMap has no datasource entry for "' + datasourceId + '"';
-
-            return dsEntries[modelPath];
-        },
-
-        /**
-         *
-         * @param datasourceId
-         * @param modelPath
-         * @param key
-         */
-        removeNode: function(datasourceId, modelPath, key) {
-            var paths = modelPath.split('.');
-            var parentPath = null;
-
-            for (var i = 0; i < paths.length - 2; i++)
-                parentPath = (parentPath == null ? paths[i] : parentPath + '.' + paths[i]);
-            var key = paths[paths.length - 1];
-            this.removePathMapEntries(datasourceId, modelPath);
-
-            // Remove the actual mapping from the parent node, if it exists
-            if (parentPath != '') {
-                var dsEntries = this.getSafeMapEntries(datasourceId, this.state.pathMap);
-                var parent = dsEntries[parentPath];
-                if (parent !== undefined) {
-                    delete parent[key];
-                }
-            }
-
-            Cajeta.theApplication.onModelChanged();
-        },
-
-        /**
-         * Clear all entries from the map
-         */
-        clearAllNodes: function() {
-            delete this.state;
-            this.state = {};
-            this.state.pathMap = {};
-            this.state.componentMap = {};
-        },
-
-        /**
-         * This method is designed to be called by components that have updated their internal DOM values, and their
-         * state needs to be mirrored in the corresponding model.  This method will use the internal state of the
-         * component's ModelAdaptor for the list of arguments to provide to update(datasourceId, key, value).
-         *
-         * In addition, this method will use the provided component as an argument to updateBoundComponents to prevent
-         * reduntant updates.
-         *
-         * @param component
-         */
-        setNodeByComponent: function(component) {
-            var paths = component.getModelAdaptor().split('.');
-            var parentPath = null;
-            for (var i = 0; i < paths.length - 2; i++) {
-                parentPath = (parentPath == null ? paths[i] : parentPath + '.' + paths[i]);
-            }
-            this.setNode(component.getModelAdaptor().getDatasourceId(), parentPath, paths[paths.length - 1],
-                component.getValue(), component);
         },
 
         /**
@@ -623,10 +548,6 @@ define([
             }
         },
 
-        getStateId: function() {
-            return this.stateCache.getStateId();
-        },
-
         /**
          * Notify the components bound to a node in the model
          *
@@ -634,9 +555,8 @@ define([
          * @param modelPath The path that was changed
          * @param committor Optional, passed in to avoid circular calls when changes are authored by components
          */
-        updateBoundComponents: function(datasourceId, modelPath, committor) {
-            if (datasourceId === undefined)
-                throw 'datasource must be a valid parameter';
+        updateBoundComponents: function(modelPath, committor, datasourceId) {
+            datasourceId = datasourceId || 'local';
 
             var dsEntries = this.state.componentMap[datasourceId];
             if (dsEntries !== undefined) {
@@ -653,7 +573,113 @@ define([
                     }
                 }
             }
+        },
+
+        /**
+         * Internal method to recursively remove object graphs from the pathMap
+         *
+         * @param datasourceId The datasource ID of the data.
+         * @param parentPath The path to the parent of the property to remove.
+         * @param key The key of the property to remove
+         */
+        _removePathMapEntries: function(datasourceId, parentPath, key) {
+            var dsEntries = this.state.pathMap[datasourceId];
+            if (dsEntries !== undefined) {
+                var parent;
+
+                if (parentPath != null) {
+                    parent = dsEntries[parentPath]
+                } else {
+                    parent = dsEntries;
+                }
+                var value = parent[key];
+                if (value !== undefined) {
+                    if (!(value instanceof String)) {
+                        for (var name in value) {
+                            if (name !== undefined) {
+                                this._removePathMapEntries(datasourceId, parentPath + '.' + key, name);
+                            }
+                        }
+                    }
+                    delete parent[key];
+                }
+            }
+        },
+
+        /**
+         * Internal method, indexes object graphs added to the model using the pathMap
+         *
+         * @param datasourceId
+         * @param parentPath
+         * @param key
+         * @param value
+         * @param componentSource
+         * @private
+         */
+        _addPathMapEntries: function(datasourceId, parentPath, key, value, componentSource) {
+            var dsEntries = this._getSafeMapEntries(datasourceId, this.state.pathMap);
+
+            // Assignments:
+            //  1. An assignment of parent:child relationship (if parent exists, which is not guaranteed)
+            var parent;
+            var modelPath;
+            if (parentPath != null) {
+                parent = dsEntries[parentPath];
+                modelPath = parentPath + '.' + key;
+            } else {
+                parent = dsEntries;
+                modelPath = key;
+            }
+
+            if (parent === undefined)
+                throw 'Error storing data in pathMap: "' + modelPath + '" could not be resolved to a map.';
+
+            parent[key] = value;
+
+            // 2. As assignment of the value in the full modelPath map
+            dsEntries[modelPath] = value;
+
+            // Now, iterate through the children mapped by this node, and recurse.  This will create
+            // map entries for the entire tree to be added.
+            if (typeof value !== "string") {
+                for (var name in value) {
+                    if (name !== undefined) {
+                        this._addPathMapEntries(datasourceId, modelPath, name, value[name], componentSource);
+                    }
+                }
+            }
+
+            // While this is a little outside of the direct role of this method, we're
+            // in the process of recursing through the set of new data nodes.  This is a
+            // good place to notify components (after we've made the path entry for the node),
+            // preventing a redundant traversal.
+            var components = this.state.componentMap[modelPath];
+            for (var id in components) {
+                if (id !== undefined) {
+                    var component = components[id];
+                    if (componentSource !== undefined && component != componentSource)
+                        component.onModelChanged();
+                }
+            }
+        },
+
+        /**
+         * An internal, safe method for accessing a map for the base, datasource entry.  If the ds entry
+         * does not exist, one is populated and returned.  May be used for both pathMap and componentMap.
+         *
+         * @param datasourceId
+         * @param map
+         * @return A map node for the datasourceId
+         */
+        _getSafeMapEntries: function(datasourceId, map) {
+            var dsEntries = map[datasourceId];
+            if (dsEntries === undefined) {
+                dsEntries = new Object();
+                map[datasourceId] = dsEntries;
+            }
+            return dsEntries;
         }
+
     });
 
     Cajeta.View = {
@@ -1298,7 +1324,7 @@ define([
             if (this.model === undefined) {
                 this.model = new Cajeta.Model.ModelCache({
                     enableHistory: true,
-                    enableJsonDelta: false
+                    enableJsonDelta: true
                 });
             }
 
