@@ -11,14 +11,12 @@ requirejs.config({
         'text': 'lib/require/plugin/text',
         'order': 'lib/require/plugin/order',
         'depend': 'lib/require/plugin/depend',
+        //'app': 'app/app',
         'homePage': 'app/view/home/homePage',
         'accountView': 'app/view/account/account',
         'formExampleDiv': 'app/view/home/formExampleDiv',
         'serverInteractionDiv': 'app/view/home/serverInteractionDiv'
     }
-//    shim: {
-//        'jquery': ['jquery']
-//    }
 });
 
 define(['cajetaHtml5', 'homePage'], function(Cajeta, homePage) {
@@ -37,31 +35,48 @@ define(['cajetaHtml5', 'homePage'], function(Cajeta, homePage) {
 
     Cajeta.theApplication.addPage(homePage);
 
-    var data = {
-        one: 'one',
-        two: 'two',
-        three: 'three',
-        childOne: {
-            four: 'four',
-            five: 'five',
-            six: 'six'
-        },
-        childTwo: {
-            seven: 'seven',
-            eight: 'eight',
-            nine: 'nine',
-            ten: 'ten'
-        }
-    };
-    Cajeta.theApplication.model.set('dataPath', data);
-
-    var subdata = {
-        eleven: 'eleven',
-        twelve: 'twelve',
-        thirteen: 'thirteen'
-    };
-
-    Cajeta.theApplication.model.set('dataPath.childOne.subdata', subdata);
+//    var data = {
+//        one: 'one',
+//        two: 'two',
+//        three: 'three',
+//        childOne: {
+//            four: 'four',
+//            five: 'five',
+//            six: 'six'
+//        },
+//        childTwo: {
+//            seven: 'seven',
+//            eight: 'eight',
+//            nine: 'nine',
+//            ten: 'ten'
+//        }
+//    };
+//    var subdata = {
+//        eleven: 'eleven',
+//        twelve: 'twelve',
+//        thirteen: 'thirteen'
+//    };
+//
+//    var component = new Cajeta.View.Component({
+//        componentId: 'test',
+//        modelPath: 'testData.childTwo.ten',
+//        modelChanged: false,
+//        onModelChanged: function() {
+//            this.modelChanged = true;
+//        }
+//    });
+//
+//
+//    Cajeta.theApplication.model.bindComponent(component);
+//    Cajeta.theApplication.model.set('testData', data);
+//    Cajeta.theApplication.model.releaseComponent(component);
+//    Cajeta.theApplication.model.saveState();
+//    Cajeta.theApplication.model.set('testData.childOne.subdata', subdata);
+//    Cajeta.theApplication.model.saveState();
+//    Cajeta.theApplication.model.set('testData.childTwo.subdata', subdata);
+//    Cajeta.theApplication.model.saveState();
+//
+//    Cajeta.theApplication.model.loadState(0);
 
     Cajeta.theApplication.execute();
 });

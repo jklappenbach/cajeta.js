@@ -50,7 +50,14 @@ define(
                 }
             };
 
-            var component = new Cajeta.View.Component({ componentId: 'test' });
+            var component = new Cajeta.View.Component({
+                componentId: 'test',
+                modelPath: 'testData.childTwo.ten',
+                modelChanged: false,
+                onModelChanged: function() {
+                    this.modelChanged = true;
+                }
+            });
 
 
             it('can instantiate with no arguments', function() {
@@ -61,10 +68,9 @@ define(
 
             it('can set data at root node, without a component reference', function() {
                 modelCache.set('testData', dataGraph);
-
             });
 
-            it('can get data from a path root', function() {
+            it('can get data from a root path', function() {
                 var data = modelCache.get('testData');
                 expect(data).toEqual(dataGraph);
             });
@@ -112,9 +118,45 @@ define(
                 expect(modelCache.get('testData')).not.toBeDefined();
             });
 
-            it('can bind a component to an object', function() {
+            it('can bind a component to an object, signaling after binding', function() {
+                modelCache.bindComponent(component);
                 modelCache.set('testData', dataGraph);
+                expect(component.modelChanged).toBeTruthy();
+            });
 
+            it('can remove a component from binding', function() {
+                component.modelChanged = false;
+                modelCache.releaseComponent(component);
+                modelCache.set('testData', dataGraph);
+                expect(component.modelChanged).not.toBeTruthy();
+            });
+
+            it('can save a state', function() {
+                expect(modelCache.saveState()).toEqual(0);
+                modelCache.set('testData.childOne.subdata', subdata);
+                expect(modelCache.saveState()).toEqual(1);
+                modelCache.set('testData.childTwo.subdata', subdata);
+                expect(modelCache.saveState()).toEqual(2);
+            });
+
+            it('can restore a state', function() {
+                modelCache.loadState(0);
+                expect(modelCache.get('testData')).toEqual({
+                    one: 'one',
+                    two: 'two',
+                    three: 'three',
+                    childOne: {
+                        four: 'four',
+                        five: 'five',
+                        six: 'six'
+                    },
+                    childTwo: {
+                        seven: 'seven',
+                        eight: 'eight',
+                        nine: 'nine',
+                        ten: 'ten'
+                    }
+                });
             });
 /*
             it('stores many entries', function() {

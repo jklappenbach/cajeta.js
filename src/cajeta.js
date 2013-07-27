@@ -425,7 +425,7 @@ define([
             $.extend(this, properties);
 
             this.state = this.state || {};
-            this.state.componentMap = this.state.componentMap || {};
+            this.componentMap = this.componentMap || {};
             this.state.pathMap = this.state.pathMap || {};
             this.state.pathMap['local'] = this.state.pathMap['local'] || {};
             this.stateCache = this.stateCache || new Cajeta.Model.StateCache();
@@ -531,11 +531,11 @@ define([
          * Clear all entries from the map
          */
         clearAll: function() {
-            delete this.state;
             this.state = {};
             this.state.pathMap = {};
             this.state.pathMap['local'] = {};
-            this.state.componentMap = {};
+            this.componentMap = {};
+            this.componentMap['local'] = {};
         },
 
         /**
@@ -563,8 +563,14 @@ define([
             return this.stateCache.getStateId();
         },
 
-        saveState: function(stateId) {
-            this.stateCache.add(this.state);
+        /**
+         * Saves the current model state to the stateCache, and returns the
+         * ID applied to the save operation for future restoration.
+         *
+         * @return The new stateId
+         */
+        saveState: function() {
+            return this.stateCache.add(this.state);
         },
 
         /**
@@ -582,12 +588,16 @@ define([
             this.state = this.stateCache.load(stateId);
 
             // Now notify all the things...
-            for (var dsName in this.state.componentMap) {
+            for (var dsName in this.componentMap) {
                 if (dsName !== undefined) {
-                    var dsEntries = this.state.componentMap[dsName];
-                    for (var componentId in dsEntries) {
-                        if (componentId !== undefined) {
-                            dsEntries[componentId].onModelChanged();
+                    var dsEntries = this.componentMap[dsName];
+                    for (var modelPath in dsEntries) {
+                        if (modelPath !== undefined) {
+                            var components = dsEntries[modelPath];
+                            for (var componentId in components) {
+                                if (componentId !== null)
+                                    components[componentId].onModelChanged();
+                            }
                         }
                     }
                 }
@@ -616,8 +626,8 @@ define([
             if (component.modelAdaptor !== undefined) {
                 var modelPath = component.modelAdaptor.getModelPath();
                 var datasourceId = component.modelAdaptor.getDatasourceId();
-                var dsEntries = this.getSafeMapEntries(datasourceId, this.state.componentMap)
-                var components = this.getSafeMapEntries(modelPath, dsEntries);
+                var dsEntries = this._getSafeMapEntries(datasourceId, this.componentMap);
+                var components = this._getSafeMapEntries(modelPath, dsEntries);
                 components[component.getCanonicalId()] = component;
             }
         },
@@ -629,9 +639,9 @@ define([
          * @param component  The component to unbind from the model
          */
         releaseComponent: function(component) {
-            var datasourceId = component.getDatasourceId();
-            var modelPath = component.getModelPath();
-            if (datasourceId !== undefined && modelPath !== undefined) {
+            if (component.modelAdaptor !== undefined) {
+                var datasourceId = component.modelAdaptor.getDatasourceId();
+                var modelPath = component.modelAdaptor.getModelPath();
                 var dsEntries = this.componentMap[datasourceId];
                 if (dsEntries !== undefined) {
                     var components = dsEntries[modelPath];
@@ -651,7 +661,7 @@ define([
         updateBoundComponents: function(modelPath, committor, datasourceId) {
             datasourceId = datasourceId || 'local';
 
-            var dsEntries = this.state.componentMap[datasourceId];
+            var dsEntries = this.componentMap[datasourceId];
             if (dsEntries !== undefined) {
                 var components = dsEntries[modelPath];
                 if (components !== undefined) {
@@ -730,31 +740,35 @@ define([
             }
 
             if (parent === undefined)
-                throw 'Error storing data in pathMap: "' + modelPath + '" could not be resolved to a map.';
+                throw new Cajeta.Exception('Error storing data in pathMap: "' + modelPath + '" could not be resolved to an entry.');
 
             parent[key] = value;
 
             // 2. As assignment of the value in the full modelPath map
             dsEntries[modelPath] = value;
 
-            // Now, iterate through the children mapped by this node, and recurse.  This will create
-            // map entries for the entire tree to be added.
-            for (var name in value) {
-                if (name !== undefined && typeof value[name] !== "string") {
-                    this._addPathMapEntries(datasourceId, modelPath, name, value[name], componentSource);
+            // Now, iterate through the children mapped by this node, and see if we have a mapped
+            // component to update.  Also, if the object is not a string (contains children),
+            // recurse.
+            if (typeof value !== "string") {
+                for (var name in value) {
+                    if (name !== undefined) {
+                        this._addPathMapEntries(datasourceId, modelPath, name, value[name], componentSource);
+                    }
                 }
             }
 
-            // While this is a little outside of the direct role of this method, we're
-            // in the process of recursing through the set of new data nodes.  This is a
-            // good place to notify components (after we've made the path entry for the node),
-            // preventing a redundant traversal.
-            var components = this.state.componentMap[modelPath];
-            for (var id in components) {
-                if (id !== undefined) {
-                    var component = components[id];
-                    if (componentSource !== undefined && component != componentSource)
+            // Notify any components bound to this modelPath
+            dsEntries = this.componentMap[datasourceId];
+            if (dsEntries !== undefined) {
+                var components = dsEntries[modelPath];
+                for (var id in components) {
+                    if (id !== undefined) {
+                        var component = components[id];
+                        if (component == componentSource)
+                            break;
                         component.onModelChanged();
+                    }
                 }
             }
         },
@@ -791,13 +805,10 @@ define([
     Cajeta.View.ModelAdaptor = Cajeta.Class.extend({
         initialize: function(properties) {
             $.extend(this, properties, true);
-            if (this.datasourceId === undefined) {
-                this.datasourceId = "local";
-            }
+            this.datasourceId = this.datasourceId || 'local';
             if (this.modelPath === undefined)
-                throw "Cajeta.View.ModelAdaptor.modelpath must be defined";
-            if (this.elementTarget === undefined)
-                this.elementTarget = "value";
+                throw new Cajeta.Exception("Cajeta.View.ModelAdaptor.modelpath must be defined");
+            this.elementTarget = this.elementTarget || 'value';
         },
         getDatasourceId: function() {
             return this.datasourceId;
@@ -806,12 +817,12 @@ define([
             return this.modelPath;
         },
         onModelChanged: function() {
-            var data = Cajeta.theApplication.getModel().getNode(this.datasourceId, this.modelPath);
+            var data = Cajeta.theApplication.getModel().get(this.datasourceId, this.modelPath);
             this.component.setModelValue(data);
         },
         onComponentChanged: function() {
             var data = this.component.getModelValue();
-            Cajeta.theApplication.getModel().setNode(this.datasourceId, this.modelPath, data);
+            Cajeta.theApplication.getModel().set(this.datasourceId, this.modelPath, data);
         }
     });
 
@@ -872,6 +883,10 @@ define([
 
             if (this.modelValue !== undefined)
                 this.setModelValue(this.modelValue);
+
+            delete this.modelPath;
+            delete this.datasourceId;
+            delete this.elementTarget;
         },
 
         /**
@@ -1176,8 +1191,9 @@ define([
                 }
             }
             if (this.template === undefined) {
-                throw 'Invalid template for ' + this.getComponentId() +
-                    ', must contain an element with the attribute templateId having the value ' + templateId + '.';
+                throw new Cajeta.Exception('Invalid template for ' + this.getComponentId() +
+                    ', must contain an element with the attribute templateId having the value ' +
+                    templateId + '.');
             }
         },
         getTemplate: function() {
