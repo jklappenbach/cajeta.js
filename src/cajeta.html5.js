@@ -418,13 +418,13 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
 
     Cajeta.View.Html5.TabList = Cajeta.View.Html5.UnorderedList.extend({
         initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
+            var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             if (properties['content'] !== undefined) {
                 this.content = properties['content'];
             } else {
-                var contentId = properties['contentId'] === undefined ? 'content' : properties['contentId'];
+                var contentId = properties['contentId'] || 'content';
                 this.content = new Cajeta.View.Html5.Div({ componentId: contentId });
             }
             this.tabEntries = new Array();

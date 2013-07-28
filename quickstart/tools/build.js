@@ -7,11 +7,11 @@
     "optimize": "none",
 
     // point to the shim config we set up before
-    "mainConfigFile": "../www/js/app.js",
+    "mainConfigFile": "../www/js/application.js",
 
     "modules": [
         //Optimize the application files. jQuery and the plugins will be included
-        //automatically, as they are dependencies of app.js.
+        //automatically, as they are dependencies of application.js.
         {
             "name": "app"
         }

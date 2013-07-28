@@ -12,7 +12,7 @@ files = [
   JASMINE_ADAPTER,
   REQUIRE,
   REQUIRE_ADAPTER,
-  { pattern: 'webapp/**/*.js', included: false },
+  { pattern: 'site/**/*.js', included: false },
   { pattern: 'test/spec/**/*Spec.js', included: false },
   'test/test-main.js'
 ];
@@ -20,7 +20,7 @@ files = [
 
 // list of files to exclude
 exclude = [
-  'webapp/main.js'
+  'site/main.js'
 ];
 
 

@@ -2,7 +2,7 @@ var sys = require('sys');
 var http = require('http');
 var nodeStatic = require('node-static');
 
-var staticServer = new nodeStatic.Server("./webapp");
+var staticServer = new nodeStatic.Server("./site");
 
 var server = http.createServer(
     function (req, res) {

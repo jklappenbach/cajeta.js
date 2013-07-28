@@ -13,7 +13,7 @@ define([
     homePage.setTemplate('homePage', homePageText);
 
     var tabs = new Html5.TabList({ componentId: 'tabs', contentId: 'content' });
-    tabs.addChild({ title: 'Html4 Form Example', component: formExampleDiv });
+    tabs.addChild({ title: 'Html5 Form Example', component: formExampleDiv });
     tabs.addChild({ title: 'Server Interaction Example', component: serverInteractionDiv });
     homePage.addChild(tabs);
 

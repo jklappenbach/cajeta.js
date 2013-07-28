@@ -22,37 +22,38 @@ define([
 
     form.addChild(new Html5.Label({
         componentId: 'firstLabel',
-        attributes: { value: 'Label Text' }})
-    );
+        attributes: { value: 'Label Text' }
+    }));
 
     form.addChild(new Html5.TextInput({
         componentId: 'firstTextField',
         modelPath: 'testForm.firstTextField',
-        attributes: { value: 'First Example Text' }})
-    );
+        attributes: { value: 'First Example Text' }
+    }));
 
     form.addChild(new Html5.TextInput({
         componentId: 'secondTextField',
         modelPath: 'testForm.secondTextField',
-        attributes: { value: 'Second Example Text' }})
-    );
+        attributes: { value: 'Second Example Text' }
+    }));
 
     // Add Checkboxes
     form.addChild(new Html5.CheckboxInput({
         componentId: 'greenColor',
         modelPath: 'testForm.greenColor',
-        properties: { checked: 'true' }})
-    );
+        properties: { checked: 'true' }
+    }));
+
     form.addChild(new Html5.CheckboxInput({
         componentId: 'blueColor',
-        modelPath: 'testForm.blueColor' })
-    );
+        modelPath: 'testForm.blueColor'
+    }));
 
     form.addChild(new Html5.CheckboxInput({
         componentId: 'redColor',
         modelPath: 'testForm.redColor',
-        properties: { checked: 'true' }})
-    );
+        properties: { checked: 'true' }
+    }));
 
     // Add RadioGroup
     var radioGroup = new Html5.RadioGroup({
@@ -65,6 +66,7 @@ define([
         componentId: 'vegetarian',
         properties: { checked: true }
     }));
+
     radioGroup.addChild(new Html5.RadioInput({ componentId: 'pescatarian' }));
     radioGroup.addChild(new Html5.RadioInput({ componentId: 'omnivore' }));
 
@@ -73,13 +75,13 @@ define([
         componentId: 'textArea',
         modelPath: 'testForm.description',
         attributes: { cols: 100, rows: 5 },
-        properties: { value: 'Enter a description here.' }})
-    );
+        properties: { value: 'Enter a description here.' }
+    }));
 
     form.addChild(new Html5.Select({
         componentId: 'selectStatic',
-        modelPath: 'testForm.selectStatic' })
-    );
+        modelPath: 'testForm.selectStatic'
+    }));
 
     form.addChild(new Html5.Select({
         componentId: 'selectProgrammatic',

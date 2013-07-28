@@ -40,11 +40,38 @@ define([
     var Cajeta = {
         author: 'Julian Klappenbach',
         version: '0.0.1',
-        license: 'MIT 2012',
-        theApplication: null
+        license: 'MIT 2013',
+        theApplication: null,
+        constants: {
+            ERROR_EVENT_ID_UNDEFINED: 'Cajeta.Events.Event.id is undefined',
+            ERROR_AJAX_MODELPATH_UNDEFINED: 'Cajeta.Datasource.Ajax.modelPath must be defined',
+            ERROR_AJAX_DATASOURCEID_UNDEFINED: 'Cajeta.Datasource.Ajax.datasourceId must be defined',
+            ERROR_RESTAJAX_URITEMPLATE_UNDEFINED: 'A "urlTemplate" property must be defined in the constructor',
+            ERROR_STATECACHE_LOADFAILURE: 'Error: Unable to restore state',
+            ERROR_MODELCACHE_DATASOURCE_UNDEFINED: 'Cajeta.Model.ModelCache.pathMap has no datasource entry for "{0}"',
+            ERROR_MODELCACHE_PATH_UNDEFINED: 'Error: "{0}" could not be resolved to an entry',
+            ERROR_MODELADAPTOR_MODELPATH_UNDEFINED: 'Error: modelPath must be defined',
+            ERROR_COMPONENT_COMPONENTID_UNDEFINED: 'Error: Cajeta.View.Component.componentId must be defined',
+            ERROR_COMPONENT_INVALIDTEMPLATE: 'Error: Invalid template for "{0}"; must contain an element with a templateId of "{1}"',
+            ERROR_COMPONENT_DOCKFAILURE_UNDEFINED: 'Error: Dock failed, unable to resolve an element with componentId "{0}" in target HTML',
+            ERROR_COMPONENT_DOCKFAILURE_MULTIPLE: 'Error: Dock failed, more than one element was found with componentId "{0}" in target HTML',
+            ERROR_APPLICATION_PAGE_UNDEFINED: 'Error: Page "{0}" undefined',
+            DEFAULT_PAGETITLE: 'Default Cajeta Page',
+            LOCAL_DATASOURCE: 'local'
+        }
     };
 
-    // JavaScript object model, based on prototype, but using some additional
+    // Adding a proper String.format method
+    if (!String.prototype.format) {
+        String.prototype.format = function() {
+            var args = arguments;
+            return this.replace(/{(\d+)}/g, function(match, number) {
+                return typeof args[number] != 'undefined' ? args[number] : match;
+            });
+        };
+    }
+
+    // JavaScript object model, based on jQuery, but using some additional
     // strategies to enable polymorphism.
     Cajeta.Class = function() { };
 
@@ -84,38 +111,6 @@ define([
         return child;
     };
 
-    /**
-     * A simple Exception class to provide information to developers and end-users
-     * when an error happens.  This is an application level exception, and should contain
-     * as much information as needed to help identify bugs and issues.  When this class is
-     * instantiated, a snapshot of the stack is taken for diagnostics.
-     *
-     * Supported properties for intialization:
-     *      message: A string value to describe the situation
-     *      causedBy: The triggering exception, to pass it on
-     */
-    Cajeta.Exception = Cajeta.Class.extend({
-        intitialize: function(properties) {
-            this.stackTrace = this._stackTrace();
-        },
-        getMessage: function() {
-            return this.message;
-        },
-        getStackTrace: function() {
-            return this.stackTrace;
-        },
-        getCausedBy: function() {
-            return this.causedBy;
-        },
-        _stackTrace: function() {
-            function processFrame(fn) {
-                return !fn ? [] :
-                    processFrame(fn.caller).concat([fn.toString().split('(')[0].substring(9) +
-                        '(' + fn.arguments.join(',') + ')']);
-            }
-            return processFrame(arguments.callee.caller);
-        }
-    });
 
     Cajeta.Events = {};
 
@@ -123,14 +118,14 @@ define([
         initialize: function(properties) {
             if (properties !== undefined)
                 $.extend(true, this, properties);
-            if (this.eventId === undefined)
-                throw new Cajeta.Exception({ message: 'Cajeta.Events.Event.eventId is undefined' });
+            if (this.id === undefined)
+                throw Cajeta.constants.ERROR_EVENT_ID_UNDEFINED;
         },
         getId: function() {
-            return eventId;
+            return this.id;
         },
         getData: function() {
-            return data;
+            return this.data;
         }
     });
 
@@ -145,7 +140,7 @@ define([
             if (listeners !== undefined) {
                 for (var listenerId in listeners) {
                     if (listenerId !== undefined) {
-                        var listener = listener[listenerId];
+                        var listener = listeners[listenerId];
                         listener.onEvent(event);
                     }
                 }
@@ -184,10 +179,6 @@ define([
             if (properties !== undefined)
                 $.extend(true, this, properties);
             this.header = this.header || {};
-            if (this.datasourceId === undefined)
-                throw 'Cajeta.Datasource.Ajax.datasourceId must be defined.';
-            if (this.modelPath === undefined)
-                throw 'Cajeta.Datasource.Ajax.modelPath must be defined.';
             Cajeta.Datasource.map[this.datasourceId] = this;
         },
         createHxr: function() {
@@ -198,7 +189,7 @@ define([
             }
         },
         onError: function(event) {
-            console.log("An error occured: " + event);
+            Console.log("An error occured: " + event);
         },
 
         /**
@@ -206,13 +197,15 @@ define([
          * @param data
          */
         onComplete: function(data) {
-            Cajeta.theApplication.getModel().setNode(this.datasourceId, this.modelPath, data);
+            if (this.modelPath === undefined)
+                throw Cajeta.constants.ERROR_AJAX_MODELPATH_UNDEFINED;
+
+            Cajeta.theApplication.getModel().set(this.modelPath, data, this.datasourceId);
         },
 
         exec: function(method, url, data, callback, headers) {
             var hxr = this.createHxr();
             var headers = (headers !== undefined) ? headers : this.headers;
-
 
             hxr.open(method, url, true);
             hxr.onerror = this.onError;
@@ -253,7 +246,7 @@ define([
             self.super.initialize.call(this, properties);
 
             if (this.uriTemplate === null) {
-                throw 'A "urlTemplate" property must be defined in the constructor';
+                throw Cajeta.constants.ERROR_RESTAJAX_URITEMPLATE_UNDEFINED;
             }
         },
         put: function(data) {
@@ -283,7 +276,7 @@ define([
             while (startIndex >= 0) {
                 var endIndex = result.indexOf('}');
                 var key = result.substring(startIndex + 1, endIndex - 1);
-                var value = Cajeta.theApplication.getModel().getNode('local', key);
+                var value = Cajeta.theApplication.getModel().get(key);
                 result = result.replace('{' + key + '}', value);
                 startIndex = result.indexOf('{');
             }
@@ -356,11 +349,11 @@ define([
             var start = stateId - (stateId % this.keyPeriod);
             this.modelJson = this.cache[start];
             if (this.modelJson === undefined)
-                throw 'Error: Unable to restore state.';
+                throw Cajeta.constants.ERROR_STATECACHE_LOADFAILURE;
             var delta;
             for (var i = start + 1; i <= stateId; i++) {
                 if (this.cache[i] === undefined)
-                    throw 'Error: Unable to restore state.';
+                    throw Cajeta.constants.ERROR_STATECACHE_LOADFAILURE;
                 this.modelJson = this.vcd.decode(this.modelJson, this.cache[i]);
             }
             this.stateId = stateId;
@@ -427,7 +420,7 @@ define([
             this.state = this.state || {};
             this.componentMap = this.componentMap || {};
             this.state.pathMap = this.state.pathMap || {};
-            this.state.pathMap['local'] = this.state.pathMap['local'] || {};
+            this.state.pathMap[Cajeta.constants.LOCAL_DATASOURCE] = this.state.pathMap[Cajeta.constants.LOCAL_DATASOURCE] || {};
             this.stateCache = this.stateCache || new Cajeta.Model.StateCache();
 
             // First, see if we've been initialized with a desired stateId.  If not,
@@ -454,7 +447,7 @@ define([
          * @param component
          */
         set: function(modelPath, value, component, datasourceId) {
-            datasourceId = datasourceId || 'local';
+            datasourceId = datasourceId || Cajeta.constants.LOCAL_DATASOURCE;
             // First, remove existing entries for parentpath + key, and all children of value
             var keyIndex = modelPath.lastIndexOf('.');
             var parentPath = null;
@@ -485,10 +478,10 @@ define([
          * @return {*}
          */
         get: function(modelPath, datasourceId) {
-            datasourceId = datasourceId || 'local';
+            datasourceId = datasourceId || Cajeta.constants.LOCAL_DATASOURCE;
             var dsEntries = this.state.pathMap[datasourceId];
             if (dsEntries === undefined)
-                throw 'Cajeta.Model.ModelCache.pathMap has no datasource entry for "' + datasourceId + '"';
+                throw Cajeta.constants.ERROR_MODELCACHE_DATASOURCE_UNDEFINED.format(datasourceId);
 
             return dsEntries[modelPath];
         },
@@ -500,7 +493,7 @@ define([
          * @param datasourceId (optional) The ID of the datasource, defaults to 'local'
          */
         remove: function(modelPath, datasourceId) {
-            datasourceId = datasourceId || 'local';
+            datasourceId = datasourceId || Cajeta.constants.LOCAL_DATASOURCE;
             var keyIndex = modelPath.lastIndexOf('.');
             var parentPath = null;
             var key = null;
@@ -533,9 +526,9 @@ define([
         clearAll: function() {
             this.state = {};
             this.state.pathMap = {};
-            this.state.pathMap['local'] = {};
+            this.state.pathMap[Cajeta.constants.LOCAL_DATASOURCE] = {};
             this.componentMap = {};
-            this.componentMap['local'] = {};
+            this.componentMap[Cajeta.constants.LOCAL_DATASOURCE] = {};
         },
 
         /**
@@ -591,12 +584,15 @@ define([
             for (var dsName in this.componentMap) {
                 if (dsName !== undefined) {
                     var dsEntries = this.componentMap[dsName];
-                    for (var modelPath in dsEntries) {
-                        if (modelPath !== undefined) {
-                            var components = dsEntries[modelPath];
-                            for (var componentId in components) {
-                                if (componentId !== null)
-                                    components[componentId].onModelChanged();
+                    if (dsEntries !== undefined) {
+                        for (var modelPath in dsEntries[dsName]) {
+                            if (modelPath !== undefined) {
+                                for (var componentId in dsEntries[modelPath]) {
+                                    var component = dsEntries[modelPath][componentId];
+                                    if (component !== undefined) {
+                                        component.onModelChanged();
+                                    }
+                                }
                             }
                         }
                     }
@@ -659,7 +655,7 @@ define([
          * @param committor Optional, passed in to avoid circular calls when changes are authored by components
          */
         updateBoundComponents: function(modelPath, committor, datasourceId) {
-            datasourceId = datasourceId || 'local';
+            datasourceId = datasourceId || Cajeta.constants.LOCAL_DATASOURCE;
 
             var dsEntries = this.componentMap[datasourceId];
             if (dsEntries !== undefined) {
@@ -740,7 +736,7 @@ define([
             }
 
             if (parent === undefined)
-                throw new Cajeta.Exception('Error storing data in pathMap: "' + modelPath + '" could not be resolved to an entry.');
+                throw Cajeta.constants.ERROR_MODELCACHE_PATH_UNDEFINED.format(modelPath);
 
             parent[key] = value;
 
@@ -805,9 +801,9 @@ define([
     Cajeta.View.ModelAdaptor = Cajeta.Class.extend({
         initialize: function(properties) {
             $.extend(this, properties, true);
-            this.datasourceId = this.datasourceId || 'local';
+            this.datasourceId = this.datasourceId || Cajeta.constants.LOCAL_DATASOURCE;
             if (this.modelPath === undefined)
-                throw new Cajeta.Exception("Cajeta.View.ModelAdaptor.modelpath must be defined");
+                throw Cajeta.constants.ERROR_MODELADAPTOR_MODELPATH_UNDEFINED;
             this.elementTarget = this.elementTarget || 'value';
         },
         getDatasourceId: function() {
@@ -854,7 +850,7 @@ define([
             properties = properties || {};
             $.extend(this, properties);
             if (this.componentId === undefined)
-                throw 'A componentId must be defined';
+                throw Cajeta.constants.ERROR_COMPONENT_COMPONENTID_UNDEFINED;
             this.parent = null;
             this.attributes = this.attributes || {};
             this.properties = this.properties || {};
@@ -863,12 +859,10 @@ define([
             this.hotKeys = {};
             this.viewStateId = '';
             this.domEventBound = false;
-            if (this.visible === undefined)
-                this.visible = true;
+            this.visible = this.visible || true;
 
             // Default setting for valueTarget
-            if (this.valueTarget === undefined)
-                this.valueTarget = "attr:value"; // Could be attr:*, prop:*, or text (element text)
+            this.valueTarget = this.valueTarget || "attr:value"; // Could be attr:*, prop:*, or text (element text)
 
             if (this.modelAdaptor === undefined && this.modelPath !== undefined) {
                 this.modelAdaptor = new Cajeta.View.ModelAdaptor({
@@ -1131,7 +1125,7 @@ define([
         addChild: function(component) {
             var componentId = component.getComponentId();
             if (componentId == undefined || componentId == '') {
-                throw 'A component must have a valid componentId to be added as a child';
+                throw Cajeta.constants.ERROR_COMPONENT_COMPONENTID_UNDEFINED;
             }
             this.children[componentId] = component;
             if (component.endpointId === undefined) {
@@ -1177,23 +1171,34 @@ define([
             if (temp.length > 0) {
                 for (var i = 0; i < temp.length; i++) {
                     if (temp[i].attributes != undefined) {
-                        var attrValue = temp[i].attributes['cajeta:templateId'];
-                        if (attrValue == undefined) {
-                            attrValue = temp[i].attributes['templateId'];
-                        }
+                        var attrValue = temp[i].attributes['templateId'];
 
                         if (attrValue != undefined && attrValue.value == templateId) {
                             this.template = $(temp[i]);
-                            this.template.attr('cajeta:componentId', this.componentId);
+
+                            this.template.attr('componentId', this.componentId);
+
+                            for (var name in this.attributes) {
+                                if (name !== undefined)
+                                    this.template.attr(name, this.attributes[name]);
+                            }
+                            for (var name in this.properties) {
+                                if (name !== undefined)
+                                    this.template.prop(name, this.properties[name]);
+                            }
+                            for (var name in this.cssAttributes) {
+                                if (name !== undefined)
+                                    this.template.css(name, this.cssAttributes[name]);
+                            }
+                            if (this.textValue !== undefined)
+                                this.template.text(this.textValue);
                             break;
                         }
                     }
                 }
             }
             if (this.template === undefined) {
-                throw new Cajeta.Exception('Invalid template for ' + this.getComponentId() +
-                    ', must contain an element with the attribute templateId having the value ' +
-                    templateId + '.');
+                throw Cajeta.constants.ERROR_COMPONENT_INVALIDTEMPLATE.format(this.getCanonicalId(), templateId);
             }
         },
         getTemplate: function() {
@@ -1218,39 +1223,34 @@ define([
         dock: function() {
             if (!this.isDocked()) {
                 var type = this.getElementType();
-                var domElement = $(type + '[cajeta\\:componentid = "' + this.componentId + '"]');
-                if (domElement.length == 0) {
-                    // Try again, without namespace
-                    domElement = $(type + '[componentid = "' + this.componentId + '"]');
-                    if (domElement.length == 0)
-                        throw 'Dock failed: a component was not found with componentId "' + this.componentId + '".';
-                } else if (domElement.length > 1) {
-                    throw 'Dock failed: more than one component was found with componentId "' + this.componentId + '".';
+                this.dom = $(type + '[componentid = "' + this.componentId + '"]');
+                if (this.dom.length == 0) {
+                    throw Cajeta.constants.ERROR_COMPONENT_DOCKFAILURE_UNDEFINED.format(this.componentId);
+                } else if (this.dom.length > 1) {
+                    throw Cajeta.constants.ERROR_COMPONENT_DOCKFAILURE_MULTIPLE.format(this.componentId);
                 }
                 if (this.template === undefined) {
                     // Synchronize with any settings made before dock
                     for (var name in this.attributes) {
                         if (name !== undefined)
-                            domElement.attr(name, this.attributes[name]);
+                            this.dom.attr(name, this.attributes[name]);
                     }
                     for (var name in this.properties) {
                         if (name !== undefined)
-                            domElement.prop(name, this.properties[name]);
+                            this.dom.prop(name, this.properties[name]);
                     }
                     for (var name in this.cssAttributes) {
                         if (name !== undefined)
-                            domElement.css(name, this.cssAttributes[name]);
+                            this.dom.css(name, this.cssAttributes[name]);
                     }
                     if (this.textValue !== undefined)
-                        domElement.text(this.textValue);
-
-                    this.dom = domElement;
+                        this.dom.text(this.textValue);
                 } else {
-                    // Should replace with template, but this is blowing away a huge portion of the dom
+                    this.dom.html(this.template.html());
                 }
 
                 // Finally, ensure we have assigned the component ID to the fragment
-                this.attr('cajeta:componentId', this.componentId);
+                this.attr('componentId', this.componentId);
 
                 // Add to the application component map at this point.
                 Cajeta.theApplication.getComponentMap()[this.componentId] = this;
@@ -1403,7 +1403,7 @@ define([
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             if (this.title === undefined)
-                this.title = 'Default Cajeta Page';
+                this.title = Cajeta.constants.DEFAULT_PAGETITLE;
             this.setElementType('body');
         },
         setTitle: function(title) {
@@ -1417,11 +1417,7 @@ define([
         },
 
         dock: function() {
-            this.dom = $('body');
-
-            // First, remove any children of body...
-            this.dom.empty();
-            this.dom.append(this.template);
+            $('body').html(this.template);
         },
 
         getViewState: function() {
@@ -1590,7 +1586,11 @@ define([
          *
          */
         render: function() {
-            this.currentPage.render();
+            try {
+                this.currentPage.render();
+            } catch(e) {
+                Console.log(e.message);
+            }
         },
 
         getComponentMap: function() {
@@ -1623,7 +1623,7 @@ define([
             }
 
             if (component === undefined)
-                throw 'An invalid argument was used in Cajeta.Application.addPage: ' + page;
+                throw Cajeta.constants.ERROR_APPLICATION_PAGE_UNDEFINED.format(page);
 
             if (this.currentPage !== undefined) {
                 if (this.currentPage != component) {

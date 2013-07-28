@@ -2,7 +2,7 @@ define(
     ['cajeta', 'jquery'],
     function(Cajeta, $) {
         // First test classes and extend functionality
-        return describe('Cajeta StateCache', function() {
+        return describe('Cajeta.Model.StateCache', function() {
 
             var stateCache = null;
             var data00 = {
@@ -145,7 +145,7 @@ define(
             });
 
             it('throws an exception when invalid state IDs are submitted', function() {
-               expect(function() { stateCache.load(10); }).toThrow('Error: Unable to restore state.');
+               expect(function() { stateCache.load(10); }).toThrow('Error: Unable to restore state');
             });
         });
     }

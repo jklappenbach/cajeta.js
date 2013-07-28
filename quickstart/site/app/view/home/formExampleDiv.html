@@ -1,40 +1,40 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<div xmlns:cajeta="http://www.cajetajs.com/v01" cajeta:templateId="formExampleDiv">
+<div xmlns:cajeta="http://www.cajetajs.com/v01" templateId="formExampleDiv">
 	Experiment with the undo functionality built in to the framework -- modify a few fields, and then press the
 	back button.
-	<form cajeta:componentId="testForm">
+	<form componentId="testForm">
 		<fieldset>
 			<legend>Text Input Fields</legend>
-			<label cajeta:componentId="firstLabel"></label><br />
-			First Field: <input type="text" cajeta:componentId="firstTextField" /><br />
-			Second Field: <input type="text" cajeta:componentId="secondTextField" /><br />
+			<label componentId="firstLabel"></label><br />
+			First Field: <input type="text" componentId="firstTextField" /><br />
+			Second Field: <input type="text" componentId="secondTextField" /><br />
 		</fieldset>
 		<fieldset>
 			<legend>Checkbox</legend>
-			<input type="checkbox" name="green" cajeta:componentId="greenColor" />Green<br />
-			<input type="checkbox" name="blue" cajeta:componentId="blueColor" />Blue<br />
-			<input type="checkbox" name="red" cajeta:componentId="redColor" />Red<br />
+			<input type="checkbox" name="green" componentId="greenColor" />Green<br />
+			<input type="checkbox" name="blue" componentId="blueColor" />Blue<br />
+			<input type="checkbox" name="red" componentId="redColor" />Red<br />
 		</fieldset>
 		<fieldset>
 			<legend>Radio</legend>
-			<input type="radio" name="diet" cajeta:componentId="vegetarian" />Vegetarian<br />
-			<input type="radio" name="diet" cajeta:componentId="pescatarian" />Pescatarian<br />
-			<input type="radio" name="diet" cajeta:componentId="omnivore" />Omnivore<br />
+			<input type="radio" name="diet" componentId="vegetarian" />Vegetarian<br />
+			<input type="radio" name="diet" componentId="pescatarian" />Pescatarian<br />
+			<input type="radio" name="diet" componentId="omnivore" />Omnivore<br />
 		</fieldset>
 		<fieldset>
 			<legend>TextArea</legend>
-			<textarea rows="4" cols="10" cajeta:componentId="textArea" />
+			<textarea rows="4" cols="10" componentId="textArea" />
 		</fieldset>
 		<fieldset>
 			<legend>Select</legend>
-			Static: <select cajeta:componentId="selectStatic">
+			Static: <select componentId="selectStatic">
 			<option value="firstChoice">First Choice</option>
 			<option value="secondChoice">Second Choice</option>
 			<option value="thirdChoice">Third Choice</option>
 		</select><br />
-			Programmatic: <select cajeta:componentId="selectProgrammatic" /><br />
-			Programmatic With OptGroups: <select cajeta:componentId="selectProgrammaticOption" /><br />
-			Programmatic Multiple: <select cajeta:componentId="selectMultiProgrammatic" multiple /><br />
+			Programmatic: <select componentId="selectProgrammatic" /><br />
+			Programmatic With OptGroups: <select componentId="selectProgrammaticOption" /><br />
+			Programmatic Multiple: <select componentId="selectMultiProgrammatic" multiple /><br />
 		</fieldset>
 		<input type="submit" value="Submit" />
 	</form>
