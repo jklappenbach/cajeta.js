@@ -12,8 +12,9 @@ define([
 
     var form = new Html5.Form({
         componentId: 'testForm',
-        onHtmlSubmit: function() {
-            var myData = Cajeta.theApplication.getModel().getNode('local', 'testForm');
+        modelPath: 'testForm',
+        onSubmit: function() {
+            var myData = Cajeta.theApplication.getModel().get('testForm');
             var ds = Cajeta.Datasource.map['http://localhost:8080/application/users/'];
             ds.post(myData);
             return false;

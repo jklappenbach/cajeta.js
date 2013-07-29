@@ -16,6 +16,27 @@ define(
                 expect(function() { new Cajeta.View.Component(); }).toThrow('Error: Cajeta.View.Component.componentId must be defined');
             });
 
+            it('accepts an html template', function() {
+
+            });
+
+            it('can be added to a page', function() {
+
+            });
+
+            it('can be added as a child to another component', function() {
+            });
+
+            it('can set a model value', function() {
+
+            });
+
+            it('can get a model value', function() {
+
+            });
+
+
+
 //            it('throws an exception when invalid state IDs are submitted', function() {
 //               expect(function() { stateCache.load(10); }).toThrow('Error: Unable to restore state');
 //            });

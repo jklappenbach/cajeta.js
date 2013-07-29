@@ -43,18 +43,20 @@ define([
         license: 'MIT 2013',
         theApplication: null,
         constants: {
-            ERROR_EVENT_ID_UNDEFINED: 'Cajeta.Events.Event.id is undefined',
-            ERROR_AJAX_MODELPATH_UNDEFINED: 'Cajeta.Datasource.Ajax.modelPath must be defined',
-            ERROR_AJAX_DATASOURCEID_UNDEFINED: 'Cajeta.Datasource.Ajax.datasourceId must be defined',
-            ERROR_RESTAJAX_URITEMPLATE_UNDEFINED: 'A "urlTemplate" property must be defined in the constructor',
+            ERROR_EVENT_ID_UNDEFINED: 'Error: Cajeta.Events.Event.id is undefined',
+            ERROR_AJAX_MODELPATH_UNDEFINED: 'Error: Cajeta.Datasource.Ajax.modelPath must be defined',
+            ERROR_AJAX_DATASOURCEID_UNDEFINED: 'Error: Cajeta.Datasource.Ajax.datasourceId must be defined',
+            ERROR_RESTAJAX_URITEMPLATE_UNDEFINED: 'Error: A Cajeta.Datasource.RestAjax.uriTemplate must be defined in properties',
             ERROR_STATECACHE_LOADFAILURE: 'Error: Unable to restore state',
-            ERROR_MODELCACHE_DATASOURCE_UNDEFINED: 'Cajeta.Model.ModelCache.pathMap has no datasource entry for "{0}"',
+            ERROR_MODELCACHE_DATASOURCE_UNDEFINED: 'Error: Cajeta.Model.ModelCache.pathMap has no datasource entry for "{0}"',
             ERROR_MODELCACHE_PATH_UNDEFINED: 'Error: "{0}" could not be resolved to an entry',
             ERROR_MODELADAPTOR_MODELPATH_UNDEFINED: 'Error: modelPath must be defined',
+            ERROR_COMPONENT_MODELADAPTOR_UNDEFINED: 'Error: Cajeta.View.Component.modelAdaptor must be defined for "{0}"',
             ERROR_COMPONENT_COMPONENTID_UNDEFINED: 'Error: Cajeta.View.Component.componentId must be defined',
             ERROR_COMPONENT_INVALIDTEMPLATE: 'Error: Invalid template for "{0}"; must contain an element with a templateId of "{1}"',
-            ERROR_COMPONENT_DOCKFAILURE_UNDEFINED: 'Error: Dock failed, unable to resolve an element with componentId "{0}" in target HTML',
-            ERROR_COMPONENT_DOCKFAILURE_MULTIPLE: 'Error: Dock failed, more than one element was found with componentId "{0}" in target HTML',
+            ERROR_COMPONENT_DOCK_UNDEFINED: 'Error: Dock failed, unable to resolve an element with componentId "{0}" in target HTML',
+            ERROR_COMPONENT_DOCK_MULTIPLE: 'Error: Dock failed, more than one element was found with componentId "{0}" in target HTML',
+            ERROR_MODELADAPTOR_COMPONENT_UNDEFINED: 'Error: Cajeta.View.ModelAdaptor.component must be defined',
             ERROR_APPLICATION_PAGE_UNDEFINED: 'Error: Page "{0}" undefined',
             DEFAULT_PAGETITLE: 'Default Cajeta Page',
             LOCAL_DATASOURCE: 'local'
@@ -439,14 +441,15 @@ define([
         },
 
         /**
-         * Set the value of a node
+         * Sets a node in the model cache.  If datasourceId is ommitted, it will default to LOCAL_DATASOURCE.  If
+         * component is present, it will prevent the notification of an update to the issuing component.
          *
-         * @param datasourceId
-         * @param modelPath
-         * @param value
-         * @param component
+         * @param modelPath The path to the node in the model cache
+         * @param value The value to set
+         * @param datasourceId (optional) The ID of the datasource, defaults to 'local'
+         * @param component (optional) The issuing component, prevent cyclical updates.
          */
-        set: function(modelPath, value, component, datasourceId) {
+        set: function(modelPath, value, datasourceId, component) {
             datasourceId = datasourceId || Cajeta.constants.LOCAL_DATASOURCE;
             // First, remove existing entries for parentpath + key, and all children of value
             var keyIndex = modelPath.lastIndexOf('.');
@@ -462,7 +465,7 @@ define([
             }
 
             this._removePathMapEntries(datasourceId, parentPath, key);
-            this._addPathMapEntries(datasourceId, parentPath, key, value);
+            this._addPathMapEntries(datasourceId, parentPath, key, value, component);
 
             if (this.autoSnapshot == true)
                 this.stateCache.add(this.state);
@@ -509,7 +512,7 @@ define([
 
             // Remove the actual mapping from the parent node, if it exists
             if (parentPath != '') {
-                var dsEntries = this._getSafeMapEntries(datasourceId, this.state.pathMap);
+                var dsEntries = this._getSafeMapEntry(datasourceId, this.state.pathMap);
                 var parent = dsEntries[parentPath];
                 if (parent !== undefined) {
                     delete parent[key];
@@ -601,20 +604,13 @@ define([
         },
 
         /**
-         * Bind a component to the data model, using information from its Cajeta.View.ModelAdaptor assignment.
-         * Changes to the data model (using setters defined here) will result in updates to
-         * 1:* dependent components.
+         * Bind a component to the data model, using information from its Cajeta.View.ModelAdaptor assignment in a
+         * 1:* association.  Changes to the data model (using setters defined here) will result in updates to
+         * dependent components.
          *
-         * Binding involves several different mappings to ensure that a simple bijection between a component and
-         * a model entry can quickly be derived.  First, we store references in the pathMap for the component,
-         * one for the
-         * the component and a complete modelPath (my.path.to.data) in a pathMap variable.  This allows
-         * the framework to quickly check to see if there's any dependencies for data updates for an arbitrary
-         * entry.
-         *
-         * Next, we create a walk for the entry, ensuring that there's a connected graph entry for each
-         * element in the path.
-         *
+         * Information is taken from the Cajeta.View.ModelAdaptor of the component for the modelPath associated with
+         * the component.  If the modelAdaptor does not exist, the component will not be bound to the model.   If
+         * necessary, model nodes will be created to support the path
          *
          * @param component
          */
@@ -622,9 +618,19 @@ define([
             if (component.modelAdaptor !== undefined) {
                 var modelPath = component.modelAdaptor.getModelPath();
                 var datasourceId = component.modelAdaptor.getDatasourceId();
-                var dsEntries = this._getSafeMapEntries(datasourceId, this.componentMap);
-                var components = this._getSafeMapEntries(modelPath, dsEntries);
+                var dsEntries = this._getSafeMapEntry(datasourceId, this.componentMap);
+                var components = this._getSafeMapEntry(modelPath, dsEntries);
                 components[component.getCanonicalId()] = component;
+
+                // Support the path
+                var paths = modelPath.split('.');
+                var parent = this._getSafeMapEntry(datasourceId, this.state.pathMap);
+                for (var path in paths) {
+                    if (parent[path] === undefined) {
+                        parent[path] = {};
+                    }
+                    parent = parent[path];
+                }
             }
         },
 
@@ -648,34 +654,7 @@ define([
         },
 
         /**
-         * Notify the components bound to a node in the model
-         *
-         * @param datasourceId The id of the datasource responsible for this update
-         * @param modelPath The path that was changed
-         * @param committor Optional, passed in to avoid circular calls when changes are authored by components
-         */
-        updateBoundComponents: function(modelPath, committor, datasourceId) {
-            datasourceId = datasourceId || Cajeta.constants.LOCAL_DATASOURCE;
-
-            var dsEntries = this.componentMap[datasourceId];
-            if (dsEntries !== undefined) {
-                var components = dsEntries[modelPath];
-                if (components !== undefined) {
-                    for (var name in components) {
-                        if (name !== undefined) {
-                            var component = components[name];
-                            if (component !== committor)
-                                component.onModelChanged();
-                        } else {
-                            return;
-                        }
-                    }
-                }
-            }
-        },
-
-        /**
-         * Internal method to recursively remove object graphs from the pathMap
+         * @private Internal method to recursively remove object graphs from the pathMap
          *
          * @param datasourceId The datasource ID of the data.
          * @param parentPath The path to the parent of the property to remove.
@@ -711,17 +690,16 @@ define([
         },
 
         /**
-         * Internal method, indexes object graphs added to the model using the pathMap
+         * @private Internal method, indexes object graphs added to the model using the pathMap
          *
          * @param datasourceId
          * @param parentPath
          * @param key
          * @param value
-         * @param componentSource
-         * @private
+         * @param component
          */
-        _addPathMapEntries: function(datasourceId, parentPath, key, value, componentSource) {
-            var dsEntries = this._getSafeMapEntries(datasourceId, this.state.pathMap);
+        _addPathMapEntries: function(datasourceId, parentPath, key, value, component) {
+            var dsEntries = this._getSafeMapEntry(datasourceId, this.state.pathMap);
 
             // Assignments:
             //  1. An assignment of parent:child relationship (if parent exists, which is not guaranteed)
@@ -749,7 +727,7 @@ define([
             if (typeof value !== "string") {
                 for (var name in value) {
                     if (name !== undefined) {
-                        this._addPathMapEntries(datasourceId, modelPath, name, value[name], componentSource);
+                        this._addPathMapEntries(datasourceId, modelPath, name, value[name], component);
                     }
                 }
             }
@@ -760,10 +738,10 @@ define([
                 var components = dsEntries[modelPath];
                 for (var id in components) {
                     if (id !== undefined) {
-                        var component = components[id];
-                        if (component == componentSource)
+                        var cmp = components[id];
+                        if (cmp == component)
                             break;
-                        component.onModelChanged();
+                        cmp.onModelChanged();
                     }
                 }
             }
@@ -777,7 +755,7 @@ define([
          * @param map
          * @return A map node for the datasourceId
          */
-        _getSafeMapEntries: function(datasourceId, map) {
+        _getSafeMapEntry: function(datasourceId, map) {
             var dsEntries = map[datasourceId];
             if (dsEntries === undefined) {
                 dsEntries = new Object();
@@ -804,7 +782,9 @@ define([
             this.datasourceId = this.datasourceId || Cajeta.constants.LOCAL_DATASOURCE;
             if (this.modelPath === undefined)
                 throw Cajeta.constants.ERROR_MODELADAPTOR_MODELPATH_UNDEFINED;
-            this.elementTarget = this.elementTarget || 'value';
+        },
+        setComponent: function(component) {
+            this.component = component;
         },
         getDatasourceId: function() {
             return this.datasourceId;
@@ -813,12 +793,14 @@ define([
             return this.modelPath;
         },
         onModelChanged: function() {
-            var data = Cajeta.theApplication.getModel().get(this.datasourceId, this.modelPath);
-            this.component.setModelValue(data);
+            if (this.component === undefined)
+                throw Cajeta.constants.ERROR_MODELADAPTOR_COMPONENT_UNDEFINED;
+            var data = Cajeta.theApplication.getModel().get(this.modelPath, this.datasourceId);
+            this.component.setModelValue(data, true);
         },
         onComponentChanged: function() {
             var data = this.component.getModelValue();
-            Cajeta.theApplication.getModel().set(this.datasourceId, this.modelPath, data);
+            Cajeta.theApplication.getModel().set(this.modelPath, data, this.datasourceId, this.component);
         }
     });
 
@@ -858,17 +840,15 @@ define([
             this.children = {};
             this.hotKeys = {};
             this.viewStateId = '';
-            this.domEventBound = false;
             this.visible = this.visible || true;
 
             // Default setting for valueTarget
-            this.valueTarget = this.valueTarget || "attr:value"; // Could be attr:*, prop:*, or text (element text)
+            this.modelEncoding = this.modelEncoding || "attr:value"; // Could be attr:*, prop:*, or text (element text)
 
             if (this.modelAdaptor === undefined && this.modelPath !== undefined) {
                 this.modelAdaptor = new Cajeta.View.ModelAdaptor({
                     modelPath: properties.modelPath,
-                    datasourceId: properties.datasourceId,
-                    elementTarget: properties.elementTarget
+                    datasourceId: properties.datasourceId
                 });
                 this.modelAdaptor.component = this;
             } else if (this.modelAdaptor !== undefined) {
@@ -880,7 +860,6 @@ define([
 
             delete this.modelPath;
             delete this.datasourceId;
-            delete this.elementTarget;
         },
 
         /**
@@ -926,7 +905,7 @@ define([
          *
          */
         getModelValue: function() {
-            var params = this.valueTarget.split(':');
+            var params = this.modelEncoding.split(':');
             switch (params[0]) {
                 case 'attr' :
                     return this.attr(params[1]);
@@ -937,8 +916,17 @@ define([
             }
         },
 
-        setModelValue: function(value) {
-            var params = this.valueTarget.split(':');
+        /**
+         * Sets the model value for the component, using the encoding format specified
+         * in the property modelEncoding.  The param internal is optional, and should only
+         * be used by the framework for setting component state in response to model updates,
+         * preventing recursion.
+         *
+         * @param value The value to set.
+         * @param internal (optional) True, if the call is the result of a model change.
+         */
+        setModelValue: function(value, internal) {
+            var params = this.modelEncoding.split(':');
             switch (params[0]) {
                 case 'attr' :
                     this.attr(params[1], value);
@@ -949,6 +937,10 @@ define([
                 case 'text' :
                     this.text(value);
                     break;
+            }
+
+            if (internal === undefined || internal == false) {
+                this.modelAdaptor.onComponentChanged();
             }
         },
 
@@ -1119,6 +1111,8 @@ define([
         },
 
         /**
+         * Add a component as a child.  The component must have a valid id.  It's parent
+         * attribute will be set to the owning component.
          *
          * @param component
          */
@@ -1128,9 +1122,6 @@ define([
                 throw Cajeta.constants.ERROR_COMPONENT_COMPONENTID_UNDEFINED;
             }
             this.children[componentId] = component;
-            if (component.endpointId === undefined) {
-                component.endpointId = this.endpointId;
-            }
             component.parent = this;
         },
 
@@ -1141,6 +1132,7 @@ define([
         removeChild: function(componentId) {
             if (this.children[componentId] !== undefined) {
                 this.children[componentId].undock();
+                delete this.children[componentId].parent;
                 delete this.children[componentId];
             }
         },
@@ -1152,15 +1144,17 @@ define([
             for (var name in this.children) {
                 if (name !== undefined) {
                     this.children[name].undock();
+                    delete this.children[name].parent;
                     delete this.children[name];
                 }
             }
         },
 
         /**
-         * A template may be assigned to a component, which will be used to override
-         * the markup existing in the DOM. If no template has been assigned, the exsting markup
-         * in the DOM will be used.  Templates nodes must be a direct child of the html parent.
+         * A template is a fragment of HTML that is injected into a target element upon docking.
+         * If no template has been assigned, the exsting markup in the DOM will be used.
+         * When a valid DOM element has been created, any preserved attributes are assigned to the
+         * element.
          *
          * @param templateId The ID of the template
          * @param template The template source, may contain many templates.
@@ -1225,9 +1219,9 @@ define([
                 var type = this.getElementType();
                 this.dom = $(type + '[componentid = "' + this.componentId + '"]');
                 if (this.dom.length == 0) {
-                    throw Cajeta.constants.ERROR_COMPONENT_DOCKFAILURE_UNDEFINED.format(this.componentId);
+                    throw Cajeta.constants.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.componentId);
                 } else if (this.dom.length > 1) {
-                    throw Cajeta.constants.ERROR_COMPONENT_DOCKFAILURE_MULTIPLE.format(this.componentId);
+                    throw Cajeta.constants.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.componentId);
                 }
                 if (this.template === undefined) {
                     // Synchronize with any settings made before dock
@@ -1271,7 +1265,6 @@ define([
 
             if (this.isDocked()) {
                 delete this.dom;
-                this.domEventBound = false;
             }
 
             Cajeta.theApplication.getModel().releaseComponent(this);
@@ -1283,7 +1276,7 @@ define([
          * * events.  These include: change, mouseOver, mouseOut, focus, blur, and click.
          */
         bindHtmlEvents: function() {
-            if (this.domEventBound == false) {
+            if (this.dom !== undefined) {
                 for (var name in this) {
                     var index = name.indexOf('onHtml');
                     if (index >= 0) {
@@ -1294,7 +1287,6 @@ define([
                         this.dom.bind(eventName, eventData, Cajeta.View.Component.htmlEventDispatch);
                     }
                 }
-                this.domEventBound = true;
             }
         },
 
@@ -1323,8 +1315,6 @@ define([
                     if (componentId !== undefined)
                         this.children[componentId].render();
                 }
-
-                this.bindHtmlEvents();
 
                 // Disable a default update.  If we have a read triggered, the incoming data should force this.
                 // Otherwise, it overwrites attribute / prop settings that don't need model interaction
@@ -1399,6 +1389,7 @@ define([
      */
     Cajeta.View.Page = Cajeta.View.Component.extend({
         initialize: function(properties) {
+            properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
@@ -1589,7 +1580,7 @@ define([
             try {
                 this.currentPage.render();
             } catch(e) {
-                Console.log(e.message);
+                alert(e);
             }
         },
 

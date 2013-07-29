@@ -27,21 +27,32 @@
  */
 
 define(['jquery', 'cajeta'], function($, Cajeta) {
-    Cajeta.View.Html5 = {};
+    Cajeta.View.Html5 = {
+        author: 'Julian Klappenbach',
+        version: '0.0.1',
+        license: 'MIT 2013',
+        theApplication: null,
+        constants: {
+            ERROR_TABLIST_INVALID_TABENTRY: 'Error: A TabEntry was submitted to tabControl "{0}" with missing attributes.',
+            ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED: 'Error: TabEntry "{0}" submitted to tabControl "{1}" with no template.'
+        }
+    };
 
     Cajeta.View.Html5.Div = Cajeta.View.Component.extend({
         initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
+            properties = properties || {};
+            var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'div';
-            this.valueTarget = 'text';
+            this.modelEncoding = 'text';
         }
     });
 
     Cajeta.View.Html5.UnorderedList = Cajeta.View.Component.extend({
         initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
+            properties = properties || {};
+            var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'ul';
@@ -62,31 +73,34 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
 
     Cajeta.View.Html5.Link = Cajeta.View.Component.extend({
         initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
+            properties = properties || {};
+            var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'a';
-            this.valueTarget = "attr:href";
+            this.modelEncoding = "attr:href";
         }
     });
 
     Cajeta.View.Html5.Span = Cajeta.View.Component.extend({
         initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
+            properties = properties || {};
+            var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'span';
-            this.valueTarget = "text";
+            this.modelEncoding = "text";
         }
     });
 
     Cajeta.View.Html5.Label = Cajeta.View.Component.extend({
         initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
+            properties = properties || {};
+            var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'label';
-            this.valueTarget = 'text';
+            this.modelEncoding = 'text';
         }
     });
 
@@ -95,10 +109,14 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      */
     Cajeta.View.Html5.Input = Cajeta.View.Component.extend({
         initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
+            properties = properties || {};
+            var self = properties.self || this;
             properties.self = self.super;
             this.elementType = 'input';
             self.super.initialize.call(this, properties);
+        },
+        $onHtmlChange: function(event) {
+            this.modelAdaptor.onComponentChanged();
         }
     });
 
@@ -107,12 +125,10 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      */
     Cajeta.View.Html5.TextInput = Cajeta.View.Html5.Input.extend({
         initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
+            properties = properties || {};
+            var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
-        },
-        $onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
         }
     });
 
@@ -122,7 +138,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      */
     Cajeta.View.Html5.RadioInput = Cajeta.View.Html5.Input.extend({
         initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
+            properties = properties || {};
+            var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
         },
@@ -134,6 +151,9 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
             if (this.dom.attr('value') === undefined) {
                 this.dom.attr('value', this.componentId);
             }
+        },
+        $onHtmlChange: function(event) {
+            this.parent.modelAdaptor.onComponentChanged();
         }
     });
 
@@ -142,24 +162,11 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      */
     Cajeta.View.Html5.CheckboxInput = Cajeta.View.Html5.Input.extend({
         initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
+            properties = properties || {};
+            var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
-        },
-        setValue: function(value) {
-            if (this.isDocked())
-                this.dom.prop('checked', value);
-            else
-                this.propChecked = value;
-        },
-        getValue: function() {
-            if (this.isDocked())
-                return this.dom.prop('checked');
-            else
-                return this.propChecked;
-        },
-        $onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
+            this.modelEncoding = 'prop:checked';
         },
         dock: function() {
             var self = (arguments.length > 0) ? arguments[0] : this;
@@ -176,14 +183,15 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      */
     Cajeta.View.Html5.TextArea = Cajeta.View.Component.extend({
         initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
+            properties = properties || {};
+            var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'textarea';
-            this.valueTarget = 'text';
+            this.modelEncoding = 'text';
         },
         $onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
+            this.modelValue.onComponentChanged();
         }
     });
 
@@ -193,10 +201,12 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      */
     Cajeta.View.Html5.Legend = Cajeta.View.Component.extend({
         initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
+            properties = properties || {};
+            var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'legend';
+            this.modelEncoding = 'text';
         }
     });
 
@@ -209,43 +219,35 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      */
     Cajeta.View.Html5.RadioGroup = Cajeta.View.Component.extend({
         initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
+            properties = properties || {};
+            var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
-            if (this.defaultValue !== undefined)
-                this.value = this.defaultValue;
+
         },
-        onModelChanged: function() {
-            this.value =  Cajeta.theApplication.getModel().getByPath(this.modelPath);
-            // iterate through our set of children, looking for the value attribute of children.
-            // The one that matches our current value gets set.
+        getModelValue: function() {
+            var value = null;
+
             for (var name in this.children) {
                 if (name !== undefined) {
-                    if (this.children[name].dom.attr('value') == this.value) {
+                    if (this.children[name].dom.prop('checked') == true) {
+                        value = name;
+                        break;
+                    }
+                }
+            }
+            return value;
+        },
+        setModelValue: function(value, internal) {
+            for (var name in this.children) {
+                if (name !== undefined) {
+                    if (this.children[name].dom.attr('value') == value) {
                         this.children[name].dom.prop('checked', true);
                     }
                 }
             }
-        },
-        onChildChange: function(event) {
-            if (this.modelPath !== undefined) {
-                var value = event.target.getModelValue();
-                if (value === undefined)
-                    throw 'Error: A ComponentGroup change event resulted in an undefined model value.';
-                this.modelAdaptor.onComponentChanged(this.modelPath, value, this);
-            }
-        },
-        bindHtmlEvents: function() {
-            if (this.domEventBound == false) {
-                this.domEventBound = true;
-                var eventData = new Object();
-                eventData['that'] = this;
-                eventData['fnName'] = 'onChildChange';
-                for (var name in this.children) {
-                    if (name !== undefined) {
-                        this.children[name].dom.bind('change', eventData, Cajeta.View.Component.htmlEventDispatch);
-                    }
-                }
+            if (internal === undefined || internal == false) {
+                this.modelAdaptor.onComponentChanged();
             }
         },
         /**
@@ -256,9 +258,8 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                 // Add to the application component map at this point.
                 Cajeta.theApplication.getComponentMap()[this.componentId] = this;
 
-                // Bind the component to the model if we have a valid path
-                if (this.modelPath !== undefined)
-                    Cajeta.theApplication.getModel().bindComponent(this);
+                // Bind the component to the model
+                Cajeta.theApplication.getModel().bindComponent(this);
             }
         }
     });
@@ -270,6 +271,7 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      */
     Cajeta.View.Html5.Select = Cajeta.View.Component.extend({
         initialize: function(properties) {
+            properties = properties || {};
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
             this.elementType = 'select';
@@ -321,13 +323,14 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                 }
             }
         },
+        // TODO Figure out what you were doing here!!!
         multiple: function(value) {
             if (value === undefined) {
                 return (!this.isDocked()) ? this.attrMultiple : (this.dom.attr('multiple') !== undefined);
             } else {
-                this.propMultiple = multiple;
+                this.propMultiple = this.multiple;
                 if (this.isDocked())
-                    this.dom.prop('multiple', multiple);
+                    this.dom.prop('multiple', this.multiple);
             }
         },
         selectedIndex: function(value) {
@@ -372,13 +375,20 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
 
             }
         },
-        getValue: function() {
+        getModelValue: function() {
             return this.selectedIndex();
         },
 
+        setModelValue: function(value, internal) {
+            this.selectedIndex(value);
+
+            if (internal === undefined || internal == false) {
+                this.modelAdaptor.onComponentChanged();
+            }
+        },
+
         $onHtmlChange: function(event) {
-            // TODO Need to fix this, so that it works with a model adaptor.  Perhaps we need a special MA!
-            Cajeta.theApplication.getModel().setNode(this.modelPath, this.getValue(), this);
+            this.modelAdaptor.onComponentChanged();
         }
     });
 
@@ -387,11 +397,12 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      */
     Cajeta.View.Html5.Image = Cajeta.View.Component.extend({
         initialize: function(properties) {
+            properties = properties || {};
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'img';
-            this.valueTarget = 'attr:src';
+            this.modelEncoding = 'attr:src';
         },
         dock: function() {
             if (!this.isDocked()) {
@@ -399,25 +410,12 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                 self.super.dock.call(this, self.super);
 
             }
-        },
-        getValue: function() {
-            if (this.isDocked()) {
-                return this.dom.attr('src');
-            } else {
-                return this.attrSrc;
-            }
-        },
-        setValue: function(value) {
-            if (this.isDocked()) {
-                this.dom.attr('src', value);
-            } else {
-                this.attrSrc = value;
-            }
         }
     });
 
     Cajeta.View.Html5.TabList = Cajeta.View.Html5.UnorderedList.extend({
         initialize: function(properties) {
+            properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
@@ -454,11 +452,19 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
                 }
             }
         },
+        /**
+         * We add tab entries as children, but they're not represented as unique, docked elements.
+         * Instead, we append each child to the same content element, and use CSS to toggle between
+         * visible and hidden states.
+         *
+         * @param tabEntry
+         */
         addChild: function(tabEntry) {
             if (tabEntry.component === undefined || tabEntry.title === undefined)
-                throw 'Invalid tabEntry submitted to tabControl "' + this.componentId + '".';
+                throw Cajeta.View.Html5.constants.ERROR_TABLIST_INVALID_TABENTRY.format(this.componentId);
             if (tabEntry.component.template === undefined)
-                throw 'Only components with valid templates may be used as tab children.';
+                throw Cajeta.View.Html5.constants.ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED.format(
+                    tabEntry.component.componentId, this.componentId);
 
             // We set the contentId to dock using existing logic
             this.tabEntries.push(tabEntry);
@@ -483,7 +489,6 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
 
             this.cssClassMap = cssClassMap;
         },
-
         $onTabClick: function(event) {
             var index = event.data['index'];
             //console.log("Selected index was " + index);
@@ -500,10 +505,14 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
      */
     Cajeta.View.Html5.Form = Cajeta.View.Component.extend({
         initialize: function(properties) {
+            properties = properties || {};
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'form';
+        },
+        onSubmit: function() {
+            
         }
     });
 
