@@ -3,7 +3,7 @@
 
 
 // base path, that will be used to resolve files and exclude
-basePath = '';
+baseUrl = '/';
 
 
 // list of files / patterns to load in the browser
@@ -12,21 +12,22 @@ files = [
   JASMINE_ADAPTER,
   REQUIRE,
   REQUIRE_ADAPTER,
-  { pattern: 'site/**/*.js', included: false },
-  { pattern: 'test/spec/**/*Spec.js', included: false },
-  'test/test-main.js'
+  { pattern: '**/*.js', included: false },
+  { pattern: '**/*.html', included: false },
+  { pattern: '../test/spec/**/*Spec.js', included: false },
+  '../test/test-main.js'
 ];
 
 
 // list of files to exclude
 exclude = [
-  'site/main.js'
+  './main.js'
 ];
 
 
 // test results reporter to use
 // possible values: 'dots', 'progress', 'junit'
-reporters = ['progress', 'dots', 'junit', 'growl', 'coverage'];
+reporters = ['progress', 'dots', 'junit', 'growl'];
 
 
 // web server port

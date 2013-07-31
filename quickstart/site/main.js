@@ -9,8 +9,6 @@ requirejs.config({
         'cajetaHtml5': 'lib/cajeta/cajeta.html5',
         'cajetaSvg': 'lib/cajeta/cajeta.html5.svg',
         'text': 'lib/require/plugin/text',
-        'order': 'lib/require/plugin/order',
-        'depend': 'lib/require/plugin/depend',
         'application': 'app/application',
         'homePage': 'app/view/home/homePage',
         'accountView': 'app/view/account/account',

@@ -9,7 +9,7 @@ for (var file in window.__karma__.files) {
 
 requirejs.config({
     // Karma serves files from '/base'
-    baseUrl: '/base/site',
+    baseUrl: '/base',
 
     paths: {
         'jquery': 'lib/jquery/jquery',
@@ -20,8 +20,11 @@ requirejs.config({
         'cajetaHtml5': 'lib/cajeta/cajeta.html5',
         'cajetaSvg': 'lib/cajeta/cajeta.html5.svg',
         'text': 'lib/require/plugin/text',
-        'order': 'lib/require/plugin/order',
-        'depend': 'lib/require/plugin/depend'
+        'application': 'app/application',
+        'homePage': 'app/view/home/homePage',
+        'accountView': 'app/view/account/account',
+        'formExampleDiv': 'app/view/home/formExampleDiv',
+        'serverInteractionDiv': 'app/view/home/serverInteractionDiv'
     },
 
     // ask Require.js to load these files (all our tests)

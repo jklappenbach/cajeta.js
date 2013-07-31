@@ -3,8 +3,10 @@ define(
     function(Cajeta, $) {
         // First test classes and extend functionality
         return describe('Cajeta.Model.ModelCache', function() {
+            if (Cajeta.theApplication == null)
+                Cajeta.theApplication = new Cajeta.Application();
 
-            var modelCache = null;
+            var modelCache = Cajeta.theApplication.model;
             var dataGraph = {
                 one: 'one',
                 two: 'two',
@@ -51,51 +53,51 @@ define(
             };
 
             var component = new Cajeta.View.Component({
-                componentId: 'test',
-                modelPath: 'testData.childTwo.ten',
+                componentId: 'test3',
+                modelPath: 'graphData.childTwo.ten',
                 modelChanged: false,
-                onModelChanged: function() {
+                setModelValue: function() {
                     this.modelChanged = true;
                 }
             });
 
-
-            it('can instantiate with no arguments', function() {
-                modelCache = new Cajeta.Model.ModelCache();
+            it('is instantiated by the application with functional defaults', function() {
                 expect(modelCache).not.toBeNull();
                 expect(modelCache.getStateId()).toEqual(0);
             });
 
             it('can set data at root node, without a component reference', function() {
-                modelCache.set('testData', dataGraph);
+                Cajeta.theApplication.model.set('dataGraph', dataGraph);
             });
 
             it('can get data from a root path', function() {
-                var data = modelCache.get('testData');
+                var data = Cajeta.theApplication.model.get('dataGraph');
                 expect(data).toEqual(dataGraph);
             });
 
             it('can get data from an arbitrary path', function() {
-                var data = modelCache.get('testData.childOne');
+                var data = Cajeta.theApplication.model.get('dataGraph.childOne');
                 expect(data).toEqual({ four: 'four', five: 'five', six: 'six' });
             });
 
             it('can store data off an existing node', function() {
-                modelCache.set('testData.childOne.subdata', subdata);
-                expect(modelCache.get('testData')).toEqual(subresult);
+                modelCache.set('dataGraph.childOne.subdata', subdata);
+                expect(modelCache.get('dataGraph')).toEqual(subresult);
             });
 
             it('throws an exception when a get request can not be mapped to a datasource', function() {
-                expect(function() { var data = modelCache.get('testData', 'invalidDs'); }).toThrow();
+                expect(function() { var data = modelCache.get('dataGraph', 'invalidDs'); }).toThrow();
             });
 
             it('returns [undefined] when a request can not be mapped to a valid entry', function() {
-                expect(modelCache.get('invalid.path')).not.toBeDefined();
+                expect(function() { modelCache.get('invalid.path') }).toThrow();
             });
 
             it('can remove data at an existing path', function() {
-                modelCache.remove('testData.childOne.subdata');
-                expect(modelCache.get('testData')).toEqual({
+                //alert(JSON.stringify(modelCache.get('dataGraph')));
+                modelCache.remove('dataGraph.childOne.subdata');
+                //alert(JSON.stringify(modelCache.get('dataGraph')));
+                expect(modelCache.get('dataGraph')).toEqual({
                     one: 'one',
                     two: 'two',
                     three: 'three',
@@ -115,33 +117,35 @@ define(
 
             it('can clear all data', function() {
                 modelCache.clearAll();
-                expect(modelCache.get('testData')).not.toBeDefined();
+                expect(function() { modelCache.get('dataGraph') }).toThrow();
             });
 
-            it('can bind a component to an object, signaling after binding', function() {
-                modelCache.bindComponent(component);
-                modelCache.set('testData', dataGraph);
-                expect(component.modelChanged).toBeTruthy();
-            });
-
-            it('can remove a component from binding', function() {
-                component.modelChanged = false;
-                modelCache.releaseComponent(component);
-                modelCache.set('testData', dataGraph);
-                expect(component.modelChanged).not.toBeTruthy();
-            });
-
+            // TODO: convert this to listeners
+//            it('can bind a component to an object, signaling after binding', function() {
+//                modelCache.bindComponent(component);
+//                modelCache.set('testData', dataGraph);
+//                expect(component.modelChanged).toBeTruthy();
+//            });
+//
+//            it('can remove a component from binding', function() {
+//                component.modelChanged = false;
+//                modelCache.releaseComponent(component);
+//                modelCache.set('testData', dataGraph);
+//                expect(component.modelChanged).toBeFalsy();
+//            });
+//
             it('can save a state', function() {
+                modelCache.set('dataGraph', dataGraph);
                 expect(modelCache.saveState()).toEqual(0);
-                modelCache.set('testData.childOne.subdata', subdata);
+                modelCache.set('dataGraph.childOne.subdata', subdata);
                 expect(modelCache.saveState()).toEqual(1);
-                modelCache.set('testData.childTwo.subdata', subdata);
+                modelCache.set('dataGraph.childTwo.subdata', subdata);
                 expect(modelCache.saveState()).toEqual(2);
             });
 
             it('can restore a state', function() {
                 modelCache.loadState(0);
-                expect(modelCache.get('testData')).toEqual({
+                expect(modelCache.get('dataGraph')).toEqual({
                     one: 'one',
                     two: 'two',
                     three: 'three',

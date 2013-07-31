@@ -5,10 +5,6 @@ define(
         return describe('Cajeta.Datasource Tests', function() {
             it('executes rest calls', function() {
             });
-
-
-            it('supports inheritance', function() {
-            });
         });
     }
 );

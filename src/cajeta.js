@@ -48,7 +48,6 @@ define([
             ERROR_AJAX_DATASOURCEID_UNDEFINED: 'Error: Cajeta.Datasource.Ajax.datasourceId must be defined',
             ERROR_RESTAJAX_URITEMPLATE_UNDEFINED: 'Error: A Cajeta.Datasource.RestAjax.uriTemplate must be defined in properties',
             ERROR_STATECACHE_LOADFAILURE: 'Error: Unable to restore state',
-            ERROR_MODELCACHE_DATASOURCE_UNDEFINED: 'Error: Cajeta.Model.ModelCache.pathMap has no datasource entry for "{0}"',
             ERROR_MODELCACHE_PATH_UNDEFINED: 'Error: "{0}" could not be resolved to an entry',
             ERROR_MODELADAPTOR_MODELPATH_UNDEFINED: 'Error: modelPath must be defined',
             ERROR_COMPONENT_MODELADAPTOR_UNDEFINED: 'Error: Cajeta.View.Component.modelAdaptor must be defined for "{0}"',
@@ -60,7 +59,16 @@ define([
             ERROR_APPLICATION_PAGE_UNDEFINED: 'Error: Page "{0}" undefined',
             DEFAULT_PAGETITLE: 'Default Cajeta Page',
             LOCAL_DATASOURCE: 'local'
+        },
+        safeEntry: function(key, map) {
+            var entry = map[key];
+            if (entry === undefined) {
+                entry = {};
+                map[key] = entry;
+            }
+            return entry;
         }
+
     };
 
     // Adding a proper String.format method
@@ -114,17 +122,24 @@ define([
     };
 
 
-    Cajeta.Events = {};
+    Cajeta.Events = {
+        MODELCACHE_CHANGED: 'MODELCACHE_CHANGED'
+    };
 
     Cajeta.Events.Event = Cajeta.Class.extend({
+
         initialize: function(properties) {
-            if (properties !== undefined)
-                $.extend(true, this, properties);
+            properties = properties || {};
+            $.extend(true, this, properties);
             if (this.id === undefined)
                 throw Cajeta.constants.ERROR_EVENT_ID_UNDEFINED;
         },
         getId: function() {
             return this.id;
+        },
+        getEventKey: function() {
+            var key = this.op === undefined ? this.id : this.id + ':' + this.op;
+            return key;
         },
         getData: function() {
             return this.data;
@@ -133,28 +148,37 @@ define([
 
     Cajeta.Events.EventDispatch = Cajeta.Class.extend({
         initialize: function(properties) {
-            if (properties !== undefined)
-                $.extend(true, this, properties);
+            $.extend(true, this, properties);
             this.eventListenerMap = {};
         },
-        dispatchEvent: function(event) {
-            var listeners = this.eventListenerMap[event.getId()];
+        /**
+         * Dispatch an event, with the provision of a
+         * @param event
+         * @param ignore
+         */
+        dispatchEvent: function(event, ignore) {
+            var listeners = this.eventListenerMap[event.getEventKey()];
             if (listeners !== undefined) {
                 for (var listenerId in listeners) {
                     if (listenerId !== undefined) {
                         var listener = listeners[listenerId];
-                        listener.onEvent(event);
+                        if (listener != ignore)
+                            listener.onEvent(event);
                     }
                 }
             }
         },
-        addListener: function(eventId, listener) {
-            var listeners = this.eventListenerMap[eventId];
-            if (listeners === undefined) {
-                listeners = {};
-                this.eventListenerMap[eventId] = listeners;
-            }
-
+        /**
+         * Add a listener for specific events
+         * @param listener The listener target to be called upon an event
+         * @param eventId The eventId, required to
+         * @param operand (optional) Some events have an operand that can be used as criteria
+         */
+        addListener: function(listener, eventId, operand) {
+            if (listener === undefined || eventId === undefined)
+                throw 'Error: invalid registration parameters for Cajeta.Events.EventDispatch.addListener';
+            var key = operand === undefined ? eventId : eventId + ':' + operand;
+            var listeners = Cajeta.safeEntry(key, this.eventListenerMap);
             listeners[listener.getId()] = listener;
         },
         removeListener: function(eventId, listener) {
@@ -162,6 +186,19 @@ define([
             if (listeners !== undefined) {
                 delete listeners[listener.getId()];
             }
+        }
+    });
+
+    /**
+     * Abstract base class
+     * @type {*}
+     */
+    Cajeta.Events.Listener = Cajeta.Class.extend({
+        getId: function() {
+            throw 'Error: unimplemented';
+        },
+        onEvent: function(event) {
+            throw 'Error: unimplemented';
         }
     });
 
@@ -411,18 +448,18 @@ define([
      * logic of that data to components, however they see fit.  The important
      *      *
      */
-    Cajeta.Model.ModelCache = Cajeta.Class.extend({
+    Cajeta.Model.ModelCache = Cajeta.Events.EventDispatch.extend({
         /**
          * @param properties
          */
         initialize: function(properties) {
             properties = properties || {};
-            $.extend(this, properties);
+            var self = properties.self || this;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
 
-            this.state = this.state || {};
             this.componentMap = this.componentMap || {};
-            this.state.pathMap = this.state.pathMap || {};
-            this.state.pathMap[Cajeta.constants.LOCAL_DATASOURCE] = this.state.pathMap[Cajeta.constants.LOCAL_DATASOURCE] || {};
+            this.nodeMap = this.nodeMap || {};
             this.stateCache = this.stateCache || new Cajeta.Model.StateCache();
 
             // First, see if we've been initialized with a desired stateId.  If not,
@@ -451,27 +488,40 @@ define([
          */
         set: function(modelPath, value, datasourceId, component) {
             datasourceId = datasourceId || Cajeta.constants.LOCAL_DATASOURCE;
-            // First, remove existing entries for parentpath + key, and all children of value
-            var keyIndex = modelPath.lastIndexOf('.');
-            var parentPath = null;
-            var key = null;
+            modelPath = datasourceId + ':' + modelPath;
 
-            if (keyIndex >= 0) {
-                parentPath = modelPath.substring(0, keyIndex);
-                key = modelPath.substring(keyIndex + 1);
-            } else {
-                parentPath = null;
+            // Find out if we have a single key, or a walk, and populate the map
+            // if necessary to support the parent
+            var index = modelPath.lastIndexOf('.');
+            var key = null, node = null, parentPath = null;
+            if (index >= 0) {
+                parentPath = modelPath.substring(0, index);
+                key = modelPath.substring(index + 1);
+                var paths = modelPath.substring(0, index).split('.');
+                node = this.nodeMap;
+                for (var pathKey in paths) {
+                    node = Cajeta.safeEntry(paths[pathKey], node);
+                }
+//                node = this.nodeMap[parentPath];
+            } else  {
                 key = modelPath;
+                node = this.nodeMap;
             }
 
-            this._removePathMapEntries(datasourceId, parentPath, key);
-            this._addPathMapEntries(datasourceId, parentPath, key, value, component);
+            // Then remove the indexes on child nodes of the element to be replaced
+            this._removeNodeMapEntries(modelPath, node);
 
+            node[key] = value;
+
+            // And index the children of the new value
+            this._addNodeMapEntries(modelPath, value, component);
+
+            // Take a snapshot if we have auto set
             if (this.autoSnapshot == true)
                 this.stateCache.add(this.state);
 
-            if (this.theApplication !== undefined)
-                this.theApplication.onModelChanged();
+            // And send out a general notification on model changed.
+            this.dispatchEvent(new Cajeta.Events.Event({ id: Cajeta.Events.MODELCACHE_CHANGED }));
         },
 
         /**
@@ -481,12 +531,11 @@ define([
          * @return {*}
          */
         get: function(modelPath, datasourceId) {
-            datasourceId = datasourceId || Cajeta.constants.LOCAL_DATASOURCE;
-            var dsEntries = this.state.pathMap[datasourceId];
-            if (dsEntries === undefined)
-                throw Cajeta.constants.ERROR_MODELCACHE_DATASOURCE_UNDEFINED.format(datasourceId);
-
-            return dsEntries[modelPath];
+            modelPath = (datasourceId || Cajeta.constants.LOCAL_DATASOURCE) + ':' + modelPath;
+            var node = this.nodeMap[modelPath];
+            if (node === undefined)
+                throw Cajeta.constants.ERROR_MODELCACHE_PATH_UNDEFINED.format(modelPath);
+            return node;
         },
 
         /**
@@ -497,62 +546,32 @@ define([
          */
         remove: function(modelPath, datasourceId) {
             datasourceId = datasourceId || Cajeta.constants.LOCAL_DATASOURCE;
-            var keyIndex = modelPath.lastIndexOf('.');
-            var parentPath = null;
-            var key = null;
+            modelPath = datasourceId + ':' + modelPath;
 
-            if (keyIndex >= 0) {
-                parentPath = modelPath.substring(0, keyIndex);
-                key = modelPath.substring(keyIndex + 1);
-            } else {
-                parentPath = null;
-                key = modelPath;
-            }
-            this._removePathMapEntries(datasourceId, modelPath);
-
-            // Remove the actual mapping from the parent node, if it exists
-            if (parentPath != '') {
-                var dsEntries = this._getSafeMapEntry(datasourceId, this.state.pathMap);
-                var parent = dsEntries[parentPath];
-                if (parent !== undefined) {
-                    delete parent[key];
+            if (this.nodeMap[modelPath] !== undefined) {
+                var index = modelPath.lastIndexOf('.');
+                var parent, key;
+                if (index >= 0) {
+                    parent = this.nodeMap[modelPath.substring(0, index)];
+                    key = modelPath.substring(index + 1);
+                } else {
+                    parent = this.nodeMap[modelPath];
+                    key = modelPath;
                 }
+
+                this._removeNodeMapEntries(modelPath, this.nodeMap[modelPath])
+                delete parent[key];
             }
 
-            if (this.theApplication !== undefined)
-                this.theApplication.onModelChanged();
+            var event = new Cajeta.Events.Event({ id: Cajeta.Events.MODELCACHE_CHANGED });
+            this.dispatchEvent(event);
         },
 
         /**
          * Clear all entries from the map
          */
         clearAll: function() {
-            this.state = {};
-            this.state.pathMap = {};
-            this.state.pathMap[Cajeta.constants.LOCAL_DATASOURCE] = {};
-            this.componentMap = {};
-            this.componentMap[Cajeta.constants.LOCAL_DATASOURCE] = {};
-        },
-
-        /**
-         * TODO: Establish if this is needed / saves time
-         * This method is designed to be called by components that have updated their internal DOM values, and their
-         * state needs to be mirrored in the corresponding model.  This method will use the internal state of the
-         * component's ModelAdaptor for the list of arguments to provide to update(datasourceId, key, value).
-         *
-         * In addition, this method will use the provided component as an argument to updateBoundComponents to prevent
-         * reduntant updates.
-         *
-         * @param component
-         */
-        setByComponent: function(component) {
-            var paths = component.getModelAdaptor().split('.');
-            var parentPath = null;
-            for (var i = 0; i < paths.length - 2; i++) {
-                parentPath = (parentPath == null ? paths[i] : parentPath + '.' + paths[i]);
-            }
-            this.set(parentPath, paths[paths.length - 1],
-                component.getValue(), component, component.getModelAdaptor().getDatasourceId());
+            this.nodeMap = {};
         },
 
         getStateId: function() {
@@ -566,7 +585,7 @@ define([
          * @return The new stateId
          */
         saveState: function() {
-            return this.stateCache.add(this.state);
+            return this.stateCache.add(this.nodeMap);
         },
 
         /**
@@ -581,22 +600,19 @@ define([
             if (stateId == this.stateCache.getStateId())
                 return;
 
-            this.state = this.stateCache.load(stateId);
+            this.nodeMap = this.stateCache.load(stateId);
 
-            // Now notify all the things...
-            for (var dsName in this.componentMap) {
-                if (dsName !== undefined) {
-                    var dsEntries = this.componentMap[dsName];
-                    if (dsEntries !== undefined) {
-                        for (var modelPath in dsEntries[dsName]) {
-                            if (modelPath !== undefined) {
-                                for (var componentId in dsEntries[modelPath]) {
-                                    var component = dsEntries[modelPath][componentId];
-                                    if (component !== undefined) {
-                                        component.onModelChanged();
-                                    }
-                                }
-                            }
+            // Now, notify all the things...
+            for (var eventKey in this.eventListenerMap) {
+                if (eventKey !== undefined) {
+                    var event = new Cajeta.Events.Event({
+                        id: Cajeta.Events.MODELCACHE_CHANGED,
+                        op: eventKey
+                    });
+                    var listeners = this.eventListenerMap[eventKey];
+                    for (var listenerId in listeners) {
+                        if (listenerId !== undefined) {
+                            listener.onEvent(event);
                         }
                     }
                 }
@@ -604,166 +620,65 @@ define([
         },
 
         /**
-         * Bind a component to the data model, using information from its Cajeta.View.ModelAdaptor assignment in a
-         * 1:* association.  Changes to the data model (using setters defined here) will result in updates to
-         * dependent components.
+         * A helper override to simplify listenership.  It makes much more sense to have
+         * modelAdaptors listen to model events.  However, for registration, it's easier to
+         * just pass in a component.
          *
-         * Information is taken from the Cajeta.View.ModelAdaptor of the component for the modelPath associated with
-         * the component.  If the modelAdaptor does not exist, the component will not be bound to the model.   If
-         * necessary, model nodes will be created to support the path
-         *
-         * @param component
+         * @param listener The listener to register for an event.
+         * @param eventId The id of the event.
+         * @param eventOp (optional) The operand to filter the event.
          */
-        bindComponent: function(component) {
-            if (component.modelAdaptor !== undefined) {
-                var modelPath = component.modelAdaptor.getModelPath();
-                var datasourceId = component.modelAdaptor.getDatasourceId();
-                var dsEntries = this._getSafeMapEntry(datasourceId, this.componentMap);
-                var components = this._getSafeMapEntry(modelPath, dsEntries);
-                components[component.getCanonicalId()] = component;
-
-                // Support the path
-                var paths = modelPath.split('.');
-                var parent = this._getSafeMapEntry(datasourceId, this.state.pathMap);
-                for (var path in paths) {
-                    if (parent[path] === undefined) {
-                        parent[path] = {};
-                    }
-                    parent = parent[path];
-                }
+        addListener: function(listener, eventId, eventOp) {
+            if (listener instanceof Cajeta.View.Component) {
+                listener = listener.modelAdaptor;
             }
+            var self = (arguments.length > 3) ? arguments[3] : this;
+            self.super.addListener.call(this, listener, eventId, eventOp);
         },
 
         /**
-         * Release the component.  Components are released, by default, when they are undocked from
-         * the DOM to prevent unnecessary updates
+         * @private Internal method to recursively remove object graphs from the nodeMap
          *
-         * @param component  The component to unbind from the model
+         * @param modelPath The current model path to delete.
+         * @param node The current node for recursion
          */
-        releaseComponent: function(component) {
-            if (component.modelAdaptor !== undefined) {
-                var datasourceId = component.modelAdaptor.getDatasourceId();
-                var modelPath = component.modelAdaptor.getModelPath();
-                var dsEntries = this.componentMap[datasourceId];
-                if (dsEntries !== undefined) {
-                    var components = dsEntries[modelPath];
-                    if (components !== undefined)
-                        delete components[component.getCanonicalId()];
-                }
-            }
-        },
-
-        /**
-         * @private Internal method to recursively remove object graphs from the pathMap
-         *
-         * @param datasourceId The datasource ID of the data.
-         * @param parentPath The path to the parent of the property to remove.
-         * @param key The key of the property to remove
-         */
-        _removePathMapEntries: function(datasourceId, parentPath, key) {
-            var dsEntries = this.state.pathMap[datasourceId];
-            if (dsEntries === undefined)
-                return;
-
-            var parent;
-
-            if (parentPath != null) {
-                parent = dsEntries[parentPath]
-            } else {
-                parent = dsEntries;
-            }
-
-            if (parent === undefined)
-                return;
-
-            var value = parent[key];
-            if (value !== undefined) {
-                if (!(value instanceof String)) {
-                    for (var name in value) {
-                        if (name !== undefined) {
-                            this._removePathMapEntries(datasourceId, parentPath + '.' + key, name);
-                        }
+        _removeNodeMapEntries: function(modelPath, node) {
+            if (typeof node != 'string' && typeof node != 'String') {
+                for (var name in node) {
+                    if (name !== undefined) {
+                        this._removeNodeMapEntries(modelPath + '.' + name, node[name]);
                     }
                 }
-                delete parent[key];
             }
+            delete this.nodeMap[modelPath];
         },
 
         /**
          * @private Internal method, indexes object graphs added to the model using the pathMap
          *
-         * @param datasourceId
-         * @param parentPath
-         * @param key
-         * @param value
-         * @param component
+         * @param modelPath The model path of the map in the current frame.
+         * @param value A node in the object graph to add, algorithm will recurse to all leaves.
+         * @param component Used to prevent cycles in update notification
          */
-        _addPathMapEntries: function(datasourceId, parentPath, key, value, component) {
-            var dsEntries = this._getSafeMapEntry(datasourceId, this.state.pathMap);
-
-            // Assignments:
-            //  1. An assignment of parent:child relationship (if parent exists, which is not guaranteed)
-            var parent;
-            var modelPath;
-            if (parentPath != null) {
-                parent = dsEntries[parentPath];
-                modelPath = parentPath + '.' + key;
-            } else {
-                parent = dsEntries;
-                modelPath = key;
-            }
-
-            if (parent === undefined)
-                throw Cajeta.constants.ERROR_MODELCACHE_PATH_UNDEFINED.format(modelPath);
-
-            parent[key] = value;
-
-            // 2. As assignment of the value in the full modelPath map
-            dsEntries[modelPath] = value;
-
-            // Now, iterate through the children mapped by this node, and see if we have a mapped
-            // component to update.  Also, if the object is not a string (contains children),
-            // recurse.
+        _addNodeMapEntries: function(modelPath, value, component) {
+            this.nodeMap[modelPath] = value;
             if (typeof value !== "string") {
                 for (var name in value) {
                     if (name !== undefined) {
-                        this._addPathMapEntries(datasourceId, modelPath, name, value[name], component);
+                        this.nodeMap[modelPath + '.' + name] = value[name];
+                        this._addNodeMapEntries(modelPath + '.' + name, value[name], component);
                     }
                 }
             }
 
-            // Notify any components bound to this modelPath
-            dsEntries = this.componentMap[datasourceId];
-            if (dsEntries !== undefined) {
-                var components = dsEntries[modelPath];
-                for (var id in components) {
-                    if (id !== undefined) {
-                        var cmp = components[id];
-                        if (cmp == component)
-                            break;
-                        cmp.onModelChanged();
-                    }
-                }
-            }
-        },
-
-        /**
-         * An internal, safe method for accessing a map for the base, datasource entry.  If the ds entry
-         * does not exist, one is populated and returned.  May be used for both pathMap and componentMap.
-         *
-         * @param datasourceId
-         * @param map
-         * @return A map node for the datasourceId
-         */
-        _getSafeMapEntry: function(datasourceId, map) {
-            var dsEntries = map[datasourceId];
-            if (dsEntries === undefined) {
-                dsEntries = new Object();
-                map[datasourceId] = dsEntries;
-            }
-            return dsEntries;
+            // And notify any components bound to this modelPath...
+            var ignore = component === undefined ? undefined : component.modelAdaptor;
+            this.dispatchEvent(new Cajeta.Events.Event({
+                    id: Cajeta.Events.MODELCACHE_CHANGED,
+                    op: modelPath
+                }), ignore
+            );
         }
-
     });
 
     Cajeta.View = {
@@ -776,12 +691,16 @@ define([
      * This class maintains variables that resolve (and bind) a component to a model entry.
      * Component.setModelAdaptor.
      */
-    Cajeta.View.ModelAdaptor = Cajeta.Class.extend({
+    Cajeta.View.ModelAdaptor = Cajeta.Events.Listener.extend({
         initialize: function(properties) {
+            properties = properties || {};
             $.extend(this, properties, true);
             this.datasourceId = this.datasourceId || Cajeta.constants.LOCAL_DATASOURCE;
             if (this.modelPath === undefined)
                 throw Cajeta.constants.ERROR_MODELADAPTOR_MODELPATH_UNDEFINED;
+        },
+        getId: function() {
+            return this.component.getCanonicalId();
         },
         setComponent: function(component) {
             this.component = component;
@@ -792,14 +711,24 @@ define([
         getModelPath: function() {
             return this.modelPath;
         },
-        onModelChanged: function() {
+        /**
+         * Handles ModelCache change events, applying new data to the component and html.
+         * Override this for additional functionality
+         *
+         * @param event The event containing updated data
+         */
+        onEvent: function(event) {
             if (this.component === undefined)
                 throw Cajeta.constants.ERROR_MODELADAPTOR_COMPONENT_UNDEFINED;
-            var data = Cajeta.theApplication.getModel().get(this.modelPath, this.datasourceId);
-            this.component.setModelValue(data, true);
+            if (event.getId() == Cajeta.Events.MODELCACHE_CHANGED) {
+                this.component.setModelValue(event.getData(), true);
+            }
         },
-        onComponentChanged: function() {
-            var data = this.component.getModelValue();
+        getEventKey: function() {
+            return this.datasourceId + ':' + this.modelPath;
+        },
+        onComponentChanged: function(data) {
+            data = data || this.component.getModelValue();
             Cajeta.theApplication.getModel().set(this.modelPath, data, this.datasourceId, this.component);
         }
     });
@@ -940,7 +869,7 @@ define([
             }
 
             if (internal === undefined || internal == false) {
-                this.modelAdaptor.onComponentChanged();
+                this.modelAdaptor.onComponentChanged(value);
             }
         },
 
@@ -1160,7 +1089,6 @@ define([
          * @param template The template source, may contain many templates.
          */
         setTemplate: function(templateId, template) {
-            this.domEventBound = false;
             var temp = $(template);
             if (temp.length > 0) {
                 for (var i = 0; i < temp.length; i++) {
@@ -1245,12 +1173,11 @@ define([
 
                 // Finally, ensure we have assigned the component ID to the fragment
                 this.attr('componentId', this.componentId);
+                Cajeta.theApplication.model.addListener(this.modelAdaptor, Cajeta.Events.MODELCACHE_CHANGED,
+                    this.modelAdaptor.getEventKey());
 
                 // Add to the application component map at this point.
                 Cajeta.theApplication.getComponentMap()[this.componentId] = this;
-
-                // Bind the component to the model
-                Cajeta.theApplication.getModel().bindComponent(this);
             }
         },
 
@@ -1306,7 +1233,6 @@ define([
          */
         render: function() {
             if (this.visible == true) {
-                Cajeta.theApplication.getModel().bindComponent(this);
 
                 // Dock starting from the top of the hierarchy down, then render children...
                 this.dock.call(this);
@@ -1323,24 +1249,6 @@ define([
             } else {
                 if (this.template != undefined) {
                     this.dom.hide();
-                }
-            }
-        },
-
-        /**
-         *
-         */
-        reset: function() {
-
-        },
-
-        /**
-         *
-         */
-        onModelChanged: function() {
-            if (this.isDocked()) {
-                if (this.modelAdaptor !== undefined) {
-                    this.modelAdaptor.onModelChanged();
                 }
             }
         },
@@ -1363,14 +1271,6 @@ define([
                     stateId += ':' + childState;
             }
             return stateId;
-        },
-
-        /**
-         *
-         * @param viewState
-         */
-        setViewStateId: function(viewState) {
-
         }
     });
 
@@ -1580,7 +1480,7 @@ define([
             try {
                 this.currentPage.render();
             } catch(e) {
-                alert(e);
+                //Cajeta.log.error(e);
             }
         },
 

@@ -501,15 +501,26 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
     });
 
     /**
+     * A form element, acting as a container for form elements.  Setting autoPath to true will cause the
+     * form's addChild logic to modify the modelPath of children, creating a single hierachy.  For example,
+     * if the form had the modelPath of "form", and a child was added the following logic will be executed:
      *
+     *  1.  If there's no modelPath on the form element, the element's componentId will be used, and will be
+     *      set to 'form.[componentId]'
+     *  2.  If a modelPath has been given, and doesn't contain dots ('.'), the modelPath will be set to 'form.[modelPath]'.
+     *  3.  If the modelPath contains dots, it will be used without modification.
      */
     Cajeta.View.Html5.Form = Cajeta.View.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
-            var self = (properties.self === undefined) ? this : properties.self;
+            var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'form';
+            this.autoPath = this.autoPath || false;
+        },
+        addChild: function(component) {
+
         },
         onSubmit: function() {
             

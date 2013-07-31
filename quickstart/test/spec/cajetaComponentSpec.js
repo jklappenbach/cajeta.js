@@ -1,45 +1,64 @@
-define(
-    ['cajeta', 'jquery'],
-    function(Cajeta, $) {
+define([
+    'cajeta',
+    'text!app/view/home/homePage.html'
+], function(Cajeta, template) {
         // First test classes and extend functionality
         return describe('Cajeta.View.Component', function() {
+            if (Cajeta.theApplication == null)
+                Cajeta.theApplication = new Cajeta.Application();
 
-            var modelCache = new Cajeta.Model.ModelCache();
+            var modelCache = Cajeta.theApplication.model;
 
             var component = new Cajeta.View.Component({
                 componentId: 'test',
                 modelPath: 'testForm.data',
-                onModelChanged: function() { }
+                modelValue: 'forests'
+            });
+
+            var component2 = new Cajeta.View.Component({
+                componentId: 'test2',
+                modelPath: 'testForm.data2',
+                modelValue: 'super'
             });
 
             it('throws an exception on instantiation without a componentId', function() {
                 expect(function() { new Cajeta.View.Component(); }).toThrow('Error: Cajeta.View.Component.componentId must be defined');
             });
 
+            it('accepts attribute changes before attaching a template, or docking', function() {
+                component.attr('one', 'one');
+                expect(component.attr('one')).toEqual('one');
+                component.prop('two', 'two');
+                expect(component.prop('two')).toEqual('two');
+            });
+
+            it('can be bound to the model', function() {
+                var modelAdaptor = component.modelAdaptor;
+                modelCache.addListener(modelAdaptor, Cajeta.Events.MODELCACHE_CHANGED, modelAdaptor.getEventKey());
+                expect(function() { component.modelAdaptor.onComponentChanged() }).not.toThrow();
+                modelCache.addListener(component2, Cajeta.Events.MODELCACHE_CHANGED, component.modelAdaptor.getEventKey());
+                expect(function() { component2.setModelValue('delicious') }).not.toThrow();
+            });
+
             it('accepts an html template', function() {
-
+                component.setTemplate('homePage', template);
+                expect(component.template).toBeDefined();
             });
 
-            it('can be added to a page', function() {
-
+            it('can set the model value', function() {
+                component.setModelValue('three');
+                expect(modelCache.get(component.modelAdaptor.modelPath, component.modelAdaptor.datasourceId)).toEqual('three');
+                expect(component.getModelValue()).toEqual('three');
             });
 
-            it('can be added as a child to another component', function() {
-            });
-
-            it('can set a model value', function() {
-
+            it('should encode the model value in the component html/template/member', function() {
+                expect(component.attr('value')).toEqual('three');
             });
 
             it('can get a model value', function() {
-
+                expect(component.getModelValue()).toEqual('three');
             });
 
-
-
-//            it('throws an exception when invalid state IDs are submitted', function() {
-//               expect(function() { stateCache.load(10); }).toThrow('Error: Unable to restore state');
-//            });
         });
     }
 );
