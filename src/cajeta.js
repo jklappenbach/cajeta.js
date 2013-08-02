@@ -123,7 +123,7 @@ define([
 
 
     Cajeta.Events = {
-        MODELCACHE_CHANGED: 'MODELCACHE_CHANGED'
+        EVENT_MODELCACHE_CHANGED: 'EVENT_MODELCACHE_CHANGED'
     };
 
     Cajeta.Events.Event = Cajeta.Class.extend({
@@ -181,8 +181,13 @@ define([
             var listeners = Cajeta.safeEntry(key, this.eventListenerMap);
             listeners[listener.getId()] = listener;
         },
-        removeListener: function(eventId, listener) {
-            var listeners = this.eventListenerMap[eventId];
+        removeListener: function(listener, eventId, operand ) {
+            if (listener === undefined || eventId === undefined)
+                return;
+            if (listener instanceof Cajeta.View.Component)
+                listener = listener.modelAdaptor;
+            var key = operand === undefined ? eventId : eventId + ':' + operand;
+            var listeners = this.eventListenerMap[key];
             if (listeners !== undefined) {
                 delete listeners[listener.getId()];
             }
@@ -521,7 +526,7 @@ define([
                 this.stateCache.add(this.state);
 
             // And send out a general notification on model changed.
-            this.dispatchEvent(new Cajeta.Events.Event({ id: Cajeta.Events.MODELCACHE_CHANGED }));
+            this.dispatchEvent(new Cajeta.Events.Event({ id: Cajeta.Events.EVENT_MODELCACHE_CHANGED }));
         },
 
         /**
@@ -563,7 +568,7 @@ define([
                 delete parent[key];
             }
 
-            var event = new Cajeta.Events.Event({ id: Cajeta.Events.MODELCACHE_CHANGED });
+            var event = new Cajeta.Events.Event({ id: Cajeta.Events.EVENT_MODELCACHE_CHANGED });
             this.dispatchEvent(event);
         },
 
@@ -606,13 +611,13 @@ define([
             for (var eventKey in this.eventListenerMap) {
                 if (eventKey !== undefined) {
                     var event = new Cajeta.Events.Event({
-                        id: Cajeta.Events.MODELCACHE_CHANGED,
+                        id: Cajeta.Events.EVENT_MODELCACHE_CHANGED,
                         op: eventKey
                     });
                     var listeners = this.eventListenerMap[eventKey];
                     for (var listenerId in listeners) {
                         if (listenerId !== undefined) {
-                            listener.onEvent(event);
+                            listeners[listenerId].onEvent(event);
                         }
                     }
                 }
@@ -674,7 +679,7 @@ define([
             // And notify any components bound to this modelPath...
             var ignore = component === undefined ? undefined : component.modelAdaptor;
             this.dispatchEvent(new Cajeta.Events.Event({
-                    id: Cajeta.Events.MODELCACHE_CHANGED,
+                    id: Cajeta.Events.EVENT_MODELCACHE_CHANGED,
                     op: modelPath
                 }), ignore
             );
@@ -720,7 +725,7 @@ define([
         onEvent: function(event) {
             if (this.component === undefined)
                 throw Cajeta.constants.ERROR_MODELADAPTOR_COMPONENT_UNDEFINED;
-            if (event.getId() == Cajeta.Events.MODELCACHE_CHANGED) {
+            if (event.getId() == Cajeta.Events.EVENT_MODELCACHE_CHANGED) {
                 this.component.setModelValue(event.getData(), true);
             }
         },
@@ -1173,7 +1178,7 @@ define([
 
                 // Finally, ensure we have assigned the component ID to the fragment
                 this.attr('componentId', this.componentId);
-                Cajeta.theApplication.model.addListener(this.modelAdaptor, Cajeta.Events.MODELCACHE_CHANGED,
+                Cajeta.theApplication.model.addListener(this.modelAdaptor, Cajeta.Events.EVENT_MODELCACHE_CHANGED,
                     this.modelAdaptor.getEventKey());
 
                 // Add to the application component map at this point.

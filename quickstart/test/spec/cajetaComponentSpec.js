@@ -22,7 +22,7 @@ define([
             });
 
             it('throws an exception on instantiation without a componentId', function() {
-                expect(function() { new Cajeta.View.Component(); }).toThrow('Error: Cajeta.View.Component.componentId must be defined');
+                expect(function() { new Cajeta.View.Component(); }).toThrow(Cajeta.constants.ERROR_COMPONENT_COMPONENTID_UNDEFINED);
             });
 
             it('accepts attribute changes before attaching a template, or docking', function() {
@@ -34,9 +34,11 @@ define([
 
             it('can be bound to the model', function() {
                 var modelAdaptor = component.modelAdaptor;
-                modelCache.addListener(modelAdaptor, Cajeta.Events.MODELCACHE_CHANGED, modelAdaptor.getEventKey());
+                modelCache.addListener(modelAdaptor, Cajeta.Events.EVENT_MODELCACHE_CHANGED,
+                        modelAdaptor.getEventKey());
                 expect(function() { component.modelAdaptor.onComponentChanged() }).not.toThrow();
-                modelCache.addListener(component2, Cajeta.Events.MODELCACHE_CHANGED, component.modelAdaptor.getEventKey());
+                modelCache.addListener(component2, Cajeta.Events.EVENT_MODELCACHE_CHANGED,
+                        component.modelAdaptor.getEventKey());
                 expect(function() { component2.setModelValue('delicious') }).not.toThrow();
             });
 
@@ -47,7 +49,8 @@ define([
 
             it('can set the model value', function() {
                 component.setModelValue('three');
-                expect(modelCache.get(component.modelAdaptor.modelPath, component.modelAdaptor.datasourceId)).toEqual('three');
+                expect(modelCache.get(component.modelAdaptor.modelPath,
+                        component.modelAdaptor.datasourceId)).toEqual('three');
                 expect(component.getModelValue()).toEqual('three');
             });
 

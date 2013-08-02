@@ -121,19 +121,21 @@ define(
             });
 
             // TODO: convert this to listeners
-//            it('can bind a component to an object, signaling after binding', function() {
-//                modelCache.bindComponent(component);
-//                modelCache.set('testData', dataGraph);
-//                expect(component.modelChanged).toBeTruthy();
-//            });
-//
-//            it('can remove a component from binding', function() {
-//                component.modelChanged = false;
-//                modelCache.releaseComponent(component);
-//                modelCache.set('testData', dataGraph);
-//                expect(component.modelChanged).toBeFalsy();
-//            });
-//
+            it('can add a component as a listener to a model path', function() {
+                modelCache.addListener(component, Cajeta.Events.EVENT_MODELCACHE_CHANGED,
+                        component.modelAdaptor.getEventKey());
+                modelCache.set('graphData.childTwo.ten', 'ten');
+                expect(component.modelChanged).toBeTruthy();
+            });
+
+            it('can remove a component from binding', function() {
+                component.modelChanged = false;
+                modelCache.removeListener(component, Cajeta.Events.EVENT_MODELCACHE_CHANGED,
+                    component.modelAdaptor.getEventKey());
+                modelCache.set('graphData.childTwo.ten', 'ten');
+                expect(component.modelChanged).toBeFalsy();
+            });
+
             it('can save a state', function() {
                 modelCache.set('dataGraph', dataGraph);
                 expect(modelCache.saveState()).toEqual(0);
