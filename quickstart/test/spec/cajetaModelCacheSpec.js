@@ -4,7 +4,9 @@ define(
         // First test classes and extend functionality
         return describe('Cajeta.Model.ModelCache', function() {
             if (Cajeta.theApplication == null)
-                Cajeta.theApplication = new Cajeta.Application();
+                Cajeta.theApplication = new Cajeta.Application({
+                    id: 'testApp'
+                });
 
             var modelCache = Cajeta.theApplication.model;
             var dataGraph = {
@@ -120,10 +122,9 @@ define(
                 expect(function() { modelCache.get('dataGraph') }).toThrow();
             });
 
-            // TODO: convert this to listeners
             it('can add a component as a listener to a model path', function() {
                 modelCache.addListener(component, Cajeta.Events.EVENT_MODELCACHE_CHANGED,
-                        component.modelAdaptor.getEventKey());
+                        component.modelAdaptor.getEventOperand());
                 modelCache.set('graphData.childTwo.ten', 'ten');
                 expect(component.modelChanged).toBeTruthy();
             });
@@ -131,7 +132,7 @@ define(
             it('can remove a component from binding', function() {
                 component.modelChanged = false;
                 modelCache.removeListener(component, Cajeta.Events.EVENT_MODELCACHE_CHANGED,
-                    component.modelAdaptor.getEventKey());
+                    component.modelAdaptor.getEventOperand());
                 modelCache.set('graphData.childTwo.ten', 'ten');
                 expect(component.modelChanged).toBeFalsy();
             });

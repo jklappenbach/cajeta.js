@@ -16,21 +16,27 @@ var http = require('http'),
 
 http.createServer(function (request, response) {
     var uri = url.parse(request.url).pathname,
-        filename = path.join(__dirname, '..', uri);
+        filename = path.join(__dirname, '../site', uri);
+
+    console.log(filename);
 
     fs.exists(filename, function (exists) {
-        if (!exists) {
-            response.writeHead(404, {'Content-Type': 'text/plain'});
-            response.write('404 Not Found\n');
-            response.end();
-            return;
+        try {
+            if (!exists) {
+                response.writeHead(404, {'Content-Type': 'text/plain'});
+                response.write('404 Not Found\n');
+                response.end();
+                return;
+            }
+
+            var type = filename.split('.');
+            type = type[type.length - 1];
+
+            response.writeHead(200, { 'Content-Type': types[type] + '; charset=utf-8' });
+            fs.createReadStream(filename).pipe(response);
+        } catch (e) {
+            console.log(JSON.stringify(e));
         }
-
-        var type = filename.split('.');
-        type = type[type.length - 1];
-
-        response.writeHead(200, { 'Content-Type': types[type] + '; charset=utf-8' });
-        fs.createReadStream(filename).pipe(response);
     });
 }).listen(parseInt(port, 10));
 

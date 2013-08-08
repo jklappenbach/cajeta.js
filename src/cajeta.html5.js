@@ -26,13 +26,13 @@
  * OTHER DEALINGS IN THE SOFTWARE.'
  */
 
-define(['jquery', 'cajeta'], function($, Cajeta) {
+define(['jquery', 'cajetaView'], function($, Cajeta) {
     Cajeta.View.Html5 = {
         author: 'Julian Klappenbach',
         version: '0.0.1',
         license: 'MIT 2013',
         theApplication: null,
-        constants: {
+        str: {
             ERROR_TABLIST_INVALID_TABENTRY: 'Error: A TabEntry was submitted to tabControl "{0}" with missing attributes.',
             ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED: 'Error: TabEntry "{0}" submitted to tabControl "{1}" with no template.'
         }
@@ -461,9 +461,9 @@ define(['jquery', 'cajeta'], function($, Cajeta) {
          */
         addChild: function(tabEntry) {
             if (tabEntry.component === undefined || tabEntry.title === undefined)
-                throw Cajeta.View.Html5.constants.ERROR_TABLIST_INVALID_TABENTRY.format(this.componentId);
+                throw Cajeta.View.Html5.str.ERROR_TABLIST_INVALID_TABENTRY.format(this.componentId);
             if (tabEntry.component.template === undefined)
-                throw Cajeta.View.Html5.constants.ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED.format(
+                throw Cajeta.View.Html5.str.ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED.format(
                     tabEntry.component.componentId, this.componentId);
 
             // We set the contentId to dock using existing logic
