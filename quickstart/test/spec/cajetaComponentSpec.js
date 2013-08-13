@@ -24,7 +24,7 @@ define([
             });
 
             it('throws an exception on instantiation without a componentId', function() {
-                expect(function() { new Cajeta.View.Component(); }).toThrow(Cajeta.str.ERROR_COMPONENT_COMPONENTID_UNDEFINED);
+                expect(function() { new Cajeta.View.Component(); }).toThrow(Cajeta.ERROR_COMPONENT_COMPONENTID_UNDEFINED);
             });
 
             it('accepts attribute changes before attaching a template, or docking', function() {
@@ -51,7 +51,7 @@ define([
 
             it('can set the model value', function() {
                 component.setModelValue('three');
-                alert(Cajeta.theApplication.id);
+                //alert(Cajeta.theApplication.id);
                 expect(modelCache.get(component.modelAdaptor.modelPath,
                         component.modelAdaptor.datasourceId)).toEqual('three');
                 expect(component.getModelValue()).toEqual('three');

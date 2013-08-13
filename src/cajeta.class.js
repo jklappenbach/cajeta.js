@@ -40,24 +40,22 @@ define([
         version: '0.0.1',
         license: 'MIT 2013',
         theApplication: null,
-        str: {
-            ERROR_EVENT_ID_UNDEFINED: 'Error: Cajeta.Events.Event.id is undefined',
-            ERROR_DATASOURCE_MODELPATH_UNDEFINED: 'Error: Cajeta.Datasource.Ajax.modelPath must be defined',
-            ERROR_AJAX_DATASOURCEID_UNDEFINED: 'Error: Cajeta.Datasource.Ajax.datasourceId must be defined',
-            ERROR_RESTAJAX_URITEMPLATE_UNDEFINED: 'Error: A Cajeta.Datasource.RestAjax.uriTemplate must be defined in properties',
-            ERROR_STATECACHE_LOADFAILURE: 'Error: Unable to restore state',
-            ERROR_MODELCACHE_PATH_UNDEFINED: 'Error: "{0}" could not be resolved to an entry',
-            ERROR_MODELADAPTOR_MODELPATH_UNDEFINED: 'Error: modelPath must be defined',
-            ERROR_COMPONENT_MODELADAPTOR_UNDEFINED: 'Error: Cajeta.View.Component.modelAdaptor must be defined for "{0}"',
-            ERROR_COMPONENT_COMPONENTID_UNDEFINED: 'Error: Cajeta.View.Component.componentId must be defined',
-            ERROR_COMPONENT_INVALIDTEMPLATE: 'Error: Invalid template for "{0}"; must contain an element with a templateId of "{1}"',
-            ERROR_COMPONENT_DOCK_UNDEFINED: 'Error: Dock failed, unable to resolve an element with componentId "{0}" in target HTML',
-            ERROR_COMPONENT_DOCK_MULTIPLE: 'Error: Dock failed, more than one element was found with componentId "{0}" in target HTML',
-            ERROR_MODELADAPTOR_COMPONENT_UNDEFINED: 'Error: Cajeta.View.ModelAdaptor.component must be defined',
-            ERROR_APPLICATION_PAGE_UNDEFINED: 'Error: Page "{0}" undefined',
-            DEFAULT_PAGETITLE: 'Default Cajeta Page',
-            LOCAL_DATASOURCE: 'local'
-        },
+        ERROR_EVENT_ID_UNDEFINED: 'Error: Cajeta.Events.Event.id is undefined',
+        ERROR_DATASOURCE_MODELPATH_UNDEFINED: 'Error: Cajeta.Datasource.Ajax.modelPath must be defined',
+        ERROR_AJAX_DATASOURCEID_UNDEFINED: 'Error: Cajeta.Datasource.Ajax.datasourceId must be defined',
+        ERROR_RESTAJAX_URITEMPLATE_UNDEFINED: 'Error: A Cajeta.Datasource.RestAjax.uriTemplate must be defined in properties',
+        ERROR_STATECACHE_LOADFAILURE: 'Error: Unable to restore state',
+        ERROR_MODELCACHE_PATH_UNDEFINED: 'Error: "{0}" could not be resolved to an entry',
+        ERROR_MODELADAPTOR_MODELPATH_UNDEFINED: 'Error: modelPath must be defined',
+        ERROR_COMPONENT_MODELADAPTOR_UNDEFINED: 'Error: Cajeta.View.Component.modelAdaptor must be defined for "{0}"',
+        ERROR_COMPONENT_COMPONENTID_UNDEFINED: 'Error: Cajeta.View.Component.componentId must be defined',
+        ERROR_COMPONENT_INVALIDTEMPLATE: 'Error: Invalid template for "{0}"; must contain an element with a templateId of "{1}"',
+        ERROR_COMPONENT_DOCK_UNDEFINED: 'Error: Dock failed, unable to resolve an element with componentId "{0}" in target HTML',
+        ERROR_COMPONENT_DOCK_MULTIPLE: 'Error: Dock failed, more than one element was found with componentId "{0}" in target HTML',
+        ERROR_MODELADAPTOR_COMPONENT_UNDEFINED: 'Error: Cajeta.View.ModelAdaptor.component must be defined',
+        ERROR_APPLICATION_PAGE_UNDEFINED: 'Error: Page "{0}" undefined',
+        DEFAULT_PAGETITLE: 'Default Cajeta Page',
+        LOCAL_DATASOURCE: 'local',
         safeEntry: function(key, map) {
             var entry = map[key];
             if (entry === undefined) {
@@ -129,7 +127,7 @@ define([
             properties = properties || {};
             $.extend(true, this, properties);
             if (this.id === undefined)
-                throw Cajeta.str.ERROR_EVENT_ID_UNDEFINED;
+                throw Cajeta.ERROR_EVENT_ID_UNDEFINED;
         },
         getId: function() {
             return this.id;
@@ -200,6 +198,16 @@ define([
             throw 'Error: unimplemented';
         },
         onEvent: function(event) {
+            throw 'Error: unimplemented';
+        }
+    });
+
+    Cajeta.Events.Future = Cajeta.Class.extend({
+        initialize: function(properties) {
+            $.extend(true, this, properties);
+        },
+
+        onExecute: function() {
             throw 'Error: unimplemented';
         }
     });

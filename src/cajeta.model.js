@@ -15,10 +15,8 @@ define([
      * structured and managed.
      */
     Cajeta.Model = {
-        str: {
-            DATASOURCE_STATECACHE_SETTINGS: 'DATASOURCE_STATECACHE_SETTINGS',
-            DATASOURCE_STATECACHE: 'DATASOURCE_STATECACHE'
-        }
+        STATECACHE_SETTINGS_DATASOURCE: 'STATECACHE_SETTINGS_DATASOURCE',
+        STATECACHE_DATASOURCE: 'DATASOURCE_STATECACHE'
     };
 
     /**
@@ -26,8 +24,8 @@ define([
      * at startup.
      */
     Cajeta.Datasource.set(new Cajeta.Datasource.MemoryDS({
-        id: Cajeta.Model.str.DATASOURCE_STATECACHE,
-        uriTemplate: '/{applicationId}/stateCache/settings'
+        id: Cajeta.Model.STATECACHE_DATASOURCE,
+        uriTemplate: '/{applicationId}/stateCache/stateId/{stateId}'
     }));
 
     /**
@@ -35,15 +33,15 @@ define([
      * at startup.
      */
     Cajeta.Datasource.set(new Cajeta.Datasource.MemoryDS({
-        id: Cajeta.Model.str.DATASOURCE_STATECACHE_SETTINGS,
-        uriTemplate: '/{applicationId}/stateCache/{stateId}'
+        id: Cajeta.Model.STATECACHE_SETTINGS_DATASOURCE,
+        uriTemplate: '/{applicationId}/stateCache/settings'
     }));
 
     /**
      * Maintains the settings for the StateCache
      * @type {Object}
      */
-    Cajeta.Model.StateCacheSettings = {
+    Cajeta.Model.defaultCacheSettings = {
         stateId: 0,
         nextId: 0,
         keyPeriod: 10
@@ -66,71 +64,71 @@ define([
     Cajeta.Model.StateCache = Cajeta.Class.extend({
         initialize: function(properties) {
             properties = properties || {};
-            $.extend(this, properties);
+            $.extend(true, this, properties);
+            this.applicationId = this.applicationId || 'defaultAppId';
             this.vcd = new vcDiff.Vcdiff();
             this.vcd.blockSize = 3;
 
-            this.dsStateCacheSettings = Cajeta.Datasource.get(Cajeta.Datasource.str.DATASOURCE_STATECACHE_SETTINGS);
-            this.scs = this.ds.get() || {
-                stateId: 0,
-                nextId: 0,
-                keyPeriod: 10
-            };
-            this.dsStateCache = Cajeta.Datasource.get(Cajeta.Datasource.str.DATASOURCE_STATECACHE);
-            this.dsStateCache.onComplete = this.onComplete; // This will never work, see how this can be fixed.
-            this.modelJson = (this.scs.stateId == 0) ? '{ }' : this.dsStateCache.get({ stateId: this.scs.stateId });
+            this.dsSettings = Cajeta.Datasource.get(Cajeta.Model.STATECACHE_SETTINGS_DATASOURCE);
+            this.settings = this.dsSettings.get({
+                applicationId: this.applicationId
+            });
+            if (this.settings === undefined) {
+                this.settings = Cajeta.Model.defaultCacheSettings;
+                this.dsSettings.put(this.settings, {
+                    applicationId: this.applicationId
+                });
+            }
+            this.dsStateCache = Cajeta.Datasource.get(Cajeta.Model.STATECACHE_DATASOURCE);
         },
         getStateId: function() {
-            return this.stateId;
+            return this.settings.stateId;
         },
 
         add: function(model) {
             var json = JSON.stringify(model);
-            if (this.scs.nextId % this.scs.keyPeriod > 0) {
-                this.dsStateCache.put(this.vcd.encode(this.modelJson, json), { stateId: this.scs.nextId });
+            if (this.settings.nextId % this.settings.keyPeriod > 0) {
+                this.dsStateCache.put(this.vcd.encode(this.modelJson, json), {
+                    stateId: this.settings.nextId,
+                    applicationId: this.applicationId
+                });
             } else {
-                this.dsStateCache.put(json, { stateId: this.scs.nextId });
+                this.dsStateCache.put(json, {
+                    stateId: this.settings.nextId,
+                    applicationId: this.applicationId
+                });
             }
-            this.scs.stateId = this.scs.nextId++;
+            this.settings.stateId = this.settings.nextId++;
             this.modelJson = json;
-            return this.stateId;
+            return this.settings.stateId;
         },
 
         /**
-         * First, find the key frame, and then iterate to the desired ID, restoring along the way.
-         * TODO: Figure out how to wire this async to get things running with the new DS model.
+         * First, find the closest key frame, load it for our uncompressed starting point, then
+         * iterate to the desired ID, restoring each snapshot along the way
          *
          * @param stateId
          */
         load: function(stateId) {
-            var startId = stateId - (stateId % this.scs.keyPeriod);
-            this.modelJson = this.dsStateCache.get({ stateId: startId });
+            var startId = stateId - (stateId % this.settings.keyPeriod);
+            this.modelJson = this.dsStateCache.get({
+                applicationId: this.applicationId,
+                stateId: startId
+            });
             if (this.modelJson === undefined)
-                throw Cajeta.str.ERROR_STATECACHE_LOADFAILURE;
+                throw Cajeta.ERROR_STATECACHE_LOADFAILURE;
             var delta;
             for (var i = startId + 1; i <= stateId; i++) {
-                if (this.cache[i] === undefined)
-                    throw Cajeta.str.ERROR_STATECACHE_LOADFAILURE;
-                this.modelJson = this.vcd.decode(this.modelJson, this.cache[i]);
+                delta = this.dsStateCache.get({
+                    applicationId: this.applicationId,
+                    stateId: i
+                })
+                if (delta === undefined)
+                    throw Cajeta.ERROR_STATECACHE_LOADFAILURE;
+                this.modelJson = this.vcd.decode(this.modelJson, delta);
             }
-            this.stateId = stateId;
+            this.settings.stateId = stateId;
             return JSON.parse(this.modelJson);
-        },
-
-        /**
-         * Clear all entries.
-         */
-        clearAll: function() {
-            this.cache = {};
-            this.stateId = 0;
-        },
-
-        onComplete: function(data) {
-
-        },
-
-        onError: function(event) {
-
         }
     });
 
@@ -190,13 +188,7 @@ define([
 
             // First, see if we've been initialized with a desired stateId.  If not,
             // check to see if we have one in a cookie.  Otherwise, set it to zero.
-            // TODO:  See if we can move this logic into the StateCache, without being difficult to intialize from the outside.
-            this.stateId = 0;
-//            if (this.stateId === undefined) {
-//                this.stateId = jCookies.get("stateId");
-//                this.stateId = this.stateId || 0;
-//            }
-
+            this.stateId = this.stateCache.getStateId();
             if (this.stateId != 0)
                 this.stateCache.load(this.stateId);
 
@@ -214,7 +206,7 @@ define([
          * @param component (optional) The issuing component, prevent cyclical updates.
          */
         set: function(modelPath, value, datasourceId, component) {
-            datasourceId = datasourceId || Cajeta.str.LOCAL_DATASOURCE;
+            datasourceId = datasourceId || Cajeta.LOCAL_DATASOURCE;
             modelPath = datasourceId + ':' + modelPath;
 
             // Find out if we have a single key, or a walk, and populate the map
@@ -252,17 +244,14 @@ define([
         },
 
         /**
-         * Returns an object graph from the
-         * @param datasourceId
+         * Returns a node from the object graph
          * @param modelPath
+         * @param datasourceId
          * @return {*}
          */
         get: function(modelPath, datasourceId) {
-            modelPath = (datasourceId || Cajeta.str.LOCAL_DATASOURCE) + ':' + modelPath;
-            var node = this.nodeMap[modelPath];
-            if (node === undefined)
-                throw Cajeta.str.ERROR_MODELCACHE_PATH_UNDEFINED.format(modelPath);
-            return node;
+            modelPath = (datasourceId || Cajeta.LOCAL_DATASOURCE) + ':' + modelPath;
+            return this.nodeMap[modelPath];
         },
 
         /**
@@ -272,7 +261,7 @@ define([
          * @param datasourceId (optional) The ID of the datasource, defaults to 'local'
          */
         remove: function(modelPath, datasourceId) {
-            datasourceId = datasourceId || Cajeta.str.LOCAL_DATASOURCE;
+            datasourceId = datasourceId || Cajeta.LOCAL_DATASOURCE;
             modelPath = datasourceId + ':' + modelPath;
 
             if (this.nodeMap[modelPath] !== undefined) {

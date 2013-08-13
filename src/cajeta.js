@@ -17,7 +17,6 @@ define([
     Cajeta.Application = Cajeta.Class.extend({
         initialize: function(properties) {
             $.extend(this, properties);
-
             if (this.id === undefined)
                 throw 'Error: Cajeta.Application.id must be defined';
 
@@ -33,6 +32,7 @@ define([
 
             if (this.model === undefined) {
                 this.model = new Cajeta.Model.ModelCache({
+                    applicationId: this.applicationId || 'defaultAppId',
                     enableHistory: true,
                     enableJsonDelta: true
                 });

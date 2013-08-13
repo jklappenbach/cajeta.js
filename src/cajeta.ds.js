@@ -18,10 +18,22 @@ define([
         get: function(datasourceId) {
             return this.cache[datasourceId];
         }
+
     };
     /**
-     * AbstractRestDS provides an abstract, REST based API definition for datasources.  REST is ideal in that it can
-     * easily be abstracted to any type of datasource (SQL, NoSQL, Memory, HTTP)
+     * AbstractRestDS provides an abstract, REST based API definition for datasources.  For the default datasource
+     * interface, REST was chosen as the protocol can easily be abstracted to just about any other, and it natively
+     * supports the main dialect supported by most HTTP based APIs.
+     *
+     * All methods support a "properties" argument, which supports multiple, optional arguments.  The following are
+     * parsed for all methods:
+     *
+     * templateValues:  Values meant to be used on the uriTemplate to create a uri
+     * uriTemplate:     Will replace a uriTemplate established in the constructor for the invocation
+     * async:           Indicates the method should be executed asynchronously, returning a requestId instead of the
+     *                  requested data
+     * requestId:       If omitted, asynchronous calls will return the uri for the request. Otherwise, this value will
+     *                  be presented in the callback
      *
      * @type {*}
      */
@@ -44,10 +56,10 @@ define([
          *
          * @abstract
          * @access public
-         * @param uriTemplate (optional) A parameterized uriTemplate to use when formatting the uri for the call
-         * @param parameters (optional) The parameters used to fill in the uriTemplate parameters.
+         * @param parameters (optional) An object containing uriTemplate values, uriTemplate, or a requestId for the operations
+         * @returns The requestId, which is either the the provided requestId, or the generated uri if the id is omitted.
          */
-        get: function(parameters, uriTemplate) {
+        get: function(parameters) {
             throw 'Error: A call was made to an abstract method.  ' +
                 'You must provide an override for a valid object definition';
         },
@@ -61,10 +73,9 @@ define([
          * @abstract
          * @access public
          * @param data The data to put into the uri
-         * @param uriTemplate (optional) A parameterized uriTemplate to use when formatting the uri for the call
-         * @param parameters (optional) The parameters used to fill in the uriTemplate parameters.
+         * @param parameters (optional) An object containing uriTemplate values, uriTemplate, or a requestId for the operations
          */
-        put: function(data, parameters, uriTemplate) {
+        put: function(data, parameters) {
             throw 'Error: A call was made to an abstract method.  You must provide an override ' +
                 'for a valid object definition';
         },
@@ -77,10 +88,9 @@ define([
          * @abstract
          * @access public
          * @param data The data to post to the uri
-         * @param uriTemplate (optional) A parameterized uriTemplate to use when formatting the uri for the call
-         * @param parameters (optional) The parameters used to fill in the uriTemplate parameters.
+         * @param parameters (optional) An object containing uriTemplate values, uriTemplate, or a requestId for the operations
          */
-        post: function(data, parameters, uriTemplate) {
+        post: function(data, parameters) {
             throw 'Error: A call was made to an abstract method.  You must provide an override ' +
                 'for a valid object definition';
 
@@ -92,10 +102,9 @@ define([
          *
          * @abstract
          * @access public
-         * @param uriTemplate (optional) A parameterized uriTemplate to use when formatting the uri for the call
-         * @param parameters (optional) The parameters used to fill in the uriTemplate parameters.
+         * @param parameters (optional) An object containing uriTemplate values, uriTemplate, or a requestId for the operations
          */
-        del: function(parameters, uriTemplate) {
+        del: function(parameters) {
             throw 'Error: A call was made to an abstract method.  You must provide an override ' +
                 'for a valid object definition';
         },
@@ -104,8 +113,9 @@ define([
          *
          * @access public
          * @param event
+         * @param requestId
          */
-        onError: function(event) {
+        onError: function(event, requestId) {
             alert("An error occured: " + JSON.stringify(event));
         },
 
@@ -116,11 +126,14 @@ define([
          *
          * @access public
          * @param data
+         * @param requestId A value that was returned by the initiating POST or GET call
          */
-        onComplete: function(data) {
+        onComplete: function(data, requestId) {
             if (this.modelPath === undefined)
-                throw Cajeta.str.ERROR_DATASOURCE_MODELPATH_UNDEFINED;
+                throw Cajeta.ERROR_DATASOURCE_MODELPATH_UNDEFINED;
 
+            if (Cajeta.theApplication === null)
+                throw 'Application is not defined';
             Cajeta.theApplication.getModel().set(this.modelPath, data, this.datasourceId);
         },
 
@@ -128,17 +141,19 @@ define([
          * Utility method to produce a uri from a template and either the parameters of a provided argument,
          * or from the application's modelCache using the default, local datasource.
          *
-         * @param uriTemplate (optional) If not provided, the logic will expect that the template was assigned in the contstructor
          * @param parameters (optional) If not provided, the logic will attempt to fulfill parameters in the template using the model.
          * @return The uri
          */
-        getUri: function(parameters, uriTemplate) {
-            var uri = uriTemplate || this.uriTemplate;
+        getUri: function(parameters) {
+            parameters = parameters || {};
+            var uri = parameters.uriTemplate || this.uriTemplate;
             var index, key, value;
 
             while ((index = uri.indexOf('{')) >= 0) {
                 key = uri.substring(index + 1, uri.indexOf('}'));
-                value = parameters !== undefined ? parameters[key] : Cajeta.theApplication.model.get(key);
+                value = parameters[key];
+                if (value === undefined && Cajeta.theApplication != null)
+                    Cajeta.theApplication.model.get(key);
                 uri = uri.replace('{' + key + '}', value);
             }
             return uri;
@@ -153,6 +168,7 @@ define([
             self.super.initialize.call(this, properties);
             this.cache = {};
         },
+
         /**
          * Async method, returning a boolean to indicate whether or not the method was
          * executed sucessfully.  Any result will be dispatched to onComplete.  If no parameters are provided,
@@ -160,12 +176,26 @@ define([
          * derived from the application modelCache.
          *
          * @access public
-         * @param uriTemplate (optional) A parameterized uriTemplate to use when formatting the uri for the call
          * @param parameters (optional) The parameters used to fill in the uriTemplate parameters.
          */
-        get: function(parameters, uriTemplate) {
-            this.onComplete(this.cache[this.getUri(parameters, uriTemplate)]);
-            return true;
+        get: function(parameters) {
+            parameters = parameters || {};
+            var uri = this.getUri(parameters);
+            if (parameters.async) {
+                var requestId = parameters.requestId || uri;
+                var future = new Cajeta.Events.Future({
+                    data: this.cache[this.getUri(parameters)],
+                    callback: this.onComplete,
+                    requestId: this.requestId,
+                    onExecute: function() {
+                        this.callback(this.data, this.requestId);
+                    }
+                });
+                window.setTimeout(future.onExecute, 1);
+                return requestId;
+            } else {
+                return this.cache[uri];
+            }
         },
 
         /**
@@ -176,11 +206,10 @@ define([
          *
          * @access public
          * @param data The data to put into the uri
-         * @param uriTemplate (optional) A parameterized uriTemplate to use when formatting the uri for the call
-         * @param parameters (optional) The parameters used to fill in the uriTemplate parameters.
+         * @param parameters (optional) Additional parameters, including a uriTemplate, parameters for the instance template, etc.
          */
-        put: function(data, parameters, uriTemplate) {
-            this.cache[this.getUri(parameters, uriTemplate)] = data;
+        put: function(data, parameters) {
+            this.cache[this.getUri(parameters)] = data;
             return true;
         },
         /**
@@ -188,13 +217,12 @@ define([
          * the uriTemplate is a member property, and any parameters are to be derived from the application modelCache.
          *
          * @access public
-         * @param uriTemplate (optional) A parameterized uriTemplate to use when formatting the uri for the call
          * @param parameters (optional) The parameters used to fill in the uriTemplate parameters.
          */
-        del: function(parameters, uriTemplate) {
-            var uri = this.getUri(parameters, uriTemplate), result;
+        del: function(parameters) {
+            var uri = this.getUri(parameters), result;
             if (this.cache[uri] !== undefined) {
-                delete this.cache(this.getUri(parameters, uriTemplate));
+                delete this.cache(uri);
                 result = true;
             } else {
                 result = false;
@@ -217,12 +245,14 @@ define([
          * derived from the application modelCache.
          *
          * @access public
-         * @param uriTemplate (optional) A parameterized uriTemplate to use when formatting the uri for the call
          * @param parameters (optional) The parameters used to fill in the uriTemplate parameters.
          */
-        get: function(parameters, uriTemplate) {
-            this.onComplete(jCookies.get[this.getUri(parameters, uriTemplate)]);
-            return true;
+        get: function(parameters) {
+            parameters = parameters || {};
+            var uri = this.getUri(parameters);
+            var requestId = parameters.requestId || uri;
+            this.onComplete(jCookies.get[uri], requestId);
+            return requestId;
         },
 
         /**
@@ -233,11 +263,10 @@ define([
          *
          * @access public
          * @param data The data to put into the uri
-         * @param uriTemplate (optional) A parameterized uriTemplate to use when formatting the uri for the call
          * @param parameters (optional) The parameters used to fill in the uriTemplate parameters.
          */
-        put: function(data, parameters, uriTemplate) {
-            jCookies.set(this.getUri(parameters, uriTemplate), data);
+        put: function(data, parameters) {
+            jCookies.set(this.getUri(parameters), data);
             return true;
         },
         /**
@@ -245,11 +274,10 @@ define([
          * the uriTemplate is a member property, and any parameters are to be derived from the application modelCache.
          *
          * @access public
-         * @param uriTemplate (optional) A parameterized uriTemplate to use when formatting the uri for the call
          * @param parameters (optional) The parameters used to fill in the uriTemplate parameters.
          */
-        del: function(parameters, uriTemplate) {
-            jCookies.del(this.getUri(parameters, uriTemplate));
+        del: function(parameters) {
+            jCookies.del(this.getUri(parameters));
             return true;
         }
     })
@@ -283,7 +311,7 @@ define([
          */
         onComplete: function(data) {
             if (this.modelPath === undefined)
-                throw Cajeta.str.ERROR_DATASOURCE_MODELPATH_UNDEFINED;
+                throw Cajeta.ERROR_DATASOURCE_MODELPATH_UNDEFINED;
 
             Cajeta.theApplication.getModel().set(this.modelPath, data, this.datasourceId);
         },

@@ -23,9 +23,9 @@ define([
         initialize: function(properties) {
             properties = properties || {};
             $.extend(this, properties, true);
-            this.datasourceId = this.datasourceId || Cajeta.str.LOCAL_DATASOURCE;
+            this.datasourceId = this.datasourceId || Cajeta.LOCAL_DATASOURCE;
             if (this.modelPath === undefined)
-                throw Cajeta.str.ERROR_MODELADAPTOR_MODELPATH_UNDEFINED;
+                throw Cajeta.ERROR_MODELADAPTOR_MODELPATH_UNDEFINED;
         },
         getId: function() {
             return this.component.getCanonicalId();
@@ -47,7 +47,7 @@ define([
          */
         onEvent: function(event) {
             if (this.component === undefined)
-                throw Cajeta.str.ERROR_MODELADAPTOR_COMPONENT_UNDEFINED;
+                throw Cajeta.ERROR_MODELADAPTOR_COMPONENT_UNDEFINED;
             if (event.getId() == Cajeta.Events.EVENT_MODELCACHE_CHANGED) {
                 this.component.setModelValue(event.getData(), true);
             }
@@ -89,7 +89,7 @@ define([
             properties = properties || {};
             $.extend(this, properties);
             if (this.componentId === undefined)
-                throw Cajeta.str.ERROR_COMPONENT_COMPONENTID_UNDEFINED;
+                throw Cajeta.ERROR_COMPONENT_COMPONENTID_UNDEFINED;
             this.parent = null;
             this.attributes = this.attributes || {};
             this.properties = this.properties || {};
@@ -376,7 +376,7 @@ define([
         addChild: function(component) {
             var componentId = component.getComponentId();
             if (componentId == undefined || componentId == '') {
-                throw Cajeta.str.ERROR_COMPONENT_COMPONENTID_UNDEFINED;
+                throw Cajeta.ERROR_COMPONENT_COMPONENTID_UNDEFINED;
             }
             this.children[componentId] = component;
             component.parent = this;
@@ -448,7 +448,7 @@ define([
                 }
             }
             if (this.template === undefined) {
-                throw Cajeta.str.ERROR_COMPONENT_INVALIDTEMPLATE.format(this.getCanonicalId(), templateId);
+                throw Cajeta.ERROR_COMPONENT_INVALIDTEMPLATE.format(this.getCanonicalId(), templateId);
             }
         },
         getTemplate: function() {
@@ -475,9 +475,9 @@ define([
                 var type = this.getElementType();
                 this.dom = $(type + '[componentid = "' + this.componentId + '"]');
                 if (this.dom.length == 0) {
-                    throw Cajeta.str.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.componentId);
+                    throw Cajeta.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.componentId);
                 } else if (this.dom.length > 1) {
-                    throw Cajeta.str.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.componentId);
+                    throw Cajeta.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.componentId);
                 }
                 if (this.template === undefined) {
                     // Synchronize with any settings made before dock
@@ -626,7 +626,7 @@ define([
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             if (this.title === undefined)
-                this.title = Cajeta.str.DEFAULT_PAGETITLE;
+                this.title = Cajeta.DEFAULT_PAGETITLE;
             this.setElementType('body');
         },
         setTitle: function(title) {

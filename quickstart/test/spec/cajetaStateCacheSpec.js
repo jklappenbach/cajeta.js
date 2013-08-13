@@ -52,13 +52,14 @@ define(
                 stateCache = new Cajeta.Model.StateCache();
                 expect(stateCache).not.toBeNull();
                 expect(stateCache.getStateId()).toEqual(0);
-                expect(stateCache.keyPeriod).toEqual(10);
+                expect(stateCache.settings.keyPeriod).toEqual(10);
             });
 
             it('stores a state entry and increments the state ID', function() {
                 stateCache.add(data00);
                 expect(stateCache.getStateId()).toEqual(0);
                 expect(stateCache.modelJson).toEqual(JSON.stringify(data00));
+                expect(stateCache.load(0)).toEqual(data00);
             });
 
             it('stores another state entry and increments the state ID', function() {
@@ -114,13 +115,7 @@ define(
                 stateCache.add(data);
                 data.eighteen = 'eighteen';
                 stateCache.add(data);
-
-                expect(stateCache.stateId).toEqual(18);
-            });
-
-            it('stores uncompressed key entries defined by modulus of the index', function() {
-                var stateId = 10;
-                expect(JSON.parse(stateCache.cache[10])).toEqual(data10);
+                expect(stateCache.getStateId()).toEqual(18);
             });
 
             it('can restore an arbitrary, non-key entry', function() {
@@ -133,19 +128,8 @@ define(
                 expect(stateCache.load(0)).toEqual(data00);
             });
 
-            it('can clear the existing cache', function() {
-                stateCache.clearAll();
-                var count = 0;
-                for (var k in stateCache.cache) {
-                    if (stateCache.hasOwnProperty(k)) {
-                        ++count;
-                    }
-                }
-                expect(count).toEqual(0);
-            });
-
             it('throws an exception when invalid state IDs are submitted', function() {
-               expect(function() { stateCache.load(10); }).toThrow('Error: Unable to restore state');
+                expect(function() { stateCache.load(1000); }).toThrow(Cajeta.ERROR_STATECACHE_LOADFAILURE);
             });
         });
     }
