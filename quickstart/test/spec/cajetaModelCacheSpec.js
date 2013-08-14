@@ -134,35 +134,13 @@ define(
                 expect(component.modelChanged).toBeFalsy();
             });
 
-            it('can save a state', function() {
-//                modelCache.set('dataGraph', dataGraph);
-//                expect(modelCache.saveState()).toEqual(0);
-//                modelCache.set('dataGraph.childOne.subdata', subdata);
-//                expect(modelCache.saveState()).toEqual(1);
-//                modelCache.set('dataGraph.childTwo.subdata', subdata);
-//                expect(modelCache.saveState()).toEqual(2);
+            it('can save and restore state', function() {
+                modelCache.set('dataGraph', dataGraph);
+                var stateId = modelCache.saveState();
+                modelCache.loadState(stateId);
+                expect(modelCache.get('dataGraph')).toEqual(dataGraph);
             });
 
-//            it('can restore a state', function() {
-//                modelCache.loadState(0);
-//                expect(modelCache.get('dataGraph')).toEqual({
-//                    one: 'one',
-//                    two: 'two',
-//                    three: 'three',
-//                    childOne: {
-//                        four: 'four',
-//                        five: 'five',
-//                        six: 'six'
-//                    },
-//                    childTwo: {
-//                        seven: 'seven',
-//                        eight: 'eight',
-//                        nine: 'nine',
-//                        ten: 'ten'
-//                    }
-//                });
-//            });
-//
 //            it('can correctly resume state ID progression after a restore', function() {
 //                modelCache.set('testData.childOne.subdata', subdata);
 //                expect(modelCache.saveState()).toEqual(3);

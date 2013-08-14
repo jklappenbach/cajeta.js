@@ -157,6 +157,23 @@ define([
                 uri = uri.replace('{' + key + '}', value);
             }
             return uri;
+        },
+
+        processResult: function(data, parameters) {
+            if (this.async || parameters.async) {
+                var future = new Cajeta.Events.Future({
+                    data: data,
+                    callback: parameters.onComplete || this.onComplete,
+                    requestId: parameters.requestId || this.getUri(parameters),
+                    onExecute: function() {
+                        this.callback(this.data, this.requestId);
+                    }
+                });
+                window.setTimeout(future.onExecute, 1);
+                return future.requestId;
+            } else {
+                return data;
+            }
         }
     });
 
@@ -180,22 +197,8 @@ define([
          */
         get: function(parameters) {
             parameters = parameters || {};
-            var uri = this.getUri(parameters);
-            if (parameters.async) {
-                var requestId = parameters.requestId || uri;
-                var future = new Cajeta.Events.Future({
-                    data: this.cache[this.getUri(parameters)],
-                    callback: this.onComplete,
-                    requestId: this.requestId,
-                    onExecute: function() {
-                        this.callback(this.data, this.requestId);
-                    }
-                });
-                window.setTimeout(future.onExecute, 1);
-                return requestId;
-            } else {
-                return this.cache[uri];
-            }
+            var data = this.cache[this.getUri(parameters)];
+            return this.processResult(data, parameters);
         },
 
         /**
@@ -250,9 +253,8 @@ define([
         get: function(parameters) {
             parameters = parameters || {};
             var uri = this.getUri(parameters);
-            var requestId = parameters.requestId || uri;
-            this.onComplete(jCookies.get[uri], requestId);
-            return requestId;
+            var data = jCookies.get(this.getUri(parameters));
+            return this.processResult(data, parameters);
         },
 
         /**

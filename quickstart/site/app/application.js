@@ -19,22 +19,22 @@ define(['jquery', 'cajeta', 'homePage'], function($, Cajeta, homePage) {
 //        modelPath: 'testForm.data'
 //    });
 //
-//    var dataGraph = {
-//        one: 'one',
-//        two: 'two',
-//        three: 'three',
-//        childOne: {
-//            four: 'four',
-//            five: 'five',
-//            six: 'six'
-//        },
-//        childTwo: {
-//            seven: 'seven',
-//            eight: 'eight',
-//            nine: 'nine',
-//            ten: 'ten'
-//        }
-//    };
+    var dataGraph = {
+        one: 'one',
+        two: 'two',
+        three: 'three',
+        childOne: {
+            four: 'four',
+            five: 'five',
+            six: 'six'
+        },
+        childTwo: {
+            seven: 'seven',
+            eight: 'eight',
+            nine: 'nine',
+            ten: 'ten'
+        }
+    };
 //
 //    var subGraph = {
 //        eleven: 'eleven',
@@ -42,7 +42,13 @@ define(['jquery', 'cajeta', 'homePage'], function($, Cajeta, homePage) {
 //        thirteen: 'thirteen'
 //    };
 //
-//    Cajeta.theApplication.model.set('dataGraph', dataGraph);
+    Cajeta.theApplication.model.set('dataGraph', dataGraph);
+    var stateId = Cajeta.theApplication.model.saveState();
+    Cajeta.theApplication.model.set('mondo', dataGraph);
+    Cajeta.theApplication.model.saveState();
+    Cajeta.theApplication.model.loadState(stateId);
+
+
 //    Cajeta.theApplication.model.set('dataGraph.childOne.subGraph', subGraph);
 //    Cajeta.theApplication.model.remove('dataGraph.childOne.subdata');
 //    component.setModelValue('modelValue');

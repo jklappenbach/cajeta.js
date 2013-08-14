@@ -10,42 +10,62 @@ define([
     'cajetaDS',
     'vcdiff'
 ], function($, Cajeta, vcDiff) {
+
     /**
      * The Model, as in traditional MVC architectures, defines the architecture and interfaces for how data is
      * structured and managed.
      */
     Cajeta.Model = {
-        STATECACHE_SETTINGS_DATASOURCE: 'STATECACHE_SETTINGS_DATASOURCE',
-        STATECACHE_DATASOURCE: 'DATASOURCE_STATECACHE'
+        STATECACHE_SETTINGS_URI: '/{applicationId}/stateCache/settings',
+        STATECACHE_STATES_URI: '/{applicationId}/stateCache/states',
+        STATECACHE_STATE_URI: '/{applicationId}/stateCache/states/{stateId}',
+        STATECACHE_DATASOURCE_ID: 'STATECACHE_DATASOURCE'
     };
+
+    Cajeta.Model.StateCacheDS = Cajeta.Datasource.MemoryDS.extend({
+        initialize: function(properties) {
+            properties = properties || {};
+            var self = properties.self || this;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+        },
+        post: function(data, parameters) {
+            var uri = this.getUri(parameters);
+            var settings = this.cache[this.getUri({
+                uriTemplate: Cajeta.Model.STATECACHE_SETTINGS_URI,
+                applicationId: parameters.applicationId
+            })];
+            this.cache[uri + '/' + settings.nextId] = data;
+            settings.stateId = settings.nextId++;
+            return this.processResult(settings.stateId, parameters);
+        },
+        get: function(parameters) {
+            var uri = this.getUri(parameters);
+            var data;
+            if (uri.indexOf('settings') >= 0) {
+                data = this.cache[uri];
+                if (data === undefined) {
+                    data = {
+                        stateId: 0,
+                        nextId: 0,
+                        keyPeriod: 10
+                    };
+                    this.cache[uri] = data;
+                }
+            } else {
+                data = this.cache[uri];
+            }
+            return this.processResult(data, parameters);
+        }
+    });
 
     /**
      * The default datasource for stateCache settings is memory, appearing as always uninitialized to the client
      * at startup.
      */
-    Cajeta.Datasource.set(new Cajeta.Datasource.MemoryDS({
-        id: Cajeta.Model.STATECACHE_DATASOURCE,
-        uriTemplate: '/{applicationId}/stateCache/stateId/{stateId}'
+    Cajeta.Datasource.set(new Cajeta.Model.StateCacheDS({
+        id: Cajeta.Model.STATECACHE_DATASOURCE_ID
     }));
-
-    /**
-     * The default datasource for the stateCache is memory, appearing as always uninitialized to the client
-     * at startup.
-     */
-    Cajeta.Datasource.set(new Cajeta.Datasource.MemoryDS({
-        id: Cajeta.Model.STATECACHE_SETTINGS_DATASOURCE,
-        uriTemplate: '/{applicationId}/stateCache/settings'
-    }));
-
-    /**
-     * Maintains the settings for the StateCache
-     * @type {Object}
-     */
-    Cajeta.Model.defaultCacheSettings = {
-        stateId: 0,
-        nextId: 0,
-        keyPeriod: 10
-    };
 
     /**
      * Cajeta.ModelSnapshotCache must support the following use cases:
@@ -69,17 +89,15 @@ define([
             this.vcd = new vcDiff.Vcdiff();
             this.vcd.blockSize = 3;
 
-            this.dsSettings = Cajeta.Datasource.get(Cajeta.Model.STATECACHE_SETTINGS_DATASOURCE);
-            this.settings = this.dsSettings.get({
-                applicationId: this.applicationId
+            this.dsStateCache = Cajeta.Datasource.get(Cajeta.Model.STATECACHE_DATASOURCE_ID);
+            this.settings = this.dsStateCache.get({
+                applicationId: this.applicationId,
+                uriTemplate: Cajeta.Model.STATECACHE_SETTINGS_URI
             });
             if (this.settings === undefined) {
-                this.settings = Cajeta.Model.defaultCacheSettings;
-                this.dsSettings.put(this.settings, {
-                    applicationId: this.applicationId
-                });
+                throw 'Error: StateCache datasource incorrectly configured!';
             }
-            this.dsStateCache = Cajeta.Datasource.get(Cajeta.Model.STATECACHE_DATASOURCE);
+            this.modelJson = '{ }';
         },
         getStateId: function() {
             return this.settings.stateId;
@@ -87,18 +105,16 @@ define([
 
         add: function(model) {
             var json = JSON.stringify(model);
+            var data;
             if (this.settings.nextId % this.settings.keyPeriod > 0) {
-                this.dsStateCache.put(this.vcd.encode(this.modelJson, json), {
-                    stateId: this.settings.nextId,
-                    applicationId: this.applicationId
-                });
+                data = this.vcd.encode(this.modelJson, json);
             } else {
-                this.dsStateCache.put(json, {
-                    stateId: this.settings.nextId,
-                    applicationId: this.applicationId
-                });
+                data = json;
             }
-            this.settings.stateId = this.settings.nextId++;
+            this.settings.stateId = this.dsStateCache.post(data, {
+                applicationId: this.applicationId,
+                uriTemplate: Cajeta.Model.STATECACHE_STATES_URI
+            });
             this.modelJson = json;
             return this.settings.stateId;
         },
@@ -112,6 +128,7 @@ define([
         load: function(stateId) {
             var startId = stateId - (stateId % this.settings.keyPeriod);
             this.modelJson = this.dsStateCache.get({
+                uriTemplate: Cajeta.Model.STATECACHE_STATE_URI,
                 applicationId: this.applicationId,
                 stateId: startId
             });
@@ -120,6 +137,7 @@ define([
             var delta;
             for (var i = startId + 1; i <= stateId; i++) {
                 delta = this.dsStateCache.get({
+                    uriTemplate: Cajeta.Model.STATECACHE_STATE_URI,
                     applicationId: this.applicationId,
                     stateId: i
                 })

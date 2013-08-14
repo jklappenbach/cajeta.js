@@ -49,7 +49,9 @@ define(
             }
 
             it('instantiates with no arguments', function() {
-                stateCache = new Cajeta.Model.StateCache();
+                stateCache = new Cajeta.Model.StateCache({
+                    applicationId: 'stateCacheSpec'
+                });
                 expect(stateCache).not.toBeNull();
                 expect(stateCache.getStateId()).toEqual(0);
                 expect(stateCache.settings.keyPeriod).toEqual(10);
@@ -59,7 +61,6 @@ define(
                 stateCache.add(data00);
                 expect(stateCache.getStateId()).toEqual(0);
                 expect(stateCache.modelJson).toEqual(JSON.stringify(data00));
-                expect(stateCache.load(0)).toEqual(data00);
             });
 
             it('stores another state entry and increments the state ID', function() {

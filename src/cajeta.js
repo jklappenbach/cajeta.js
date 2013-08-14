@@ -32,7 +32,7 @@ define([
 
             if (this.model === undefined) {
                 this.model = new Cajeta.Model.ModelCache({
-                    applicationId: this.applicationId || 'defaultAppId',
+                    applicationId: this.id || 'defaultAppId',
                     enableHistory: true,
                     enableJsonDelta: true
                 });
