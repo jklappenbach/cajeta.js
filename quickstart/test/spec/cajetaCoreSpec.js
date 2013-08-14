@@ -2,7 +2,7 @@ define(
     ['cajeta'],
     function(Cajeta) {
         // First test classes and extend functionality
-        return describe('Cajeta Objects', function() {
+        return describe('Cajeta Core', function() {
             var Parent = Cajeta.Class.extend({
                 initialize: function(properties) {
                     properties = properties || {};

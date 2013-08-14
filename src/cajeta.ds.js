@@ -7,7 +7,7 @@
  */
 define([
     'jquery',
-    'cajetaClass',
+    'cajetaCore',
     'jcookies'
 ], function($, Cajeta, jCookies) {
     Cajeta.Datasource = {
