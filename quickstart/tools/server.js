@@ -14,12 +14,14 @@ var http = require('http'),
         'js': 'application/javascript'
     };
 
-http.createServer(function (request, response) {
-    var uri = url.parse(request.url).pathname,
-        filename = path.join(__dirname, '../site', uri);
+var server = http.createServer(function (request, response) {
+    var uri = url.parse(request.url).pathname;
+    var filename = path.join(__dirname, '../site', uri);
 
-    console.log(filename);
+    console.log(uri + ' -> ' + filename);
 
+    // First, check for our api calls
+    // Else, it's for a static file
     fs.exists(filename, function (exists) {
         try {
             if (!exists) {
@@ -38,6 +40,8 @@ http.createServer(function (request, response) {
             console.log(JSON.stringify(e));
         }
     });
-}).listen(parseInt(port, 10));
+});
+
+server.listen(parseInt(port, 10));
 
 console.log('Static file server running at\n  => http://localhost:' + port + '/\nCTRL + C to shutdown');

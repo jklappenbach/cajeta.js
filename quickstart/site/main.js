@@ -18,6 +18,7 @@ requirejs.config({
         'homePage': 'app/view/home/homePage',
         'accountView': 'app/view/account/account',
         'formExampleDiv': 'app/view/home/formExampleDiv',
+        'uiExampleDiv': 'app/view/home/uiExampleDiv',
         'serverInteractionDiv': 'app/view/home/serverInteractionDiv'
     }
 });

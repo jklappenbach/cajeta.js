@@ -161,16 +161,12 @@ define([
 
         processResult: function(data, parameters) {
             if (this.async || parameters.async) {
-                var future = new Cajeta.Events.Future({
-                    data: data,
-                    callback: parameters.onComplete || this.onComplete,
-                    requestId: parameters.requestId || this.getUri(parameters),
-                    onExecute: function() {
-                        this.callback(this.data, this.requestId);
-                    }
-                });
-                window.setTimeout(future.onExecute, 1);
-                return future.requestId;
+                var callback = parameters.onComplete || this.onComplete;
+                var requestId = parameters.requestId || this.getUri(parameters);
+                window.setTimeout(function() {
+                    callback(data, requestId);
+                }, 1);
+                return requestId;
             } else {
                 return data;
             }
@@ -254,6 +250,7 @@ define([
             parameters = parameters || {};
             var uri = this.getUri(parameters);
             var data = jCookies.get(this.getUri(parameters));
+            if (data == null) data = undefined;
             return this.processResult(data, parameters);
         },
 
@@ -296,65 +293,56 @@ define([
                 'Content-Type': 'application/json'
             };
         },
-        createHxr: function() {
-            if (window.XMLHttpRequest) {
-                return new XMLHttpRequest();
-            } else if (window.ActiveXObject) {
-                return new ActiveXObject("MSXML2.XMLHTTP.3.0");
-            }
+//        createHxr: function() {
+//            if (window.XMLHttpRequest) {
+//                return new XMLHttpRequest();
+//            } else if (window.ActiveXObject) {
+//                return new ActiveXObject("MSXML2.XMLHTTP.3.0");
+//            }
+//        },
+        get: function(parameters) {
+            var uri = this.getUri(parameters);
+            $.ajax(uri, {
+                // TODO: FINISH ME!
+            });
+            this._exec('GET', uri, null, parameters.onComplete || this.onComplete,
+                parameters.headers || this.headers);
         },
-        onError: function(event) {
-            Console.log("An error occured: " + event);
-        },
-
-        /**
-         * Do nothing method.  Override if you want to store or act upon data results.
-         * @param data
-         */
-        onComplete: function(data) {
-            if (this.modelPath === undefined)
-                throw Cajeta.ERROR_DATASOURCE_MODELPATH_UNDEFINED;
-
-            Cajeta.theApplication.getModel().set(this.modelPath, data, this.datasourceId);
-        },
-        get: function() {
-            this._exec('GET', this.url, null, this.onComplete, this.headers);
-        },
-        put: function(data) {
+        put: function(data, parameters) {
             this._exec('PUT', this.url, data, this.onComplete, this.headers);
         },
-        post: function(data) {
+        post: function(data, parameters) {
             this._exec('POST', this.url, data, this.onComplete, this.headers);
         },
-        del: function() {
+        del: function(parameters) {
             this._exec('DELETE', this.url, null, this.onComplete, this.headers);
-        },
-
-        _exec: function(method, url, data, callback, headers) {
-            var hxr = this.createHxr();
-            var headers = (headers !== undefined) ? headers : this.headers;
-
-            hxr.open(method, url, true);
-            hxr.onerror = this.onError;
-
-            if (callback != null && callback !== undefined) {
-                hxr.onreadystatechange = callback;
-            } else {
-                hxr.onreadystatechange = this.onComplete;
-            }
-
-            for (var name in headers) {
-                if (name !== undefined)
-                    hxr.setRequestHeader(name, headers[name]);
-            }
-
-            if (data !== undefined) {
-                data = $.param(data, true);
-                hxr.send(data);
-            } else {
-                hxr.send();
-            }
         }
+
+//        _exec: function(method, url, data, callback, headers) {
+//            var hxr = this.createHxr();
+//            var headers = (headers !== undefined) ? headers : this.headers;
+//
+//            hxr.open(method, url, true);
+//            hxr.onerror = this.onError;
+//
+//            if (callback != null && callback !== undefined) {
+//                hxr.onreadystatechange = callback;
+//            } else {
+//                hxr.onreadystatechange = this.onComplete;
+//            }
+//
+//            for (var name in headers) {
+//                if (name !== undefined)
+//                    hxr.setRequestHeader(name, headers[name]);
+//            }
+//
+//            if (data !== undefined) {
+//                data = $.param(data, true);
+//                hxr.send(data);
+//            } else {
+//                hxr.send();
+//            }
+//        }
     });
 
     return Cajeta;

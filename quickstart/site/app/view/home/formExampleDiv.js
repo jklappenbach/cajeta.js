@@ -7,85 +7,85 @@ define([
     // Create an alias for namespace brevity.
     var Html5 = Cajeta.View.Html5;
 
-    var div = new Html5.Div({ componentId: 'formExampleDiv' });
+    var div = new Html5.Div({ id: 'formExampleDiv' });
     div.setTemplate('formExampleDiv', formExampleDiv);
 
     var form = new Html5.Form({
-        componentId: 'testForm',
+        id: 'testForm',
         modelPath: 'testForm',
         onSubmit: function() {
-            var myData = Cajeta.theApplication.getModel().get('testForm');
-            var ds = Cajeta.Datasource.map['http://localhost:8080/application/users/'];
+            var myData = this.modelAdaptor.getModelData();
+            var ds = Cajeta.Datasource.get('dsApp');
             ds.post(myData);
             return false;
         }
     });
 
     form.addChild(new Html5.Label({
-        componentId: 'firstLabel',
-        attributes: { value: 'Label Text' }
+        id: 'firstLabel',
+        modelValue: 'Label Text'
     }));
 
     form.addChild(new Html5.TextInput({
-        componentId: 'firstTextField',
+        id: 'firstTextField',
         modelPath: 'testForm.firstTextField',
         attributes: { value: 'First Example Text' }
     }));
 
     form.addChild(new Html5.TextInput({
-        componentId: 'secondTextField',
+        id: 'secondTextField',
         modelPath: 'testForm.secondTextField',
         attributes: { value: 'Second Example Text' }
     }));
 
     // Add Checkboxes
     form.addChild(new Html5.CheckboxInput({
-        componentId: 'greenColor',
+        id: 'greenColor',
         modelPath: 'testForm.greenColor',
         properties: { checked: 'true' }
     }));
 
     form.addChild(new Html5.CheckboxInput({
-        componentId: 'blueColor',
+        id: 'blueColor',
         modelPath: 'testForm.blueColor'
     }));
 
     form.addChild(new Html5.CheckboxInput({
-        componentId: 'redColor',
+        id: 'redColor',
         modelPath: 'testForm.redColor',
         properties: { checked: 'true' }
     }));
 
     // Add RadioGroup
     var radioGroup = new Html5.RadioGroup({
-        componentId: 'dietGroup',
+        id: 'dietGroup',
         modelPath: 'testForm.diet',
         attributes: { value: 'omnivore' }
     });
 
     radioGroup.addChild(new Html5.RadioInput({
-        componentId: 'vegetarian',
+        id: 'vegetarian',
         properties: { checked: true }
     }));
 
-    radioGroup.addChild(new Html5.RadioInput({ componentId: 'pescatarian' }));
-    radioGroup.addChild(new Html5.RadioInput({ componentId: 'omnivore' }));
+    radioGroup.addChild(new Html5.RadioInput({ id: 'pescatarian' }));
+    radioGroup.addChild(new Html5.RadioInput({ id: 'omnivore' }));
 
     // TextArea
     form.addChild(new Html5.TextArea({
-        componentId: 'textArea',
+        id: 'textArea',
         modelPath: 'testForm.description',
         attributes: { cols: 100, rows: 5 },
         properties: { value: 'Enter a description here.' }
     }));
 
     form.addChild(new Html5.Select({
-        componentId: 'selectStatic',
+        id: 'selectStatic',
         modelPath: 'testForm.selectStatic'
     }));
 
     form.addChild(new Html5.Select({
-        componentId: 'selectProgrammatic',
+        id: 'selectProgrammatic',
         modelPath: 'testForm.selectProgrammatic',
         options: [
             { type: 'option', label: 'First Option', value: 'firstOption' },
@@ -98,7 +98,7 @@ define([
     }));
 
     form.addChild(new Html5.Select({
-        componentId: 'selectProgrammaticOption',
+        id: 'selectProgrammaticOption',
         modelPath: 'testForm.selectProgrammaticOption', options: [
             { type: 'optgroup', label: 'First Option', options: [
                 { type: 'option', label: 'First Child Option', value: 'firstChildOption'},
@@ -109,7 +109,7 @@ define([
     }));
 
     form.addChild(new Html5.Select({
-        componentId: 'selectMultiProgrammatic',
+        id: 'selectMultiProgrammatic',
         modelPath: 'testForm.selectMultiProgrammatic',
         options: [
             { type: 'option', label: 'First Multi Option', value: 'firstMultiOption' },

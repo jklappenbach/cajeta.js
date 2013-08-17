@@ -180,7 +180,7 @@ define([
          * @param page The page to add
          */
         addPage: function(page) {
-            this.componentMap[page.getComponentId()] = page;
+            this.componentMap[page.getId()] = page;
             if (this.currentPage == null) {
                 this.currentPage = page;
             }

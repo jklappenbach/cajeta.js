@@ -12,13 +12,13 @@ define([
             var modelCache = Cajeta.theApplication.model;
 
             var component = new Cajeta.View.Component({
-                componentId: 'test',
+                id: 'test',
                 modelPath: 'testForm.data',
                 modelValue: 'forests'
             });
 
             var component2 = new Cajeta.View.Component({
-                componentId: 'test2',
+                id: 'test2',
                 modelPath: 'testForm.data2',
                 modelValue: 'super'
             });

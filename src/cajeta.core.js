@@ -48,7 +48,7 @@ define([
         ERROR_MODELCACHE_PATH_UNDEFINED: 'Error: "{0}" could not be resolved to an entry',
         ERROR_MODELADAPTOR_MODELPATH_UNDEFINED: 'Error: modelPath must be defined',
         ERROR_COMPONENT_MODELADAPTOR_UNDEFINED: 'Error: Cajeta.View.Component.modelAdaptor must be defined for "{0}"',
-        ERROR_COMPONENT_COMPONENTID_UNDEFINED: 'Error: Cajeta.View.Component.componentId must be defined',
+        ERROR_COMPONENT_COMPONENTID_UNDEFINED: 'Error: Cajeta.View.Component.id must be defined',
         ERROR_COMPONENT_INVALIDTEMPLATE: 'Error: Invalid template for "{0}"; must contain an element with a templateId of "{1}"',
         ERROR_COMPONENT_DOCK_UNDEFINED: 'Error: Dock failed, unable to resolve an element with componentId "{0}" in target HTML',
         ERROR_COMPONENT_DOCK_MULTIPLE: 'Error: Dock failed, more than one element was found with componentId "{0}" in target HTML',

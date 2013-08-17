@@ -149,7 +149,7 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
 
             // Set the value of the element if not set in markup
             if (this.dom.attr('value') === undefined) {
-                this.dom.attr('value', this.componentId);
+                this.dom.attr('value', this.id);
             }
         },
         $onHtmlChange: function(event) {
@@ -256,10 +256,12 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
         dock: function() {
             if (!this.isDocked()) {
                 // Add to the application component map at this point.
-                Cajeta.theApplication.getComponentMap()[this.componentId] = this;
+                Cajeta.theApplication.getComponentMap()[this.id] = this;
 
                 // Bind the component to the model
-                Cajeta.theApplication.getModel().bindComponent(this);
+                Cajeta.theApplication.getModel().addListener(this.modelAdaptor,
+                    Cajeta.Events.EVENT_MODELCACHE_CHANGED,
+                    this.modelAdaptor.getEventOperand());
             }
         }
     });
@@ -423,7 +425,7 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
                 this.content = properties['content'];
             } else {
                 var contentId = properties['contentId'] || 'content';
-                this.content = new Cajeta.View.Html5.Div({ componentId: contentId });
+                this.content = new Cajeta.View.Html5.Div({ id: contentId });
             }
             this.tabEntries = new Array();
             this.selectedIndex = 0;
@@ -461,10 +463,10 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
          */
         addChild: function(tabEntry) {
             if (tabEntry.component === undefined || tabEntry.title === undefined)
-                throw Cajeta.View.Html5.str.ERROR_TABLIST_INVALID_TABENTRY.format(this.componentId);
+                throw Cajeta.View.Html5.str.ERROR_TABLIST_INVALID_TABENTRY.format(this.id);
             if (tabEntry.component.template === undefined)
                 throw Cajeta.View.Html5.str.ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED.format(
-                    tabEntry.component.componentId, this.componentId);
+                    tabEntry.component.id, this.id);
 
             // We set the contentId to dock using existing logic
             this.tabEntries.push(tabEntry);
@@ -505,8 +507,8 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
      * form's addChild logic to modify the modelPath of children, creating a single hierachy.  For example,
      * if the form had the modelPath of "form", and a child was added the following logic will be executed:
      *
-     *  1.  If there's no modelPath on the form element, the element's componentId will be used, and will be
-     *      set to 'form.[componentId]'
+     *  1.  If there's no modelPath on the form element, the element's id will be used, and will be
+     *      set to 'form.[id]'
      *  2.  If a modelPath has been given, and doesn't contain dots ('.'), the modelPath will be set to 'form.[modelPath]'.
      *  3.  If the modelPath contains dots, it will be used without modification.
      */
@@ -519,9 +521,30 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
             this.elementType = 'form';
             this.autoPath = this.autoPath || false;
         },
-        addChild: function(component) {
 
+        /**
+         * We check to see if the form supports autoPath.  If so, then we will set the component's modelPath
+         * using the form's modelPath + '.' + the component's contribution.  This will be either:
+         *
+         * 1.  If a dot is found in the component's modelPath, it is used exclusively.
+         * 2.  The component's modelPath, if no '.' exists in it.
+         * @param component
+         */
+        addChild: function(component) {
+            var self = arguments[1] || this;
+            if (this.autoPath) {
+                if (component.modelAdaptor.modelPath.indexOf('.') < 0) {
+                    component.modelAdaptor.modelPath = this.modelAdaptor.modelPath + '.' +
+                            component.modelAdaptor.modelPath;
+                }
+            }
+
+            self.super.addChild.call(this, component, self.super);
         },
+
+        /**
+         *
+         */
         onSubmit: function() {
             
         }

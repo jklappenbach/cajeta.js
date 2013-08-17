@@ -24,20 +24,22 @@ define([
             properties = properties || {};
             $.extend(this, properties, true);
             this.datasourceId = this.datasourceId || Cajeta.LOCAL_DATASOURCE;
-            if (this.modelPath === undefined)
-                throw Cajeta.ERROR_MODELADAPTOR_MODELPATH_UNDEFINED;
         },
         getId: function() {
             return this.component.getCanonicalId();
         },
         setComponent: function(component) {
             this.component = component;
+            this.modelPath = this.modelPath || component.id;
         },
         getDatasourceId: function() {
             return this.datasourceId;
         },
         getModelPath: function() {
             return this.modelPath;
+        },
+        getModelData: function() {
+            return Cajeta.theApplication.getModel().get(this.modelPath, this.datasourceId);
         },
         /**
          * Handles ModelCache change events, applying new data to the component and html.
@@ -56,8 +58,10 @@ define([
             return this.datasourceId + ':' + this.modelPath;
         },
         onComponentChanged: function(data) {
-            data = data || this.component.getModelValue();
-            Cajeta.theApplication.getModel().set(this.modelPath, data, this.datasourceId, this.component);
+            if (Cajeta.theApplication != null) {
+                data = data || this.component.getModelValue();
+                Cajeta.theApplication.getModel().set(this.modelPath, data, this.datasourceId, this.component);
+            }
         }
     });
 
@@ -73,7 +77,9 @@ define([
     Cajeta.View.Component = Cajeta.Class.extend({
         /**
          * Constructor supports mixins for fast definitions.  If only a few methods are needed, this
-         * can be an easier way of extending functionality than inheritance.  A componentId must be specified.
+         * can be an easier way of extending functionality than inheritance.  A id for the component must be specified.
+         * This id will be used to map directly to the associated HTML.
+         *
          * Other properties include: modelPath, defaultValue (for model), as well as
          * values using elementValue or attr* for element values and attributes, and methods using
          * onHtml* for event handlers.  For portable, re-usable definitions, consider subclassing.
@@ -87,8 +93,8 @@ define([
          */
         initialize: function(properties) {
             properties = properties || {};
-            $.extend(this, properties);
-            if (this.componentId === undefined)
+            $.extend(true, this, properties);
+            if (this.id === undefined)
                 throw Cajeta.ERROR_COMPONENT_COMPONENTID_UNDEFINED;
             this.parent = null;
             this.attributes = this.attributes || {};
@@ -102,14 +108,14 @@ define([
             // Default setting for valueTarget
             this.modelEncoding = this.modelEncoding || "attr:value"; // Could be attr:*, prop:*, or text (element text)
 
-            if (this.modelAdaptor === undefined && this.modelPath !== undefined) {
+            if (this.modelAdaptor === undefined) {
                 this.modelAdaptor = new Cajeta.View.ModelAdaptor({
-                    modelPath: properties.modelPath,
+                    modelPath: properties.modelPath || this.id,
                     datasourceId: properties.datasourceId
                 });
                 this.modelAdaptor.component = this;
-            } else if (this.modelAdaptor !== undefined) {
-                this.modelAdaptor.component = this;
+            } else {
+                this.modelAdaptor.setComponent(this);
             }
 
             if (this.modelValue !== undefined)
@@ -123,17 +129,17 @@ define([
          *
          * @return {*}
          */
-        getComponentId: function() {
-            return this.componentId;
+        getId: function() {
+            return this.id;
         },
 
         /**
          *
-         * @param componentId
+         * @param id
          */
-        setComponentId: function(componentId) {
-            if (componentId !== undefined) {
-                this.componentId = componentId;
+        setId: function(id) {
+            if (id !== undefined) {
+                this.id = id;
             }
         },
 
@@ -143,14 +149,14 @@ define([
          */
         getCanonicalId: function() {
             if (parent !== undefined && parent.getCanonicalId !== undefined)
-                return parent.getCanonicalId() + '.' + this.componentId;
+                return parent.getCanonicalId() + '.' + this.id;
             else
-                return this.componentId;
+                return this.id;
         },
 
         setModelAdaptor: function(modelAdaptor) {
             this.modelAdaptor = modelAdaptor;
-            this.modelAdaptor.component = this;
+            this.modelAdaptor.setComponent(this);
         },
 
         getModelAdaptor: function() {
@@ -196,7 +202,7 @@ define([
                     break;
             }
 
-            if (internal === undefined || internal == false) {
+            if (!internal && this.modelAdaptor !== undefined) {
                 this.modelAdaptor.onComponentChanged(value);
             }
         },
@@ -374,11 +380,11 @@ define([
          * @param component
          */
         addChild: function(component) {
-            var componentId = component.getComponentId();
-            if (componentId == undefined || componentId == '') {
+            var id = component.getId();
+            if (id == undefined || id == '') {
                 throw Cajeta.ERROR_COMPONENT_COMPONENTID_UNDEFINED;
             }
-            this.children[componentId] = component;
+            this.children[id] = component;
             component.parent = this;
         },
 
@@ -426,7 +432,7 @@ define([
                         if (attrValue != undefined && attrValue.value == templateId) {
                             this.template = $(temp[i]);
 
-                            this.template.attr('componentId', this.componentId);
+                            this.template.attr('componentid', this.id);
 
                             for (var name in this.attributes) {
                                 if (name !== undefined)
@@ -473,14 +479,17 @@ define([
         dock: function() {
             if (!this.isDocked()) {
                 var type = this.getElementType();
-                this.dom = $(type + '[componentid = "' + this.componentId + '"]');
+                this.dom = $(type + '[componentid = "' + this.id + '"]');
                 if (this.dom.length == 0) {
-                    throw Cajeta.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.componentId);
+                    throw Cajeta.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.id);
                 } else if (this.dom.length > 1) {
-                    throw Cajeta.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.componentId);
+                    throw Cajeta.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.id);
                 }
-                if (this.template === undefined) {
-                    // Synchronize with any settings made before dock
+                if (this.template !== undefined) {
+                    // Insert our template into the dom...
+                    this.dom.html(this.template.html());
+                } else {
+                    // Otherwise, check for any settings that need to be transfered to the dom
                     for (var name in this.attributes) {
                         if (name !== undefined)
                             this.dom.attr(name, this.attributes[name]);
@@ -495,12 +504,10 @@ define([
                     }
                     if (this.textValue !== undefined)
                         this.dom.text(this.textValue);
-                } else {
-                    this.dom.html(this.template.html());
                 }
 
                 // Ensure we have assigned the component ID to the fragment
-                this.attr('componentId', this.componentId);
+                this.attr('componentId', this.id);
 
                 // Add the component as a listener to the model, if we have a valid modelAdaptor
                 if (this.modelAdaptor !== undefined) {
@@ -509,7 +516,7 @@ define([
                 }
 
                 // Add to the application component map at this point.
-                Cajeta.theApplication.getComponentMap()[this.componentId] = this;
+                Cajeta.theApplication.getComponentMap()[this.id] = this;
             }
         },
 
@@ -644,7 +651,7 @@ define([
         },
 
         getViewState: function() {
-            var self = (arguments.length > 0) ? arguments[0] : this;
+            var self = arguments[0] || this;
             var viewState = self.super.getViewState.call(this, self.super);
             return (viewState != '' ? this.getCanonicalId() : this.getCanonicalId() + ':' + viewState);
         },

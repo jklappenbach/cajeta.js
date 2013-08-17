@@ -56,7 +56,7 @@ define(
             };
 
             var component = new Cajeta.View.Component({
-                componentId: 'test3',
+                id: 'test3',
                 modelPath: 'graphData.childTwo.ten',
                 modelChanged: false,
                 setModelValue: function() {
