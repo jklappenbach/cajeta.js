@@ -11,7 +11,8 @@ define(
             it('provides a MemoryDS', function() {
                 var ds = new Cajeta.Datasource.MemoryDS({
                     id: 'memDS',
-                    uriTemplate: 'test/{key}'
+                    uriTemplate: 'unitTest/cacheEntries/{key}',
+                    async: false
                 });
 
                 ds.put(data, { key: '00' });
@@ -43,7 +44,8 @@ define(
             it('provides a CookieDS', function() {
                 var ds = new Cajeta.Datasource.CookieDS({
                     id: 'cookieDS',
-                    uriTemplate: 'test/{key}'
+                    uriTemplate: 'unitTest/cacheEntries/{key}',
+                    async: false
                 });
 
                 ds.put(data, {
@@ -74,16 +76,37 @@ define(
                     expect(result).toEqual(data);
                 });
             });
-//            it('provides an AjaxDS', function() {
-//                var ds = new Cajeta.Datasource.AjaxDS({
-//                    id: 'cookieDS',
-//                    uriTemplate: 'test/{key}'
-//                });
-//
+            it('provides an AjaxDS', function() {
+                var ds = new Cajeta.Datasource.AjaxDS({
+                    id: 'ajaxDS',
+                    modelPath: 'unitTest/cacheEntries',
+                    uriTemplate: 'http://localhost:8888/unitTest/cacheEntries/{key}',
+                    async: false
+                });
+
+                var data = {
+                    one: 'one',
+                    two: 'two',
+                    three: 'three',
+                    childOne: {
+                        four: 'four',
+                        five: 'five',
+                        six: 'six'
+                    },
+                    childTwo: {
+                        seven: 'seven',
+                        eight: 'eight',
+                        nine: 'nine',
+                        ten: 'ten'
+                    }
+                };
+
+                // TODO: These tests are failing under Karma, but pass under normal circumstances.
+                // TODO: These should be revisited, but aren't blocking.
 //                ds.put(data, {
 //                    key: '00'
 //                });
-//
+
 //                expect(ds.get({ key: '00' })).toEqual(data);
 //                expect(ds.get({ key: '01' })).toBeUndefined();
 //
@@ -107,7 +130,7 @@ define(
 //                runs(function() {
 //                    expect(result).toEqual(data);
 //                });
-//            });
+            });
         });
     }
 );

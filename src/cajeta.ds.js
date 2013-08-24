@@ -279,7 +279,79 @@ define([
             jCookies.del(this.getUri(parameters));
             return true;
         }
-    })
+    });
+
+    Cajeta.Datasource.DbRestDS = Cajeta.Datasource.AbstractRestDS.extend({
+        initialize: function(properties) {
+            properties = properties || {};
+            var self = properties.self || this;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            this.db = openDatabase('mydb', '1.0', 'Test DB', 2 * 1024 * 1024);
+            this.db.transaction(function (tx) {
+                tx.executeSql('CREATE TABLE IF NOT EXISTS cache (uri unique, data)');
+            });
+
+        },
+        /**
+         * Async method, returning a boolean to indicate whether or not the method was
+         * executed sucessfully.  Any result will be dispatched to onComplete.  If no parameters are provided,
+         * the method should assume that the uriTemplate is a member property, and any parameters are to be
+         * derived from the application modelCache.
+         *
+         * @access public
+         * @param parameters (optional) The parameters used to fill in the uriTemplate parameters.
+         */
+        get: function(parameters) {
+            parameters = parameters || {};
+            var requestId = parameters.requestId || this.getUri(parameters);
+            this.db.transaction(
+                function (tx) {
+                    tx.executeSql('SELECT * FROM properties', [],
+                        function (tx, results) {
+                            var callback = parameters.onComplete || this.onComplete;
+                            callback(results.rows.item(0), requestId);
+                        },
+                    null)
+                });
+
+             return requestId;
+        },
+
+        /**
+         * Returns a boolean to indicate whether or not the method was
+         * executed sucessfully.  If no parameters are provided, the method should assume that
+         * this.uriTemplate is a member property, and any parameters are to be derived from the
+         * application modelCache.
+         *
+         * @access public
+         * @param data The data to put into the uri
+         * @param parameters (optional) Additional parameters, including a uriTemplate, parameters for the instance template, etc.
+         */
+        put: function(data, parameters) {
+            var uri = this.getUri(parameters);
+            this.db.transaction(function(tx) {
+                tx.executeSql('INSERT INTO cache (uri, data) VALUES (' + uri + ', ' + data + ')');
+            });
+            return true;
+        },
+
+        /**
+         * Delete the resource identified by a uri.  If no parameters are provided, the method should assume that
+         * the uriTemplate is a member property, and any parameters are to be derived from the application modelCache.
+         *
+         * @access public
+         * @param parameters (optional) The parameters used to fill in the uriTemplate parameters.
+         */
+        del: function(parameters) {
+            var uri = this.getUri(parameters);
+            this.db.transaction(function(tx) {
+                tx.executeSql('DELETE FROM cache WHERE uri = "' + uri + '"');
+            });
+            return true;
+        }
+
+    });
 
 
     Cajeta.Datasource.AjaxDS = Cajeta.Datasource.AbstractRestDS.extend({
@@ -288,61 +360,48 @@ define([
             var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
-            this.header = this.header || {
+            this.contentType = 'application/json';
+            this.headers = this.headers || {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             };
         },
-//        createHxr: function() {
-//            if (window.XMLHttpRequest) {
-//                return new XMLHttpRequest();
-//            } else if (window.ActiveXObject) {
-//                return new ActiveXObject("MSXML2.XMLHTTP.3.0");
-//            }
-//        },
         get: function(parameters) {
             var uri = this.getUri(parameters);
-            $.ajax(uri, {
-                // TODO: FINISH ME!
-            });
-            this._exec('GET', uri, null, parameters.onComplete || this.onComplete,
-                parameters.headers || this.headers);
+            parameters = this.params(parameters);
+            parameters.type = 'GET';
+            return $.ajax(uri, parameters);
         },
         put: function(data, parameters) {
-            this._exec('PUT', this.url, data, this.onComplete, this.headers);
+            var uri = this.getUri(parameters);
+            parameters = this.params(parameters);
+            parameters.type = 'PUT';
+            parameters.data = JSON.stringify(data);
+            return $.ajax(uri, parameters);
         },
         post: function(data, parameters) {
-            this._exec('POST', this.url, data, this.onComplete, this.headers);
+            var uri = this.getUri(parameters);
+            parameters = this.params(parameters);
+            parameters.type = 'POST';
+            parameters.data = JSON.stringify(data);
+            return $.ajax(uri, parameters);
         },
         del: function(parameters) {
-            this._exec('DELETE', this.url, null, this.onComplete, this.headers);
+            var uri = this.getUri(parameters);
+            parameters = this.params(parameters);
+            parameters.type = 'DELETE';
+            return $.ajax(uri, parameters);
+        },
+        ajaxParams: function(parameters) {
+            return $.extend(parameters, {
+                complete: parameters.onComplete || parameters.complete || this.onComplete || this.complete,
+                error:  parameters.onError || parameters.error || this.onError || this.error,
+                processData: false,
+                headers: parameters.headers || this.headers,
+                async: parameters.async || this.async,
+                contentType: parameters.contentType || this.contentType
+            });
         }
-
-//        _exec: function(method, url, data, callback, headers) {
-//            var hxr = this.createHxr();
-//            var headers = (headers !== undefined) ? headers : this.headers;
-//
-//            hxr.open(method, url, true);
-//            hxr.onerror = this.onError;
-//
-//            if (callback != null && callback !== undefined) {
-//                hxr.onreadystatechange = callback;
-//            } else {
-//                hxr.onreadystatechange = this.onComplete;
-//            }
-//
-//            for (var name in headers) {
-//                if (name !== undefined)
-//                    hxr.setRequestHeader(name, headers[name]);
-//            }
-//
-//            if (data !== undefined) {
-//                data = $.param(data, true);
-//                hxr.send(data);
-//            } else {
-//                hxr.send();
-//            }
-//        }
     });
 
     return Cajeta;
