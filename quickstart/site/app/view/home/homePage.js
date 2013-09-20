@@ -10,7 +10,7 @@ define([
     // Create an alias for shortening namespace.
     var Html5 = Cajeta.View.Html5;
 
-    var homePage = new Cajeta.View.Page({ id: Cajeta.View.homePage });
+    var homePage = new Cajeta.View.Page({ id: Cajeta.homePage });
     homePage.setTemplate('homePage', homePageText);
 
     var tabs = new Html5.TabList({ id: 'tabs', contentId: 'content' });

@@ -1,5 +1,5 @@
 define(
-    ['cajeta'],
+    ['cajetaDS'],
     function(Cajeta) {
         // First test classes and extend functionality
         return describe('Cajeta.Datasource', function() {
@@ -76,6 +76,44 @@ define(
                     expect(result).toEqual(data);
                 });
             });
+
+// Unsupported on Firefox and IE (what a mess)
+//            it('provides a DatabaseDS', function() {
+//                var ds = new Cajeta.Datasource.DbRestDS({
+//                    id: 'dbDS',
+//                    uriTemplate: 'unitTest/cacheEntries/{key}',
+//                    async: false
+//                });
+//
+//                ds.put(data, {
+//                    key: '00'
+//                });
+//
+//                expect(ds.get({ key: '00' })).toEqual(data);
+//                expect(ds.get({ key: '01' })).toBeUndefined();
+//
+//                var result = null;
+//
+//                var complete = function(data, requestId) {
+//                    result = data;
+//                };
+//
+//                ds.get({
+//                    key: '00',
+//                    async: true,
+//                    onComplete: complete
+//                });
+//
+//                waitsFor(function() {
+//                    return result != null;
+//                }, "Datasource never returned a value", 5000);
+//
+//                // Asynchronous
+//                runs(function() {
+//                    expect(result).toEqual(data);
+//                });
+//            });
+
             it('provides an AjaxDS', function() {
                 var ds = new Cajeta.Datasource.AjaxDS({
                     id: 'ajaxDS',

@@ -26,12 +26,11 @@
  * OTHER DEALINGS IN THE SOFTWARE.'
  */
 
-define(['jquery', 'cajetaView'], function($, Cajeta) {
+define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
     Cajeta.View.Html5 = {
         author: 'Julian Klappenbach',
         version: '0.0.1',
         license: 'MIT 2013',
-        theApplication: null,
         str: {
             ERROR_TABLIST_INVALID_TABENTRY: 'Error: A TabEntry was submitted to tabControl "{0}" with missing attributes.',
             ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED: 'Error: TabEntry "{0}" submitted to tabControl "{1}" with no template.'
@@ -46,6 +45,10 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
             self.super.initialize.call(this, properties);
             this.elementType = 'div';
             this.modelEncoding = 'text';
+        },
+        render: function() {
+            var self = (arguments.length > 0) ? arguments[0] : this;
+            self.super.render.call(this, self.super);
         }
     });
 
@@ -68,6 +71,36 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
                 this.listItemHtml = liChildren[0];
             else
                 this.listItemHtml = $('<li />');
+        }
+    });
+
+    Cajeta.View.Html5.Table = Cajeta.View.Component.extend({
+        initialize: function(properties) {
+            properties = properties || {};
+            var self = properties.self || this;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            this.elementType = 'table';
+        }
+    });
+
+    Cajeta.View.Html5.TableRow = Cajeta.View.Component.extend({
+        initialize: function(properties) {
+            properties = properties || {};
+            var self = properties.self || this;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            this.elementType = 'tr';
+        }
+    });
+
+    Cajeta.View.Html5.TableDivision = Cajeta.View.Component.extend({
+        initialize: function(properties) {
+            properties = properties || {};
+            var self = properties.self || this;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            this.elementType = 'td';
         }
     });
 
@@ -116,7 +149,7 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
             self.super.initialize.call(this, properties);
         },
         $onHtmlChange: function(event) {
-            this.modelAdaptor.onComponentChanged();
+            this.onComponentChanged();
         }
     });
 
@@ -153,12 +186,12 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
             }
         },
         $onHtmlChange: function(event) {
-            this.parent.modelAdaptor.onComponentChanged();
+            this.parent.onComponentChanged();
         }
     });
 
     /**
-     * Manages an HTML4 CheckboxInput control
+     * Manages an HTML5 CheckboxInput control
      */
     Cajeta.View.Html5.CheckboxInput = Cajeta.View.Html5.Input.extend({
         initialize: function(properties) {
@@ -171,10 +204,6 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
         dock: function() {
             var self = (arguments.length > 0) ? arguments[0] : this;
             self.super.dock.call(this, self.super);
-
-            // Bind the component to the model if we have a valid path
-            if (this.modelPath !== undefined)
-                Cajeta.theApplication.getModel().bindComponent(this);
         }
     });
 
@@ -225,7 +254,7 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
             self.super.initialize.call(this, properties);
 
         },
-        getModelValue: function() {
+        getComponentValue: function() {
             var value = null;
 
             for (var name in this.children) {
@@ -238,7 +267,7 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
             }
             return value;
         },
-        setModelValue: function(value, internal) {
+        setComponentValue: function(value, internal) {
             for (var name in this.children) {
                 if (name !== undefined) {
                     if (this.children[name].dom.attr('value') == value) {
@@ -247,7 +276,7 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
                 }
             }
             if (internal === undefined || internal == false) {
-                this.modelAdaptor.onComponentChanged();
+                this.onComponentChanged();
             }
         },
         /**
@@ -256,12 +285,11 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
         dock: function() {
             if (!this.isDocked()) {
                 // Add to the application component map at this point.
-                Cajeta.theApplication.getComponentMap()[this.id] = this;
+                model.componentMap[this.id] = this;
 
                 // Bind the component to the model
-                Cajeta.theApplication.getModel().addListener(this.modelAdaptor,
-                    Cajeta.Events.EVENT_MODELCACHE_CHANGED,
-                    this.modelAdaptor.getEventOperand());
+                model.addListener(this,
+                    Cajeta.Events.EVENT_MODELCACHE_CHANGED);
             }
         }
     });
@@ -321,24 +349,13 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
                     } else {
                         this.dom.val(this.modelValue);
                     }
-                    Cajeta.theApplication.getModel().bindComponent(this);
                 }
-            }
-        },
-        // TODO Figure out what you were doing here!!!
-        multiple: function(value) {
-            if (value === undefined) {
-                return (!this.isDocked()) ? this.attrMultiple : (this.dom.attr('multiple') !== undefined);
-            } else {
-                this.propMultiple = this.multiple;
-                if (this.isDocked())
-                    this.dom.prop('multiple', this.multiple);
             }
         },
         selectedIndex: function(value) {
             if (value === undefined) {
                 if (this.isDocked()) {
-                    if (this.multiple()) {
+                    if (this.prop('multiple')) {
                         if (value == null) {
                             this.dom.find('option').map(function() { this.selected = false; });
                         } else {
@@ -356,7 +373,7 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
                         this.dom.selectedIndex = value;
                     }
                 } else {
-                    if (this.multiple()) {
+                    if (this.prop('multiple')) {
 
                     } else {
                         this.properties['selectedIndex'] = value;
@@ -377,20 +394,20 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
 
             }
         },
-        getModelValue: function() {
+        getComponentValue: function() {
             return this.selectedIndex();
         },
 
-        setModelValue: function(value, internal) {
+        setComponentValue: function(value, internal) {
             this.selectedIndex(value);
 
             if (internal === undefined || internal == false) {
-                this.modelAdaptor.onComponentChanged();
+                this.onComponentChanged();
             }
         },
 
         $onHtmlChange: function(event) {
-            this.modelAdaptor.onComponentChanged();
+            this.onComponentChanged();
         }
     });
 
@@ -430,6 +447,14 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
             this.tabEntries = new Array();
             this.selectedIndex = 0;
         },
+
+        /**
+         * Custom override for dock.  The child components are rendered in series to the content div. CSS tags
+         * are then used to show only one child at a time.
+         *
+         * TODO:  Either this is failing to dock every page, or (if that's not desirable) the onTab handler is failing
+         * to dock children when they're active.
+         */
         dock: function() {
             if (!this.isDocked()) {
                 var self = (arguments.length > 0) ? arguments[0] : this;
@@ -445,7 +470,7 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
                     listItem.text(this.tabEntries[i].title);
                     var eventData = new Object();
                     eventData['that'] = this;
-                    eventData['fnName'] = '$onTabClick';
+                    eventData['fnName'] = '_onTabClick';
                     eventData['index'] = i;
                     listItem.click(eventData, Cajeta.View.Component.htmlEventDispatch);
                     this.dom.append(listItem);
@@ -491,13 +516,14 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
 
             this.cssClassMap = cssClassMap;
         },
-        $onTabClick: function(event) {
+        _onTabClick: function(event) {
             var index = event.data['index'];
             //console.log("Selected index was " + index);
             if (index !== undefined && index != this.selectedIndex) {
-                this.tabEntries[this.selectedIndex].component.css("display", "none");
+                this.tabEntries[this.selectedIndex].component.css('display', 'none');
                 this.selectedIndex = index;
-                this.tabEntries[this.selectedIndex].component.css("display", "");
+                this.tabEntries[this.selectedIndex].component.css('display', '');
+                this.tabEntries[this.selectedIndex].component.render(this, self.super);
             }
         }
     });
@@ -533,9 +559,9 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
         addChild: function(component) {
             var self = arguments[1] || this;
             if (this.autoPath) {
-                if (component.modelAdaptor.modelPath.indexOf('.') < 0) {
-                    component.modelAdaptor.modelPath = this.modelAdaptor.modelPath + '.' +
-                            component.modelAdaptor.modelPath;
+                if (component.modelPath.indexOf('.') < 0) {
+                    component.modelPath = this.modelPath + '.' +
+                            component.modelPath;
                 }
             }
 

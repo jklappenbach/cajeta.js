@@ -7,38 +7,27 @@
  */
 define([
     'jquery',
-    'cajetaView',
-    'jcookies'
-], function($, Cajeta, jCookies) {
+    'cajetaCore',
+    'model'
+], function($, Cajeta, model) {
     /**
      *
      *
      */
     Cajeta.Application = Cajeta.Class.extend({
         initialize: function(properties) {
-            $.extend(this, properties);
+            $.extend(true, this, properties);
             if (this.id === undefined)
                 throw 'Error: Cajeta.Application.id must be defined';
 
-            this.viewStateAliasMap = {};
-            this.anchor = '';
-            this.viewStateId = '';
-            this.modelStateId = '';
+            this.viewStateAliasMap = this.viewStateAliasMap || {};
+            this.anchor = this.anchor || '';
+            this.viewStateId = this.viewStateId || '';
+            this.modelStateId = this.modelStateId || '';
 
-            this.componentMap = {};
-            this.stringResourceMap = {};
-            this.currentPage = null;
-            this.executing = false;
-
-            if (this.model === undefined) {
-                this.model = new Cajeta.Model.ModelCache({
-                    applicationId: this.id || 'defaultAppId',
-                    enableHistory: true,
-                    enableJsonDelta: true
-                });
-            }
-
-            this.model.set('applicationId', this.id);
+            this.stringResourceMap = this.stringResourceMap || {};
+            this.currentPage = this.currentPage || null;
+            this.executing = this.executing || false;
         },
 
         /**
@@ -62,14 +51,17 @@ define([
          */
         execute: function() {
             if (this.executing == false) {
+                var app = this;
                 if ("onhashchange" in window) { //&& !($.browser.msie)) {
-                    window.onhashchange = Cajeta.Application.onAnchorChanged;
+                    window.onhashchange = function() {
+                        app.onAnchorChanged();
+                    }
                 } else {
                     // Quick and dirty to detect anchor hash change for primitive browsers
                     var prevHash = window.location.hash;
                     window.setInterval(function () {
                         if (window.location.hash != prevHash) {
-                            Cajeta.Application.onAnchorChanged();
+                            app.onAnchorChanged();
                         }
                     }, 200);
                 }
@@ -80,12 +72,12 @@ define([
                 // for the application, and populate the (browser's) url with the anchor,
                 // bootstrapping the render.
                 if (this.anchor === undefined || this.anchor == '') {
-                    var viewStateId = Cajeta.View.homePage;
+                    var viewStateId = Cajeta.homePage;
                     this.anchor = viewStateId;
 
-                    if (this.model !== undefined && this.model.enableHistory == true) {
-                        this.modelStateId = this.model.getStateId();
-                        this.anchor += '=' + this.modelStateId;
+                    if (model !== undefined && model.enableHistory == true) {
+                        modelStateId = model.getStateId();
+                        this.anchor += '=' + modelStateId;
                     }
                     this.setUrlAnchor(this.anchor);
                 } else {
@@ -112,12 +104,12 @@ define([
                 this.setViewStateId(states[0].substring(1), true);
                 var validAnchor = "#" + this.viewStateId;
                 var validModelId;
-//                if (this.model.isHistoryEnabled()) {
+//                if (model.isHistoryEnabled()) {
 //                    if (states.length > 1) {
 //                        this.setModelStateId(states[1]);
-//                        validModelId = this.model.getStateId();
-//                    } else if (this.model.isHistoryEnabled() == true) {
-//                        validModelId = this.modelStateId = this.model.getStateId();
+//                        validModelId = model.getStateId();
+//                    } else if (model.isHistoryEnabled() == true) {
+//                        validModelId = modelStateId = model.getStateId();
 //                    }
 //                    validAnchor += '=' + validModelId;
 //                }
@@ -129,7 +121,7 @@ define([
                 }
             } else {
                 // The url was incorrectly modified.  Go back to default state
-                this.setUrlAnchor(Cajeta.View.homePage + "=" + this.model.getStateId());
+                this.setUrlAnchor(Cajeta.homePage + "=" + model.getStateId());
             }
         },
 
@@ -137,17 +129,8 @@ define([
          * Called with the model is updated
          */
         onModelChanged: function() {
-            this.anchor = '#' + this.viewStateId + '=' + this.model.getStateId();
+            this.anchor = '#' + this.viewStateId + '=' + model.getStateId();
             this.setUrlAnchor(this.anchor);
-        },
-
-        /**
-         * Returns the instance of the data model for the application.
-         *
-         * @return Cajeta.Model
-         */
-        getModel: function() {
-            return this.model;
         },
 
         /**
@@ -170,17 +153,13 @@ define([
             this.currentPage.render();
         },
 
-        getComponentMap: function() {
-            return this.componentMap;
-        },
-
         /**
          * Add a page to the application.
          *
          * @param page The page to add
          */
         addPage: function(page) {
-            this.componentMap[page.getId()] = page;
+            model.componentMap[page.getId()] = page;
             if (this.currentPage == null) {
                 this.currentPage = page;
             }
@@ -192,12 +171,7 @@ define([
          * @param fromUrl
          */
         setCurrentPage: function(page, fromUrl) {
-            var component;
-            if (page instanceof Cajeta.View.Component) {
-                component = page;
-            } else {
-                component = this.componentMap[page];
-            }
+            var component = model.componentMap[page];
 
             if (component === undefined)
                 throw Cajeta.str.ERROR_APPLICATION_PAGE_UNDEFINED.format(page);
@@ -225,7 +199,7 @@ define([
                 var viewStateEntries = viewStateId.split(':');
                 for (var i = 0; i < viewStateEntries.length; i++) {
                     var componentState = viewStateEntries[i].split('.');
-                    var component = this.componentMap[componentState[0]];
+                    var component = model.componentMap[componentState[0]];
                     if (component !== undefined) {
                         if (componentState.length > 0) {
                             if (i == 0)
@@ -235,8 +209,8 @@ define([
                         }
                     } else {
                         // We have an invalid viewStateId!  Set it to the homePage
-                        viewStateId = Cajeta.View.homePage;
-                        page = this.componentMap[viewStateId];
+                        viewStateId = Cajeta.homePage;
+                        page = model.componentMap[viewStateId];
                         break;
                     }
                 }
@@ -251,8 +225,8 @@ define([
                 // update the internal variable and the URL.
                 this.viewStateId = viewStateId;
                 this.anchor = '#' + this.viewStateId;
-                if (this.modelStateId != '') {
-                    this.anchor += '=' + this.modelStateId;
+                if (modelStateId != '') {
+                    this.anchor += '=' + modelStateId;
                 }
                 this.setUrlAnchor(this.anchor);
             }
@@ -264,7 +238,7 @@ define([
          */
         setModelStateId: function(modelState) {
             this.modelStateId = modelState;
-            this.model.loadState(this.modelStateId);
+            model.loadState(modelStateId);
         },
 
         /**
@@ -305,13 +279,6 @@ define([
             // at the provided url.  The returned result will be assumed to be in the proper format.
         }
     });
-
-    /**
-     *
-     */
-    Cajeta.Application.onAnchorChanged = function() {
-        Cajeta.theApplication.onAnchorChanged();
-    };
 
     return Cajeta;
 });

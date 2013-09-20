@@ -1,16 +1,10 @@
 define([
     'cajeta',
-    'text!app/view/home/homePage.html'
-], function(Cajeta, template) {
+    'text!app/view/home/homePage.html',
+    'model'
+], function(Cajeta, template, model) {
         // First test classes and extend functionality
         return describe('Cajeta.View.Component', function() {
-            if (Cajeta.theApplication == null)
-                Cajeta.theApplication = new Cajeta.Application({
-                    id: 'componentTestApp'
-                });
-
-            var modelCache = Cajeta.theApplication.model;
-
             var component = new Cajeta.View.Component({
                 id: 'test',
                 modelPath: 'testForm.data',
@@ -35,13 +29,10 @@ define([
             });
 
             it('can be bound to the model', function() {
-                var modelAdaptor = component.modelAdaptor;
-                modelCache.addListener(modelAdaptor, Cajeta.Events.EVENT_MODELCACHE_CHANGED,
-                        modelAdaptor.getEventOperand());
-                expect(function() { component.modelAdaptor.onComponentChanged() }).not.toThrow();
-                modelCache.addListener(component2, Cajeta.Events.EVENT_MODELCACHE_CHANGED,
-                        component.modelAdaptor.getEventOperand());
-                expect(function() { component2.setModelValue('delicious') }).not.toThrow();
+                model.addListener(component, Cajeta.Events.EVENT_MODELCACHE_CHANGED);
+                expect(function() { component.onComponentChanged() }).not.toThrow();
+                model.addListener(component2, Cajeta.Events.EVENT_MODELCACHE_CHANGED);
+                expect(function() { component2.setComponentValue('delicious') }).not.toThrow();
             });
 
             it('accepts an html template', function() {
@@ -49,22 +40,25 @@ define([
                 expect(component.template).toBeDefined();
             });
 
-            it('can set the model value', function() {
-                component.setModelValue('three');
-                //alert(Cajeta.theApplication.id);
-                expect(modelCache.get(component.modelAdaptor.modelPath,
-                        component.modelAdaptor.datasourceId)).toEqual('three');
-                expect(component.getModelValue()).toEqual('three');
+            it('can set the model value through the component', function() {
+                component.setComponentValue('three');
+                expect(model.get(component.modelPath,
+                        component.datasourceId)).toEqual('three');
             });
 
-            it('should encode the model value in the component html/template/member', function() {
-                expect(component.attr('value')).toEqual('three');
+            it('Updates component value in response to model changes', function() {
+                model.set(component.modelPath, 'eight', component.datasourceId);
+                expect(component.getComponentValue()).toEqual('eight');
             });
 
-            it('can get a model value', function() {
-                expect(component.getModelValue()).toEqual('three');
-            });
-
+//            // TODO: integrate this test
+//            it('can be unbound from a component', function() {
+//                component.modelChanged = false;
+//                model.removeListener(component, Cajeta.Events.EVENT_MODELCACHE_CHANGED,
+//                    component.getEventOperand());
+//                model.set('graphData.childTwo.ten', 'ten');
+//                expect(component.modelChanged).toBeFalsy();
+//            });
         });
     }
 );

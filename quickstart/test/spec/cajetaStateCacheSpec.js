@@ -1,6 +1,6 @@
 define(
-    ['cajeta', 'jquery'],
-    function(Cajeta, $) {
+    ['jquery', 'cajetaModel'],
+    function($, Cajeta) {
         // First test classes and extend functionality
         return describe('Cajeta.Model.StateCache', function() {
 

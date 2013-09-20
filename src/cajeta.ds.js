@@ -128,14 +128,7 @@ define([
          * @param data
          * @param requestId A value that was returned by the initiating POST or GET call
          */
-        onComplete: function(data, requestId) {
-            if (this.modelPath === undefined)
-                throw Cajeta.ERROR_DATASOURCE_MODELPATH_UNDEFINED;
-
-            if (Cajeta.theApplication === null)
-                throw 'Application is not defined';
-            Cajeta.theApplication.getModel().set(this.modelPath, data, this.datasourceId);
-        },
+        onComplete: function(data, requestId) { },
 
         /**
          * Utility method to produce a uri from a template and either the parameters of a provided argument,
@@ -152,8 +145,12 @@ define([
             while ((index = uri.indexOf('{')) >= 0) {
                 key = uri.substring(index + 1, uri.indexOf('}'));
                 value = parameters[key];
-                if (value === undefined && Cajeta.theApplication != null)
-                    Cajeta.theApplication.model.get(key);
+                if (value === undefined)
+                    value = this[key];
+                if (value === undefined && this.data !== undefined)
+                    value = value || this.data[key];
+                if (value === undefined)
+                    value = value || '';
                 uri = uri.replace('{' + key + '}', value);
             }
             return uri;
@@ -281,6 +278,10 @@ define([
         }
     });
 
+    /**
+     * Only provided as a POC.  Unsupported in FF, and IE.
+     * @type {*}
+     */
     Cajeta.Datasource.DbRestDS = Cajeta.Datasource.AbstractRestDS.extend({
         initialize: function(properties) {
             properties = properties || {};

@@ -14,7 +14,7 @@ define([
         id: 'testForm',
         modelPath: 'testForm',
         onSubmit: function() {
-            var myData = this.modelAdaptor.getModelData();
+            var myData = this.getModelValue();
             var ds = Cajeta.Datasource.get('dsApp');
             ds.post(myData);
             return false;

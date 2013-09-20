@@ -31,15 +31,12 @@ define([
 
     /**
      * Runtime info, including author, verison, and license information.
-     * Supports Cajeta.theApplication, which needs to be initialized with the
-     * instance of the application.  This variable is used internally for framework
-     * operation.
      */
     var Cajeta = {
         author: 'Julian Klappenbach',
         version: '0.0.1',
         license: 'MIT 2013',
-        theApplication: null,
+        homePage: 'homePage',
         ERROR_EVENT_ID_UNDEFINED: 'Error: Cajeta.Events.Event.id is undefined',
         ERROR_DATASOURCE_MODELPATH_UNDEFINED: 'Error: Cajeta.Datasource.Ajax.modelPath must be defined',
         ERROR_AJAX_DATASOURCEID_UNDEFINED: 'Error: Cajeta.Datasource.Ajax.datasourceId must be defined',
@@ -90,6 +87,8 @@ define([
      * inheritance and proper OO design still provide the best mechanisms for
      * code reuse, extension, and long term maintenance.
      *
+     * If initialize is defined, this will be called.
+     *
      * @param definition The definition with which to extend the base object.
      * @return The extended object.
      */
@@ -117,12 +116,37 @@ define([
         return child;
     };
 
+    /**
+     * Allows other Cajeta.Class or basic javascript structure to be mixed in with the caller.  This call
+     * should be used over $.extend, as the 'super' function, parent class fn refrence, needs to be
+     * mixed in, with existing properties preserved (initialize, etc).  $.extend will just overwrite.
+     *
+     * @param source
+     */
+    Cajeta.Class.prototype.mixin = function(source) {
+        for (var propertyName in source) {
+            if (propertyName in this) {
+                if (this[propertyName] === source[propertyName])
+                    continue;
+                if (propertyName == 'super') {
+                    var fn = this[propertyName];
+                    for (var fnProp in source[propertyName]) {
+                        if (!(fnProp in fn)) {
+                            fn[fnProp] = source[propertyName][fnProp];
+                        }
+                    }
+                }
+            } else {
+                this[propertyName] = source[propertyName];
+            }
+        }
+    }
+
     Cajeta.Events = {
         EVENT_MODELCACHE_CHANGED: 'EVENT_MODELCACHE_CHANGED'
     };
 
     Cajeta.Events.Event = Cajeta.Class.extend({
-
         initialize: function(properties) {
             properties = properties || {};
             $.extend(true, this, properties);
@@ -152,7 +176,8 @@ define([
          * @param ignore
          */
         dispatchEvent: function(event, ignore) {
-            var listeners = this.eventListenerMap[event.getEventOperand()];
+            var key = event.getEventOperand();
+            var listeners = this.eventListenerMap[key];
             if (listeners !== undefined) {
                 for (var listenerId in listeners) {
                     if (listenerId !== undefined) {
@@ -172,6 +197,9 @@ define([
         addListener: function(listener, eventId, operand) {
             if (listener === undefined || eventId === undefined)
                 throw 'Error: invalid registration parameters for Cajeta.Events.EventDispatch.addListener';
+            if (operand === undefined && listener.getEventOperand !== undefined) {
+                operand = listener.getEventOperand();
+            }
             var key = operand === undefined ? eventId : eventId + ':' + operand;
             var listeners = Cajeta.safeEntry(key, this.eventListenerMap);
             listeners[listener.getId()] = listener;
@@ -190,7 +218,7 @@ define([
     });
 
     /**
-     * Abstract base class for listeners, helps to enforce an API contract with exceptions
+     * Abstract base object definition for listeners, intended for extension only
      * @type {*}
      */
     Cajeta.Events.Listener = Cajeta.Class.extend({
@@ -198,16 +226,6 @@ define([
             throw 'Error: unimplemented';
         },
         onEvent: function(event) {
-            throw 'Error: unimplemented';
-        }
-    });
-
-    Cajeta.Events.Future = Cajeta.Class.extend({
-        initialize: function(properties) {
-            $.extend(true, this, properties);
-        },
-
-        onExecute: function() {
             throw 'Error: unimplemented';
         }
     });

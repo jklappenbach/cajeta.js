@@ -28,7 +28,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-define(['jquery', 'cajetaView'], function($, Cajeta) {
+define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
     Cajeta.View.Html4 = {};
 
     Cajeta.View.Html4.Div = Cajeta.View.Component.extend({
@@ -212,7 +212,7 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
                 this.attrValue = this.defaultValue;
         },
         $onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
+            this.onComponentChanged();
         }
     });
 
@@ -246,28 +246,12 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
             properties.self = self.super;
             self.super.initialize.call(this, properties);
         },
-        setValue: function(value) {
-            if (this.isDocked())
-                this.dom.prop('checked', value);
-            else
-                this.propChecked = value;
-        },
-        getValue: function() {
-            if (this.isDocked())
-                return this.dom.prop('checked');
-            else
-                return this.propChecked;
-        },
         $onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
+            this.onComponentChanged();
         },
         dock: function() {
             var self = (arguments.length > 0) ? arguments[0] : this;
             self.super.dock.call(this, self.super);
-
-            // Bind the component to the model if we have a valid path
-            if (this.modelPath !== undefined)
-                Cajeta.theApplication.getModel().bindComponent(this);
         }
     });
 
@@ -282,7 +266,7 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
             this.elementType = 'textarea';
         },
         $onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
+            // TODO: FIX ME! model.setByPath(this.modelPath, this.getValue(), this);
         }
     });
 
@@ -352,7 +336,7 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
                     } else {
                         this.dom.val(this.defaultValue);
                     }
-                    Cajeta.theApplication.getModel().bindComponent(this);
+                    model.bindComponent(this);
                 }
             }
         },
@@ -399,7 +383,7 @@ define(['jquery', 'cajetaView'], function($, Cajeta) {
             }
         },
         $onHtmlChange: function(event) {
-            Cajeta.theApplication.getModel().setByPath(this.modelPath, this.getValue(), this);
+            model.setByPath(this.modelPath, this.getValue(), this);
         }
     });
 

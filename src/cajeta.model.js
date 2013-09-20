@@ -166,7 +166,7 @@ define([
      * <h2>Cache to Component Surjection</h2>
      * In providing bindings between components and values in the cache, the framework supports a surjection, or a
      * one-to-many (1:*) between a model node value and a set of components.  Components map their internal DOM
-     * state to the model using a contained Cajeta.View.ModelAdaptor instance.  When one component's state is modified,
+     * state to the model using a mixin of a Cajeta.View.ModelAdaptor instance.  When one component's state is modified,
      * it's changes are persisted to the model, which then uses its internal mappings to identify the other components
      * to notify.
      *
@@ -262,14 +262,31 @@ define([
         },
 
         /**
+         * A utility method to provide simplicity
+         * @param component
+         */
+        setByComponent: function(component) {
+            this.set(component.modelPath, component.getComponentValue, component.datasourceId, component);
+        },
+
+        /**
          * Returns a node from the object graph
          * @param modelPath
          * @param datasourceId
          * @return {*}
          */
         get: function(modelPath, datasourceId) {
-            modelPath = (datasourceId || Cajeta.LOCAL_DATASOURCE) + ':' + modelPath;
-            return this.nodeMap[modelPath];
+            var path = (datasourceId || Cajeta.LOCAL_DATASOURCE) + ':' + modelPath;
+            return this.nodeMap[path];
+        },
+
+        /**
+         * A utility method to provide simplicity
+         * @param component
+         * @return {*}
+         */
+        getByComponent: function(component) {
+            return this.get(component.modelPath, component.datasourceId);
         },
 
         /**
@@ -354,23 +371,6 @@ define([
         },
 
         /**
-         * A helper override to simplify listenership.  It makes much more sense to have
-         * modelAdaptors listen to model events.  However, for registration, it's easier to
-         * just pass in a component.
-         *
-         * @param listener The listener to register for an event.
-         * @param eventId The id of the event.
-         * @param eventOp (optional) The operand to filter the event.
-         */
-        addListener: function(listener, eventId, eventOp) {
-            if (listener instanceof Cajeta.View.Component) {
-                listener = listener.modelAdaptor;
-            }
-            var self = (arguments.length > 3) ? arguments[3] : this;
-            self.super.addListener.call(this, listener, eventId, eventOp);
-        },
-
-        /**
          * @private Internal method to recursively remove object graphs from the nodeMap
          *
          * @param modelPath The current model path to delete.
@@ -406,12 +406,11 @@ define([
             }
 
             // And notify any components bound to this modelPath...
-            var ignore = component === undefined ? undefined : component.modelAdaptor;
             this.dispatchEvent(new Cajeta.Events.Event({
                 id: Cajeta.Events.EVENT_MODELCACHE_CHANGED,
-                op: modelPath
-            }), ignore
-            );
+                op: modelPath,
+                data: value
+            }), component);
         }
     });
 
