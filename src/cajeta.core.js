@@ -126,7 +126,7 @@ define([
     Cajeta.Class.prototype.mixin = function(source) {
         for (var propertyName in source) {
             if (propertyName in this) {
-                if (this[propertyName] === source[propertyName])
+                if (this[propertyName] === source[propertyName] || propertyName == 'initialize')
                     continue;
                 if (propertyName == 'super') {
                     var fn = this[propertyName];
@@ -202,7 +202,7 @@ define([
             }
             var key = operand === undefined ? eventId : eventId + ':' + operand;
             var listeners = Cajeta.safeEntry(key, this.eventListenerMap);
-            listeners[listener.getId()] = listener;
+            listeners[listener.getCanonicalId()] = listener;
         },
         removeListener: function(listener, eventId, operand ) {
             if (listener === undefined || eventId === undefined)
@@ -212,7 +212,7 @@ define([
             var key = operand === undefined ? eventId : eventId + ':' + operand;
             var listeners = this.eventListenerMap[key];
             if (listeners !== undefined) {
-                delete listeners[listener.getId()];
+                delete listeners[listener.getCanonicalId()];
             }
         }
     });

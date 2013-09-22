@@ -13,49 +13,6 @@ define([
     Cajeta.View = {
     };
 
-    /**
-     * ModelAdaptor keeps a component and its corresponding model entry synchronized.  Changes to model
-     * entries are directed to onModelChanged.  Conversely, changes to the component are handled by OnComponentUpdate.
-     * This class maintains variables that resolve (and bind) a component to a model entry.
-     * Component.setModelAdaptor.
-     */
-    Cajeta.View.ModelAdaptor = Cajeta.Events.Listener.extend({
-        getDatasourceId: function() {
-            return this.datasourceId;
-        },
-        getModelPath: function() {
-            return this.modelPath;
-        },
-
-//        // TODO: Should we have seperate methods for *ModelValue and *ComponentValue?  Does this make sense?
-//          NO!
-//        getModelValue: function() {
-//            return model.get(this.modelPath, this.datasourceId);
-//        },
-//        setModelValue: function(value) {
-//            model.set(this.modelPath, value, this.datasourceId, this);
-//        },
-
-        /**
-         * Handles ModelCache change events, applying new data to the component and html.
-         * Override this for additional functionality
-         *
-         * @param event The event containing updated data
-         */
-        onEvent: function(event) {
-            if (event.getId() == Cajeta.Events.EVENT_MODELCACHE_CHANGED) {
-                this.setComponentValue(event.getData(), true);
-            }
-        },
-        getEventOperand: function() {
-            return this.datasourceId + ':' + this.modelPath;
-        },
-        onComponentChanged: function() {
-            var value = this.getComponentValue();
-            model.set(this.modelPath, value, this.datasourceId, this);
-        }
-    });
-
     Cajeta.View.EventCallback = $.extend(true, Function.prototype, {
         setInstance: function(instance) { this.instance = instance; }
     });
@@ -87,7 +44,6 @@ define([
             $.extend(true, this, properties);
             if (this.id === undefined)
                 throw Cajeta.ERROR_COMPONENT_COMPONENTID_UNDEFINED;
-            this.parent = null;
             this.attributes = this.attributes || {};
             this.properties = this.properties || {};
             this.cssAttributes = this.cssAttributes || {};
@@ -95,25 +51,22 @@ define([
             this.hotKeys = {};
             this.viewStateId = '';
             this.visible = this.visible || true;
-            this.datasourceId = this.datasourceId || Cajeta.LOCAL_DATASOURCE;
-            this.modelPath = this.modelPath || this.id;
 
-
-            // Default setting for valueTarget
-            this.modelEncoding = this.modelEncoding || "attr:value"; // Could be attr:*, prop:*, or text (element text)
+            // Default setting for valueTarget, ould be attr:*, prop:*, text (element text)
+            this.modelEncoding = this.modelEncoding || "attr:value";
 
             var adaptor;
-            if (properties.modelAdaptor === undefined) {
-                adaptor = new Cajeta.View.ModelAdaptor();
-                this.mixin(adaptor);
-            } else {
-                this.mixin(properties.modelAdaptor);
-                delete this.modelAdaptor;
-            }
 
-            if (this.modelValue !== undefined) {
-                this.setComponentValue(this.modelValue);
-                delete this.modelValue;
+            if (this.datasourceId !== undefined) {
+                if (this.modelAdaptor === undefined) {
+                    this.mixin(new Cajeta.View.ModelAdaptor({
+                        datasourceId: this.datasourceId,
+                        modelPath: this.modelPath
+                    }));
+                } else {
+                    this.mixin(this.modelAdaptor);
+                    delete this.modelAdaptor;
+                }
             }
         },
 
@@ -153,11 +106,11 @@ define([
         getComponentValue: function() {
             var params = this.modelEncoding.split(':');
             switch (params[0]) {
-                case 'attr' :
+                case 'attr':
                     return this.attr(params[1]);
-                case 'prop' :
+                case 'prop':
                     return this.prop(params[1]);
-                case 'text' :
+                case 'text':
                     return this.text();
             }
         },
@@ -174,13 +127,13 @@ define([
         setComponentValue: function(value, internal) {
             var params = this.modelEncoding.split(':');
             switch (params[0]) {
-                case 'attr' :
+                case 'attr':
                     this.attr(params[1], value);
                     break;
-                case 'prop' :
+                case 'prop':
                     this.prop(params[1], value);
                     break;
-                case 'text' :
+                case 'text':
                     this.text(value);
                     break;
             }
@@ -413,7 +366,6 @@ define([
 
                         if (attrValue != undefined && attrValue.value == templateId) {
                             this.template = $(temp[i]);
-
                             this.template.attr('componentid', this.id);
 
                             for (var name in this.attributes) {
@@ -468,9 +420,13 @@ define([
                 } else if (this.dom.length > 1) {
                     throw Cajeta.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.id);
                 }
+
                 if (this.template !== undefined) {
                     // Insert our template into the dom...
                     this.dom.html(this.template.html());
+
+                    // Ensure we have assigned the component ID to the fragment
+                    this.attr('componentId', this.id);
                 } else {
                     // Otherwise, check for any settings that need to be transfered to the dom
                     for (var name in this.attributes) {
@@ -489,10 +445,8 @@ define([
                         this.dom.text(this.textValue);
                 }
 
-                // Ensure we have assigned the component ID to the fragment
-                this.attr('componentId', this.id);
-
-                model.addListener(this, Cajeta.Events.EVENT_MODELCACHE_CHANGED);
+                // Add listeners for our own datamodel, as well as jQuery based hooks
+                this.bindHtmlEvents();
 
                 // Add to the application component map at this point.
                 model.componentMap[this.getCanonicalId()] = this;
@@ -513,6 +467,66 @@ define([
             }
 
             model.removeListener(this);
+        },
+
+        /**
+         * Compute the model path by iterating up through parents until either a form (or other collection node is
+         * reached, or a node containing a root modelPath (no dot operator) is found.  We'll have to play with it to
+         * see what works best.
+         */
+        updateModelPath: function() {
+            var recurseParents = function(parent) {
+                if (parent !== undefined)
+                {
+                    if (parent.modelPath !== undefined) {
+                        if (parent.modelPath.indexOf('.') > 0 && !(parent instanceof Cajeta.View.Form)) {
+                            var base = recurseParents(parent.parent);
+                            return base + '.' + parent.modelPath;
+                        } else {
+                            return parent.modelPath;
+                        }
+                    } else {
+                        return undefined;
+                    }
+                } else {
+                    return undefined;
+                }
+            }
+            var base = recurseParents(this.parent);
+            if (base !== undefined)
+                this.modelPath = base + '.' + this.id;
+            else
+                this.modelPath = this.id;
+        },
+
+        bindModel: function() {
+            if (this.datasourceId !== undefined) {
+                if (this.modelPath === undefined)
+                    this.updateModelPath();
+
+                model.addListener(this, Cajeta.Events.EVENT_MODELCACHE_CHANGED);
+
+                // We may observe the following priorities for setting state:
+                // this.modelValue > model.getByComponent > this.getComponentValue
+                if (this.modelValue !== undefined) {
+                    this.setComponentValue(this.modelValue);
+                    delete this.modelValue; // delete it, so that it doesn't persist over future docks
+                } else {
+                    if (this.promptValue !== undefined) {
+                        this.setComponentValue(this.promptValue, true);
+                    } else {
+                        var value = model.getByComponent(this);
+                        if (value !== undefined) {
+                            this.setComponentValue(value, true);
+                        } else {
+                            value = this.getComponentValue();
+                            if (value !== undefined) {
+                                model.setByComponent(this);
+                            }
+                        }
+                    }
+                }
+            }
         },
 
         /**
@@ -552,7 +566,10 @@ define([
         render: function() {
             if (this.visible == true) {
                 // Dock starting from the top of the hierarchy down, then render children...
-                this.dock.call(this);
+                if (!this.isDocked()) {
+                    this.dock.call(this);
+                    this.bindModel();
+                }
 
                 for (var componentId in this.children) {
                     if (componentId !== undefined)
@@ -653,7 +670,7 @@ define([
                 self.super.dock.call(this, self.super);
                 this.content.dock();
 
-                var data = this.getModelValue();
+                var data = model.getByComponent(this);
                 var i = 0;
                 for (var row in data) {
                     var child = this.content.clone('[' + i + ']');
@@ -984,6 +1001,68 @@ define([
         setStringResourceLocale: function(locale, url) {
             // Default behavior: execute XHR to retrieve the string resource map JSON from the server
             // at the provided url.  The returned result will be assumed to be in the proper format.
+        }
+    });
+
+    /**
+     * A form element, acting as a container for form elements.  Setting autoPath to true will cause the
+     * form's addChild logic to modify the modelPath of children, creating a single hierachy.  For example,
+     * if the form had the modelPath of "form", and a child was added the following logic will be executed:
+     *
+     *  1.  If there's no modelPath on the form element, the element's id will be used, and will be
+     *      set to 'form.[id]'
+     *  2.  If a modelPath has been given, and doesn't contain dots ('.'), the modelPath will be set to 'form.[modelPath]'.
+     *  3.  If the modelPath contains dots, it will be used without modification.
+     */
+    Cajeta.View.Form = Cajeta.View.Component.extend({
+        initialize: function(properties) {
+            properties = properties || {};
+            var self = properties.self || this;
+            properties.self = self.super;
+            self.super.initialize.call(this, properties);
+            this.elementType = 'form';
+        },
+
+        /**
+         *
+         */
+        onSubmit: function() {
+
+        }
+    });
+
+
+    /**
+     * ModelAdaptor keeps a component and its corresponding model entry synchronized.  Changes to model
+     * entries are directed to onModelChanged.  Conversely, changes to the component are handled by OnComponentUpdate.
+     * This class maintains variables that resolve (and bind) a component to a model entry.
+     * Component.setModelAdaptor.
+     */
+    Cajeta.View.ModelAdaptor = Cajeta.Events.Listener.extend({
+        initialize: function(properties) {
+            properties = properties || {};
+            $.extend(true, this, properties);
+            if (this.datasourceId === undefined)
+                throw 'Error: Cajeta.View.ModelAdaptor.datasourceId must be defined';
+        },
+        /**
+         * Handles ModelCache change events, applying new data to the component and html.
+         * Override this for additional functionality
+         *
+         * @param event The event containing updated data
+         */
+        onEvent: function(event) {
+            if (event.getId() == Cajeta.Events.EVENT_MODELCACHE_CHANGED) {
+                this.setComponentValue(event.getData(), true);
+            }
+        },
+        getEventOperand: function() {
+            return this.datasourceId + ':' + this.modelPath;
+        },
+        onComponentChanged: function() {
+            if (this.modelPath !== undefined) {
+                model.setByComponent(this);
+            }
         }
     });
 

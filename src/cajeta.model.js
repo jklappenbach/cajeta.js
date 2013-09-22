@@ -266,7 +266,7 @@ define([
          * @param component
          */
         setByComponent: function(component) {
-            this.set(component.modelPath, component.getComponentValue, component.datasourceId, component);
+            this.set(component.modelPath, component.getComponentValue(), component.datasourceId, component);
         },
 
         /**

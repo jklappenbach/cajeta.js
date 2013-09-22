@@ -393,7 +393,7 @@ define([
             parameters.type = 'DELETE';
             return $.ajax(uri, parameters);
         },
-        ajaxParams: function(parameters) {
+        params: function(parameters) {
             return $.extend(parameters, {
                 complete: parameters.onComplete || parameters.complete || this.onComplete || this.complete,
                 error:  parameters.onError || parameters.error || this.onError || this.error,

@@ -500,17 +500,5 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
         }
     });
 
-    /**
-     *
-     */
-    Cajeta.View.Html4.Form = Cajeta.View.Component.extend({
-        initialize: function(properties) {
-            var self = (properties.self === undefined) ? this : properties.self;
-            properties.self = self.super;
-            self.super.initialize.call(this, properties);
-            this.elementType = 'form';
-        }
-    });
-
     return Cajeta;
 });

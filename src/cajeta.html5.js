@@ -42,14 +42,22 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'div';
             this.modelEncoding = 'text';
-        },
-        render: function() {
-            var self = (arguments.length > 0) ? arguments[0] : this;
-            self.super.render.call(this, self.super);
+            self.super.initialize.call(this, properties);
         }
+    });
+
+    Cajeta.View.Html5.Button = Cajeta.View.Component.extend({
+        initialize: function(properties) {
+            properties = properties || {};
+            var self = properties.self || this;
+            properties.self = self.super;
+            this.elementType = 'button';
+            this.modelEncoding = 'text';
+            self.super.initialize.call(this, properties);
+        },
+        updateModelPath: function() { }
     });
 
     Cajeta.View.Html5.UnorderedList = Cajeta.View.Component.extend({
@@ -79,8 +87,8 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'table';
+            self.super.initialize.call(this, properties);
         }
     });
 
@@ -89,8 +97,8 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'tr';
+            self.super.initialize.call(this, properties);
         }
     });
 
@@ -99,8 +107,8 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'td';
+            self.super.initialize.call(this, properties);
         }
     });
 
@@ -109,9 +117,9 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'a';
             this.modelEncoding = "attr:href";
+            self.super.initialize.call(this, properties);
         }
     });
 
@@ -120,9 +128,9 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'span';
             this.modelEncoding = "text";
+            self.super.initialize.call(this, properties);
         }
     });
 
@@ -131,9 +139,9 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'label';
             this.modelEncoding = 'text';
+            self.super.initialize.call(this, properties);
         }
     });
 
@@ -161,7 +169,22 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
+            this.datasourceId = this.datasourceId || Cajeta.LOCAL_DATASOURCE;
             self.super.initialize.call(this, properties);
+        },
+        getComponentValue: function() {
+            var value;
+            if (this.isDocked()) {
+                value = this.dom.val();
+            } else {
+                var self = (arguments.length > 0) ? arguments[0] : this;
+                value = self.super.getComponentValue.call(this);
+            }
+
+            if (value == this.promptValue)
+                value = '';
+
+            return value;
         }
     });
 
@@ -174,6 +197,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
+            this.modelEncoding = 'prop:checked';
             self.super.initialize.call(this, properties);
         },
         dock: function() {
@@ -187,7 +211,8 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
         },
         $onHtmlChange: function(event) {
             this.parent.onComponentChanged();
-        }
+        },
+        updateModelPath: function() { }
     });
 
     /**
@@ -198,8 +223,9 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.modelEncoding = 'prop:checked';
+            this.datasourceId = this.datasourceId || Cajeta.LOCAL_DATASOURCE;
+            self.super.initialize.call(this, properties);
         },
         dock: function() {
             var self = (arguments.length > 0) ? arguments[0] : this;
@@ -215,12 +241,27 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'textarea';
             this.modelEncoding = 'text';
+            this.datasourceId = this.datasourceId || Cajeta.LOCAL_DATASOURCE;
+            self.super.initialize.call(this, properties);
         },
         $onHtmlChange: function(event) {
-            this.modelValue.onComponentChanged();
+            this.onComponentChanged();
+        },
+        getComponentValue: function() {
+            var value;
+            if (this.isDocked()) {
+                value = this.dom.val();
+            } else {
+                var self = (arguments.length > 0) ? arguments[0] : this;
+                 value = self.super.getComponentValue.call(this);
+            }
+
+            if (value == this.promptValue)
+                value = '';
+
+            return value;
         }
     });
 
@@ -233,9 +274,9 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'legend';
             this.modelEncoding = 'text';
+            self.super.initialize.call(this, properties);
         }
     });
 
@@ -251,16 +292,25 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
+            this.order = []; // A list of ids to track order (maps are not order preserving)
+            this.datasourceId = this.datasourceId || Cajeta.LOCAL_DATASOURCE;
             self.super.initialize.call(this, properties);
-
         },
+
+        addChild: function(child) {
+            var self = (arguments.length > 1) ? arguments[1] : this;
+            self.super.addChild.call(this, child);
+            this.order.push(child.id);
+        },
+
+
         getComponentValue: function() {
             var value = null;
 
-            for (var name in this.children) {
-                if (name !== undefined) {
-                    if (this.children[name].dom.prop('checked') == true) {
-                        value = name;
+            for (var componentId in this.children) {
+                if (componentId !== undefined) {
+                    if (this.children[componentId].getComponentValue() == true) {
+                        value = componentId;
                         break;
                     }
                 }
@@ -268,11 +318,9 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             return value;
         },
         setComponentValue: function(value, internal) {
-            for (var name in this.children) {
-                if (name !== undefined) {
-                    if (this.children[name].dom.attr('value') == value) {
-                        this.children[name].dom.prop('checked', true);
-                    }
+            for (var componentId in this.children) {
+                if (componentId !== undefined) {
+                    this.children[componentId].setComponentValue(componentId == value, true);
                 }
             }
             if (internal === undefined || internal == false) {
@@ -287,13 +335,37 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
                 // Add to the application component map at this point.
                 model.componentMap[this.id] = this;
 
+                // Compute the modelPath
+                this.updateModelPath();
+
+                // First, if a modelValue has been declared, this will override the existing HTML, or even
+                // child component settings.  If we don't have a modelValue declared, then we need to get the
+                // value from the children.  If nothing has been selected, then we should declare the first
+                // child automatically set.  The resulting componentId will be used to initialize the model.
+                var value = undefined;
+                if (this.modelValue !== undefined) {
+                    this.setComponentValue(this.modelValue);
+                    delete this.modelValue;
+                } else {
+                    // Check and see if there's a value in the model that we should use...
+                    value = model.getByComponent(this);
+                    if (value !== undefined) {
+                        this.setComponentValue(value, true);
+                    } else {
+                        // Use the existing state (if set in HTML) for the value
+                        value = this.getComponentValue();
+                        model.setByComponent(this);
+                        if (value === undefined) {
+                            this.setComponentValue(this.order[0]);
+                        }
+                    }
+                }
+
                 // Bind the component to the model
-                model.addListener(this,
-                    Cajeta.Events.EVENT_MODELCACHE_CHANGED);
+                model.addListener(this, Cajeta.Events.EVENT_MODELCACHE_CHANGED);
             }
         }
     });
-
 
     /**
      *
@@ -305,6 +377,8 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
             this.elementType = 'select';
+            this.datasourceId = this.datasourceId || Cajeta.LOCAL_DATASOURCE;
+            this.selectedType = this.selectedType || 'index'; // value || index
             self.super.initialize.call(this, properties);
         },
         dock: function() {
@@ -340,58 +414,28 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
                         }
                         this.dom.append(element);
                     }
-                }
-
-                // Bind the component to the model if we have a valid path
-                if (this.modelPath !== undefined) {
-                    if (this.modelValue == undefined) {
-                        this.modelValue = this.dom.val();
-                    } else {
-                        this.dom.val(this.modelValue);
-                    }
+                    this.selectedIndex(0);
                 }
             }
         },
-        selectedIndex: function(value) {
-            if (value === undefined) {
-                if (this.isDocked()) {
-                    if (this.prop('multiple')) {
-                        if (value == null) {
-                            this.dom.find('option').map(function() { this.selected = false; });
-                        } else {
-                            var options = this.dom.find('option');
-                            var values = {};
-                            value.split(',').map(function() {
-                                values[arguments[0]] = true;
-                            });
-                            for (var i = 0; i < options.length; i++) {
-                                options[i].selected = (values[options[i].value] !== undefined);
-                            }
-                        }
-                    }
-                    else {
-                        this.dom.selectedIndex = value;
-                    }
-                } else {
-                    if (this.prop('multiple')) {
 
-                    } else {
-                        this.properties['selectedIndex'] = value;
-                    }
-                }
+        selectedIndex: function(value) {
+            if (arguments.length > 0) {
+                if (this.selectedType == 'index')
+                    this.prop('selectedIndex', value);
+                else
+                    this.dom.val(value);
             } else {
                 if (this.isDocked()) {
                     var value;
-                    if (this.isMultiple()) {
-                        value = this.dom.find("option:selected").map(function() { return this.value; }).get().join(",");
-                    } else {
+                    if (this.selectedType == 'index')
+                        value = this.prop('selectedIndex');
+                    else
                         value = this.dom.val();
-                    }
                     return value;
                 } else {
                     return this.attributes['value'];
                 }
-
             }
         },
         getComponentValue: function() {
@@ -419,9 +463,9 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             this.elementType = 'img';
             this.modelEncoding = 'attr:src';
+            self.super.initialize.call(this, properties);
         },
         dock: function() {
             if (!this.isDocked()) {
@@ -479,6 +523,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
                 }
             }
         },
+
         /**
          * We add tab entries as children, but they're not represented as unique, docked elements.
          * Instead, we append each child to the same content element, and use CSS to toggle between
@@ -528,53 +573,6 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
         }
     });
 
-    /**
-     * A form element, acting as a container for form elements.  Setting autoPath to true will cause the
-     * form's addChild logic to modify the modelPath of children, creating a single hierachy.  For example,
-     * if the form had the modelPath of "form", and a child was added the following logic will be executed:
-     *
-     *  1.  If there's no modelPath on the form element, the element's id will be used, and will be
-     *      set to 'form.[id]'
-     *  2.  If a modelPath has been given, and doesn't contain dots ('.'), the modelPath will be set to 'form.[modelPath]'.
-     *  3.  If the modelPath contains dots, it will be used without modification.
-     */
-    Cajeta.View.Html5.Form = Cajeta.View.Component.extend({
-        initialize: function(properties) {
-            properties = properties || {};
-            var self = properties.self || this;
-            properties.self = self.super;
-            self.super.initialize.call(this, properties);
-            this.elementType = 'form';
-            this.autoPath = this.autoPath || false;
-        },
-
-        /**
-         * We check to see if the form supports autoPath.  If so, then we will set the component's modelPath
-         * using the form's modelPath + '.' + the component's contribution.  This will be either:
-         *
-         * 1.  If a dot is found in the component's modelPath, it is used exclusively.
-         * 2.  The component's modelPath, if no '.' exists in it.
-         * @param component
-         */
-        addChild: function(component) {
-            var self = arguments[1] || this;
-            if (this.autoPath) {
-                if (component.modelPath.indexOf('.') < 0) {
-                    component.modelPath = this.modelPath + '.' +
-                            component.modelPath;
-                }
-            }
-
-            self.super.addChild.call(this, component, self.super);
-        },
-
-        /**
-         *
-         */
-        onSubmit: function() {
-            
-        }
-    });
 
     return Cajeta;
 });

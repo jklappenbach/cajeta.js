@@ -1,8 +1,9 @@
 define([
     'jquery',
     'cajetaHtml5',
-    'text!app/view/home/formExampleDiv.html'
-], function($, Cajeta, formExampleDiv) {
+    'text!app/view/home/formExampleDiv.html',
+    'model'
+], function($, Cajeta, formExampleDiv, model) {
 
     // Create an alias for namespace brevity.
     var Html5 = Cajeta.View.Html5;
@@ -10,96 +11,81 @@ define([
     var div = new Html5.Div({ id: 'formExampleDiv' });
     div.setTemplate('formExampleDiv', formExampleDiv);
 
-    var form = new Html5.Form({
+    var form = new Cajeta.View.Form({
         id: 'testForm',
         modelPath: 'testForm',
         onSubmit: function() {
-            var myData = this.getModelValue();
-            var ds = Cajeta.Datasource.get('dsApp');
-            ds.post(myData);
+            var myData = model.getByComponent(this);
+//            var ds = Cajeta.Datasource.get('dsApp');
+//            ds.post(myData);
             return false;
         }
     });
 
     form.addChild(new Html5.Label({
         id: 'firstLabel',
-        modelValue: 'Label Text'
+        modelValue: 'My Label Text'
     }));
 
     form.addChild(new Html5.TextInput({
         id: 'firstTextField',
-        modelPath: 'testForm.firstTextField',
-        attributes: { value: 'First Example Text' }
+        modelValue: 'First Example Text'
     }));
 
     form.addChild(new Html5.TextInput({
         id: 'secondTextField',
-        modelPath: 'testForm.secondTextField',
-        attributes: { value: 'Second Example Text' }
+        modelValue: 'Second Example Text'
     }));
 
     // Add Checkboxes
     form.addChild(new Html5.CheckboxInput({
         id: 'greenColor',
-        modelPath: 'testForm.greenColor',
-        properties: { checked: 'true' }
+        modelValue: 'true'
     }));
 
     form.addChild(new Html5.CheckboxInput({
-        id: 'blueColor',
-        modelPath: 'testForm.blueColor'
+        id: 'blueColor'
     }));
 
     form.addChild(new Html5.CheckboxInput({
         id: 'redColor',
-        modelPath: 'testForm.redColor',
-        properties: { checked: 'true' }
+        modelValue: 'true'
     }));
 
     // Add RadioGroup
     var radioGroup = new Html5.RadioGroup({
         id: 'dietGroup',
-        modelPath: 'testForm.diet',
-        attributes: { value: 'omnivore' }
+        modelValue: 'omnivore'
     });
 
-    radioGroup.addChild(new Html5.RadioInput({
-        id: 'vegetarian',
-        properties: { checked: true }
-    }));
-
+    radioGroup.addChild(new Html5.RadioInput({ id: 'vegetarian', properties: { checked: true } }));
     radioGroup.addChild(new Html5.RadioInput({ id: 'pescatarian' }));
     radioGroup.addChild(new Html5.RadioInput({ id: 'omnivore' }));
 
-    // TextArea
+    // TextArea, example of how to have a default value that doesn't get committed
     form.addChild(new Html5.TextArea({
         id: 'textArea',
         modelPath: 'testForm.description',
         attributes: { cols: 100, rows: 5 },
-        properties: { value: 'Enter a description here.' }
+        promptValue: 'Enter a description here'
     }));
 
     form.addChild(new Html5.Select({
-        id: 'selectStatic',
-        modelPath: 'testForm.selectStatic'
+        id: 'selectStatic'
     }));
 
     form.addChild(new Html5.Select({
         id: 'selectProgrammatic',
-        modelPath: 'testForm.selectProgrammatic',
         options: [
             { type: 'option', label: 'First Option', value: 'firstOption' },
             { type: 'option', label: 'Second Option', value: 'secondOption'},
             { type: 'option', label: 'Third Option', value: 'thirdOption' }
-        ],
-        onHtmlChange: function(event) {
-            alert('Programmatic is changed.');
-        }
+        ]
     }));
 
     form.addChild(new Html5.Select({
         id: 'selectProgrammaticOption',
-        modelPath: 'testForm.selectProgrammaticOption', options: [
+        options: [
             { type: 'optgroup', label: 'First Option', options: [
                 { type: 'option', label: 'First Child Option', value: 'firstChildOption'},
                 { type: 'option', label: 'Second Child Option', value: 'secondChildOption' }]},
@@ -110,7 +96,6 @@ define([
 
     form.addChild(new Html5.Select({
         id: 'selectMultiProgrammatic',
-        modelPath: 'testForm.selectMultiProgrammatic',
         options: [
             { type: 'option', label: 'First Multi Option', value: 'firstMultiOption' },
             { type: 'option', label: 'Second Multi Option', value: 'secondMultiOption' },
@@ -119,6 +104,13 @@ define([
     }));
 
     form.addChild(radioGroup);
+
+    form.addChild(new Html5.Button({
+        id: 'submitButton',
+        onHtmlClick: function() {
+            form.onSubmit();
+        }
+    }));
     div.addChild(form);
     return div;
 });
