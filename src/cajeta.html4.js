@@ -195,7 +195,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
                 if (properties.defaultValue !== undefined)
                     this.attrValue = properties.defaultValue;
                 else
-                    this.attrValue = this.componentId;
+                    this.attrValue = this.cid;
             }
         }
     });
@@ -232,7 +232,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
 
             // Set the value of the element if not set in markup
             if (this.dom.attr('value') === undefined) {
-                this.dom.attr('value', this.componentId);
+                this.dom.attr('value', this.cid);
             }
         }
     });
@@ -429,7 +429,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
                 this.content = properties['content'];
             } else {
                 var contentId = properties['contentId'] === undefined ? 'content' : properties['contentId'];
-                this.content = new Cajeta.View.Html4.Div({ componentId: contentId });
+                this.content = new Cajeta.View.Html4.Div({ cid: contentId });
             }
             this.tabEntries = new Array();
             this.selectedIndex = 0;
@@ -460,7 +460,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
         },
         addChild: function(tabEntry) {
             if (tabEntry.component === undefined || tabEntry.title === undefined)
-                throw 'Invalid tabEntry submitted to tabControl "' + this.componentId + '".';
+                throw 'Invalid tabEntry submitted to tabControl "' + this.cid + '".';
             if (tabEntry.component.template === undefined)
                 throw 'Only components with valid templates may be used as tab children.';
 

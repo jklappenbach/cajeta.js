@@ -45,10 +45,10 @@ define([
         ERROR_MODELCACHE_PATH_UNDEFINED: 'Error: "{0}" could not be resolved to an entry',
         ERROR_MODELADAPTOR_MODELPATH_UNDEFINED: 'Error: modelPath must be defined',
         ERROR_COMPONENT_MODELADAPTOR_UNDEFINED: 'Error: Cajeta.View.Component.modelAdaptor must be defined for "{0}"',
-        ERROR_COMPONENT_COMPONENTID_UNDEFINED: 'Error: Cajeta.View.Component.id must be defined',
-        ERROR_COMPONENT_INVALIDTEMPLATE: 'Error: Invalid template for "{0}"; must contain an element with a templateId of "{1}"',
-        ERROR_COMPONENT_DOCK_UNDEFINED: 'Error: Dock failed, unable to resolve an element with componentId "{0}" in target HTML',
-        ERROR_COMPONENT_DOCK_MULTIPLE: 'Error: Dock failed, more than one element was found with componentId "{0}" in target HTML',
+        ERROR_COMPONENT_CID_UNDEFINED: 'Error: Cajeta.View.Component.cid must be defined',
+        ERROR_COMPONENT_INVALIDTEMPLATE: 'Error: Invalid template for "{0}"; must contain an element with a tid of "{1}"',
+        ERROR_COMPONENT_DOCK_UNDEFINED: 'Error: Dock failed, unable to resolve an element with cid "{0}" in target HTML',
+        ERROR_COMPONENT_DOCK_MULTIPLE: 'Error: Dock failed, more than one element was found with cid "{0}" in target HTML',
         ERROR_MODELADAPTOR_COMPONENT_UNDEFINED: 'Error: Cajeta.View.ModelAdaptor.component must be defined',
         ERROR_APPLICATION_PAGE_UNDEFINED: 'Error: Page "{0}" undefined',
         DEFAULT_PAGETITLE: 'Default Cajeta Page',
@@ -126,7 +126,7 @@ define([
     Cajeta.Class.prototype.mixin = function(source) {
         for (var propertyName in source) {
             if (propertyName in this) {
-                if (this[propertyName] === source[propertyName] || propertyName == 'initialize')
+                if (propertyName == 'initialize' || propertyName == 'setInstance')
                     continue;
                 if (propertyName == 'super') {
                     var fn = this[propertyName];
@@ -135,6 +135,8 @@ define([
                             fn[fnProp] = source[propertyName][fnProp];
                         }
                     }
+                } else {
+                    this[propertyName] = source[propertyName];
                 }
             } else {
                 this[propertyName] = source[propertyName];
@@ -154,10 +156,10 @@ define([
                 throw Cajeta.ERROR_EVENT_ID_UNDEFINED;
         },
         getId: function() {
-            return this.id;
+            return this.cid;
         },
         getEventOperand: function() {
-            var key = this.op === undefined ? this.id : this.id + ':' + this.op;
+            var key = this.op === undefined ? this.cid : this.cid + ':' + this.op;
             return key;
         },
         getData: function() {

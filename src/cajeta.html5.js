@@ -42,8 +42,8 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            this.elementType = 'div';
-            this.modelEncoding = 'text';
+            properties.elementType = 'div';
+            properties.modelEncoding = 'text';
             self.super.initialize.call(this, properties);
         }
     });
@@ -53,8 +53,8 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            this.elementType = 'button';
-            this.modelEncoding = 'text';
+            properties.elementType = 'button';
+            properties.modelEncoding = 'text';
             self.super.initialize.call(this, properties);
         },
         updateModelPath: function() { }
@@ -66,7 +66,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
-            this.elementType = 'ul';
+            properties.elementType = 'ul';
         },
         dock: function() {
             var self = (arguments.length > 0) ? arguments[0] : this;
@@ -87,7 +87,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            this.elementType = 'table';
+            properties.elementType = 'table';
             self.super.initialize.call(this, properties);
         }
     });
@@ -97,7 +97,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            this.elementType = 'tr';
+            properties.elementType = 'tr';
             self.super.initialize.call(this, properties);
         }
     });
@@ -107,7 +107,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            this.elementType = 'td';
+            properties.elementType = 'td';
             self.super.initialize.call(this, properties);
         }
     });
@@ -117,8 +117,8 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            this.elementType = 'a';
-            this.modelEncoding = "attr:href";
+            properties.elementType = 'a';
+            properties.modelEncoding = "attr:href";
             self.super.initialize.call(this, properties);
         }
     });
@@ -128,8 +128,8 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            this.elementType = 'span';
-            this.modelEncoding = "text";
+            properties.elementType = 'span';
+            properties.modelEncoding = "text";
             self.super.initialize.call(this, properties);
         }
     });
@@ -139,8 +139,8 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            this.elementType = 'label';
-            this.modelEncoding = 'text';
+            properties.elementType = 'label';
+            properties.modelEncoding = 'text';
             self.super.initialize.call(this, properties);
         }
     });
@@ -153,10 +153,10 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            this.elementType = 'input';
+            properties.elementType = 'input';
             self.super.initialize.call(this, properties);
         },
-        $onHtmlChange: function(event) {
+        _onHtmlChange: function(event) {
             this.onComponentChanged();
         }
     });
@@ -169,7 +169,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            this.datasourceId = this.datasourceId || Cajeta.LOCAL_DATASOURCE;
+            properties.datasourceId = properties.datasourceId || Cajeta.LOCAL_DATASOURCE;
             self.super.initialize.call(this, properties);
         },
         getComponentValue: function() {
@@ -197,7 +197,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            this.modelEncoding = 'prop:checked';
+            properties.modelEncoding = 'prop:checked';
             self.super.initialize.call(this, properties);
         },
         dock: function() {
@@ -206,10 +206,10 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
 
             // Set the value of the element if not set in markup
             if (this.dom.attr('value') === undefined) {
-                this.dom.attr('value', this.id);
+                this.dom.attr('value', this.cid);
             }
         },
-        $onHtmlChange: function(event) {
+        _onHtmlChange: function(event) {
             this.parent.onComponentChanged();
         },
         updateModelPath: function() { }
@@ -223,13 +223,9 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            this.modelEncoding = 'prop:checked';
-            this.datasourceId = this.datasourceId || Cajeta.LOCAL_DATASOURCE;
+            properties.modelEncoding = 'prop:checked';
+            properties.datasourceId = properties.datasourceId || Cajeta.LOCAL_DATASOURCE;
             self.super.initialize.call(this, properties);
-        },
-        dock: function() {
-            var self = (arguments.length > 0) ? arguments[0] : this;
-            self.super.dock.call(this, self.super);
         }
     });
 
@@ -241,12 +237,12 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            this.elementType = 'textarea';
-            this.modelEncoding = 'text';
-            this.datasourceId = this.datasourceId || Cajeta.LOCAL_DATASOURCE;
+            properties.elementType = 'textarea';
+            properties.modelEncoding = 'text';
+            properties.datasourceId = properties.datasourceId || Cajeta.LOCAL_DATASOURCE;
             self.super.initialize.call(this, properties);
         },
-        $onHtmlChange: function(event) {
+        _onHtmlChange: function(event) {
             this.onComponentChanged();
         },
         getComponentValue: function() {
@@ -274,8 +270,8 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            this.elementType = 'legend';
-            this.modelEncoding = 'text';
+            properties.elementType = 'legend';
+            properties.modelEncoding = 'text';
             self.super.initialize.call(this, properties);
         }
     });
@@ -292,8 +288,8 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            this.order = []; // A list of ids to track order (maps are not order preserving)
-            this.datasourceId = this.datasourceId || Cajeta.LOCAL_DATASOURCE;
+            properties.order = []; // A list of ids to track order (maps are not order preserving)
+            properties.datasourceId = properties.datasourceId || Cajeta.LOCAL_DATASOURCE;
             self.super.initialize.call(this, properties);
         },
 
@@ -307,10 +303,10 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
         getComponentValue: function() {
             var value = null;
 
-            for (var componentId in this.children) {
-                if (componentId !== undefined) {
-                    if (this.children[componentId].getComponentValue() == true) {
-                        value = componentId;
+            for (var cid in this.children) {
+                if (cid !== undefined) {
+                    if (this.children[cid].getComponentValue() == true) {
+                        value = cid;
                         break;
                     }
                 }
@@ -318,9 +314,9 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             return value;
         },
         setComponentValue: function(value, internal) {
-            for (var componentId in this.children) {
-                if (componentId !== undefined) {
-                    this.children[componentId].setComponentValue(componentId == value, true);
+            for (var cid in this.children) {
+                if (cid !== undefined) {
+                    this.children[cid].setComponentValue(cid == value, true);
                 }
             }
             if (internal === undefined || internal == false) {
@@ -333,7 +329,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
         dock: function() {
             if (!this.isDocked()) {
                 // Add to the application component map at this point.
-                model.componentMap[this.id] = this;
+                model.componentMap[this.cid] = this;
 
                 // Compute the modelPath
                 this.updateModelPath();
@@ -341,7 +337,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
                 // First, if a modelValue has been declared, this will override the existing HTML, or even
                 // child component settings.  If we don't have a modelValue declared, then we need to get the
                 // value from the children.  If nothing has been selected, then we should declare the first
-                // child automatically set.  The resulting componentId will be used to initialize the model.
+                // child automatically set.  The resulting cid will be used to initialize the model.
                 var value = undefined;
                 if (this.modelValue !== undefined) {
                     this.setComponentValue(this.modelValue);
@@ -376,9 +372,9 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            this.elementType = 'select';
-            this.datasourceId = this.datasourceId || Cajeta.LOCAL_DATASOURCE;
-            this.selectedType = this.selectedType || 'index'; // value || index
+            properties.elementType = 'select';
+            properties.datasourceId = properties.datasourceId || Cajeta.LOCAL_DATASOURCE;
+            properties.selectedType = properties.selectedType || 'index'; // value || index
             self.super.initialize.call(this, properties);
         },
         dock: function() {
@@ -414,7 +410,6 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
                         }
                         this.dom.append(element);
                     }
-                    this.selectedIndex(0);
                 }
             }
         },
@@ -428,10 +423,11 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             } else {
                 if (this.isDocked()) {
                     var value;
-                    if (this.selectedType == 'index')
-                        value = this.prop('selectedIndex');
-                    else
+                    if (this.selectedType == 'index') {
+                        value = this.dom.val(); //this.prop('selectedIndex');
+                    } else {
                         value = this.dom.val();
+                    }
                     return value;
                 } else {
                     return this.attributes['value'];
@@ -450,7 +446,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             }
         },
 
-        $onHtmlChange: function(event) {
+        _onHtmlChange: function(event) {
             this.onComponentChanged();
         }
     });
@@ -463,8 +459,8 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
-            this.elementType = 'img';
-            this.modelEncoding = 'attr:src';
+            properties.elementType = 'img';
+            properties.modelEncoding = 'attr:src';
             self.super.initialize.call(this, properties);
         },
         dock: function() {
@@ -481,15 +477,15 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            self.super.initialize.call(this, properties);
             if (properties['content'] !== undefined) {
-                this.content = properties['content'];
+                properties.content = properties['content'];
             } else {
                 var contentId = properties['contentId'] || 'content';
-                this.content = new Cajeta.View.Html5.Div({ id: contentId });
+                properties.content = new Cajeta.View.Html5.Div({ cid: contentId });
             }
-            this.tabEntries = new Array();
-            this.selectedIndex = 0;
+            properties.tabEntries = new Array();
+            properties.selectedIndex = 0;
+            self.super.initialize.call(this, properties);
         },
 
         /**
@@ -533,10 +529,10 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
          */
         addChild: function(tabEntry) {
             if (tabEntry.component === undefined || tabEntry.title === undefined)
-                throw Cajeta.View.Html5.str.ERROR_TABLIST_INVALID_TABENTRY.format(this.id);
+                throw Cajeta.View.Html5.str.ERROR_TABLIST_INVALID_TABENTRY.format(this.cid);
             if (tabEntry.component.template === undefined)
                 throw Cajeta.View.Html5.str.ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED.format(
-                    tabEntry.component.id, this.id);
+                    tabEntry.component.id, this.cid);
 
             // We set the contentId to dock using existing logic
             this.tabEntries.push(tabEntry);

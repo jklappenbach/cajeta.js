@@ -40,10 +40,23 @@ define([
          * @param properties
          */
         initialize: function(properties) {
-            properties = properties || {};
+            if (properties === undefined || (properties.cid === undefined && properties.tid === undefined))
+                throw Cajeta.ERROR_COMPONENT_CID_UNDEFINED;
+
+            if (properties.datasourceId !== undefined) {
+                if (properties.modelAdaptor === undefined) {
+                    this.mixin(new Cajeta.View.ModelAdaptor({
+                        datasourceId: properties.datasourceId,
+                        modelPath: properties.modelPath
+                    }));
+                    delete properties.datasourceId;
+                } else {
+                    this.mixin(properties.modelAdaptor);
+                    delete properties.modelAdaptor;
+                }
+            }
             $.extend(true, this, properties);
-            if (this.id === undefined)
-                throw Cajeta.ERROR_COMPONENT_COMPONENTID_UNDEFINED;
+
             this.attributes = this.attributes || {};
             this.properties = this.properties || {};
             this.cssAttributes = this.cssAttributes || {};
@@ -54,20 +67,6 @@ define([
 
             // Default setting for valueTarget, ould be attr:*, prop:*, text (element text)
             this.modelEncoding = this.modelEncoding || "attr:value";
-
-            var adaptor;
-
-            if (this.datasourceId !== undefined) {
-                if (this.modelAdaptor === undefined) {
-                    this.mixin(new Cajeta.View.ModelAdaptor({
-                        datasourceId: this.datasourceId,
-                        modelPath: this.modelPath
-                    }));
-                } else {
-                    this.mixin(this.modelAdaptor);
-                    delete this.modelAdaptor;
-                }
-            }
         },
 
         /**
@@ -75,7 +74,7 @@ define([
          * @return {*}
          */
         getId: function() {
-            return this.id;
+            return this.cid;
         },
 
         /**
@@ -84,7 +83,7 @@ define([
          */
         setId: function(id) {
             if (id !== undefined) {
-                this.id = id;
+                this.cid = id;
             }
         },
 
@@ -94,9 +93,9 @@ define([
          */
         getCanonicalId: function() {
             if (parent !== undefined && parent.getCanonicalId !== undefined)
-                return parent.getCanonicalId() + '.' + this.id;
+                return parent.getCanonicalId() + '.' + this.cid;
             else
-                return this.id;
+                return this.cid;
         },
 
         /**
@@ -140,6 +139,10 @@ define([
 
             if (internal === undefined || internal == false)
                 this.onComponentChanged();
+        },
+
+        onComponentChanged: function() {
+            // Override or mixin to provide behavior
         },
 
         /**
@@ -315,9 +318,9 @@ define([
          * @param component
          */
         addChild: function(component) {
-            var id = component.getId();
+            var id = component.cid;
             if (id == undefined || id == '') {
-                throw Cajeta.ERROR_COMPONENT_COMPONENTID_UNDEFINED;
+                throw Cajeta.ERROR_COMPONENT_CID_UNDEFINED;
             }
             this.children[id] = component;
             component.parent = this;
@@ -325,13 +328,13 @@ define([
 
         /**
          *
-         * @param componentId
+         * @param cid
          */
-        removeChild: function(componentId) {
-            if (this.children[componentId] !== undefined) {
-                this.children[componentId].undock();
-                delete this.children[componentId].parent;
-                delete this.children[componentId];
+        removeChild: function(cid) {
+            if (this.children[cid] !== undefined) {
+                this.children[cid].undock();
+                delete this.children[cid].parent;
+                delete this.children[cid];
             }
         },
 
@@ -354,19 +357,19 @@ define([
          * When a valid DOM element has been created, any preserved attributes are assigned to the
          * element.
          *
-         * @param templateId The ID of the template
+         * @param tid The ID of the template
          * @param template The template source, may contain many templates.
          */
-        setTemplate: function(templateId, template) {
+        setTemplate: function(tid, template) {
             var temp = $(template);
             if (temp.length > 0) {
                 for (var i = 0; i < temp.length; i++) {
                     if (temp[i].attributes != undefined) {
-                        var attrValue = temp[i].attributes['templateId'];
+                        var attrValue = temp[i].attributes['tid'];
 
-                        if (attrValue != undefined && attrValue.value == templateId) {
+                        if (attrValue != undefined && attrValue.value == tid) {
                             this.template = $(temp[i]);
-                            this.template.attr('componentid', this.id);
+                            this.template.attr('cid', this.cid);
 
                             for (var name in this.attributes) {
                                 if (name !== undefined)
@@ -388,7 +391,7 @@ define([
                 }
             }
             if (this.template === undefined) {
-                throw Cajeta.ERROR_COMPONENT_INVALIDTEMPLATE.format(this.getCanonicalId(), templateId);
+                throw Cajeta.ERROR_COMPONENT_INVALIDTEMPLATE.format(this.getCanonicalId(), tid);
             }
         },
         getTemplate: function() {
@@ -412,44 +415,61 @@ define([
          * will throw an exception.
          */
         dock: function() {
+            var type = this.getElementType();
             if (!this.isDocked()) {
-                var type = this.getElementType();
-                this.dom = $(type + '[componentid = "' + this.id + '"]');
-                if (this.dom.length == 0) {
-                    throw Cajeta.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.id);
-                } else if (this.dom.length > 1) {
-                    throw Cajeta.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.id);
-                }
-
-                if (this.template !== undefined) {
-                    // Insert our template into the dom...
-                    this.dom.html(this.template.html());
-
-                    // Ensure we have assigned the component ID to the fragment
-                    this.attr('componentId', this.id);
+                // We've defined the dock element as a template.  Grab the element from the DOM
+                // store it as a template, and remove it from the markup
+                if (this.tid !== undefined) {
+                    this.template = $('*[tid = "' + this.tid + '"]');
+//                    this.template = $(type + '[tid = "' + this.tid + '"]');
+                    if (this.template.length == 0) {
+                        throw Cajeta.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.tid);
+                    } else if (this.template.length > 1) {
+                        throw Cajeta.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.tid);
+                    }
+                    $('*[tid = "' + this.tid + '"]').detach();
+                    // TODO provide synchronization with settings made before docking
                 } else {
-                    // Otherwise, check for any settings that need to be transfered to the dom
-                    for (var name in this.attributes) {
-                        if (name !== undefined)
-                            this.dom.attr(name, this.attributes[name]);
+                    this.dom = $('*[cid = "' + this.cid + '"]');
+//                    this.dom = $(type + '[cid = "' + this.cid + '"]');
+                    if (this.dom.length == 0) {
+                        throw Cajeta.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.cid);
+                    } else if (this.dom.length > 1) {
+                        throw Cajeta.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.cid);
                     }
-                    for (var name in this.properties) {
-                        if (name !== undefined)
-                            this.dom.prop(name, this.properties[name]);
+
+                    // If we have a template assigned to this component, then inject it, replacing the
+                    // existing html
+                    if (this.template !== undefined) {
+                        // Insert our template into the dom...
+                        this.dom.html(this.template.html());
+
+                        // Ensure we have assigned the component ID to the fragment
+                        this.attr('cid', this.cid);
+                    } else {
+                        // Otherwise, check for any settings that need to be transfered to the dom
+                        for (var name in this.attributes) {
+                            if (name !== undefined)
+                                this.dom.attr(name, this.attributes[name]);
+                        }
+                        for (var name in this.properties) {
+                            if (name !== undefined)
+                                this.dom.prop(name, this.properties[name]);
+                        }
+                        for (var name in this.cssAttributes) {
+                            if (name !== undefined)
+                                this.dom.css(name, this.cssAttributes[name]);
+                        }
+                        if (this.textValue !== undefined)
+                            this.dom.text(this.textValue);
                     }
-                    for (var name in this.cssAttributes) {
-                        if (name !== undefined)
-                            this.dom.css(name, this.cssAttributes[name]);
-                    }
-                    if (this.textValue !== undefined)
-                        this.dom.text(this.textValue);
+
+                    // Add listeners for our own datamodel, as well as jQuery based hooks
+                    this.bindHtmlEvents();
+
+                    // Add to the application component map at this point.
+                    model.componentMap[this.getCanonicalId()] = this;
                 }
-
-                // Add listeners for our own datamodel, as well as jQuery based hooks
-                this.bindHtmlEvents();
-
-                // Add to the application component map at this point.
-                model.componentMap[this.getCanonicalId()] = this;
             }
         },
 
@@ -459,11 +479,11 @@ define([
          * update calls for undisplayed elements.
          */
         undock: function() {
-            for (var componentId in this.children)
-                this.children[componentId].undock();
+            for (var cid in this.children)
+                this.children[cid].undock();
 
             if (this.isDocked()) {
-                delete this.dom;
+                this.dom.detach();
             }
 
             model.removeListener(this);
@@ -494,9 +514,9 @@ define([
             }
             var base = recurseParents(this.parent);
             if (base !== undefined)
-                this.modelPath = base + '.' + this.id;
+                this.modelPath = base + '.' + this.cid;
             else
-                this.modelPath = this.id;
+                this.modelPath = this.cid;
         },
 
         bindModel: function() {
@@ -535,7 +555,7 @@ define([
          * * events.  These include: change, mouseOver, mouseOut, focus, blur, and click.
          */
         bindHtmlEvents: function() {
-            if (this.dom !== undefined) {
+            if (this.isDocked()) {
                 for (var name in this) {
                     var index = name.indexOf('onHtml');
                     if (index >= 0) {
@@ -571,9 +591,9 @@ define([
                     this.bindModel();
                 }
 
-                for (var componentId in this.children) {
-                    if (componentId !== undefined)
-                        this.children[componentId].render();
+                for (var cid in this.children) {
+                    if (cid !== undefined)
+                        this.children[cid].render();
                 }
             } else {
                 if (this.template != undefined) {
@@ -594,8 +614,8 @@ define([
             if (this.viewStateId !== undefined && this.viewStateId != '') {
                 stateId = this.viewStateId;
             }
-            for (var componentId in this.children) {
-                var childState = this.children[componentId].getViewState();
+            for (var cid in this.children) {
+                var childState = this.children[cid].getViewState();
                 if (childState != '')
                     stateId += ':' + childState;
             }
@@ -613,13 +633,13 @@ define([
             var updateIds = function(component, idSuffix) {
                 component.setId(component.id + idSuffix);
                 if (component.dom !== undefined) {
-                    component.dom.attr('componentId', component.id);
+                    component.dom.attr('cid', component.id);
                 } else if (component.template !== undefined) {
-                    component.template.attr('componentId', component.id);
+                    component.template.attr('cid', component.id);
                 }
-                for (var componentId in component.children) {
-                    if (componentId !== undefined) {
-                        updateIds(component.children[componentId], idSuffix);
+                for (var cid in component.children) {
+                    if (cid !== undefined) {
+                        updateIds(component.children[cid], idSuffix);
                     }
                 }
             }
@@ -655,6 +675,7 @@ define([
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
+            this.overwrite = this.overwrite || true;
             self.super.initialize.call(this, properties);
             if (this.content === undefined)
                 throw "Error: Cajeta.View.Repeater.content must be defined";
@@ -668,8 +689,13 @@ define([
             if (!this.isDocked()) {
                 var self = (arguments.length > 0) ? arguments[0] : this;
                 self.super.dock.call(this, self.super);
-                this.content.dock();
+//                this.content.dock();
 
+                if (this.overwrite) {
+
+                } else {
+
+                }
                 var data = model.getByComponent(this);
                 var i = 0;
                 for (var row in data) {
@@ -800,8 +826,8 @@ define([
                     this.anchor = viewStateId;
 
                     if (model !== undefined && model.enableHistory == true) {
-                        modelStateId = model.getStateId();
-                        this.anchor += '=' + modelStateId;
+                        this.modelStateId = model.getStateId();
+                        this.anchor += '=' + this.modelStateId;
                     }
                     this.setUrlAnchor(this.anchor);
                 } else {
@@ -874,7 +900,11 @@ define([
          *
          */
         render: function() {
-            this.currentPage.render();
+            try {
+                this.currentPage.render();
+            } catch (e) {
+                alert(JSON.stringify(e));
+            }
         },
 
         /**
@@ -949,8 +979,8 @@ define([
                 // update the internal variable and the URL.
                 this.viewStateId = viewStateId;
                 this.anchor = '#' + this.viewStateId;
-                if (modelStateId != '') {
-                    this.anchor += '=' + modelStateId;
+                if (this.modelStateId != '') {
+                    this.anchor += '=' + this.modelStateId;
                 }
                 this.setUrlAnchor(this.anchor);
             }
@@ -962,7 +992,7 @@ define([
          */
         setModelStateId: function(modelState) {
             this.modelStateId = modelState;
-            model.loadState(modelStateId);
+            model.loadState(this.modelStateId);
         },
 
         /**

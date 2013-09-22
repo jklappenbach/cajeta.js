@@ -7,7 +7,7 @@ define([
     // Create an alias for namespace brevity.
     var Html5 = Cajeta.View.Html5;
 
-    var div = new Html5.Div({ id: 'serverInteraction' });
+    var div = new Html5.Div({ cid: 'serverInteraction' });
     div.setTemplate('serverInteractionDiv', serverInteractionDiv);
     return div;
 });

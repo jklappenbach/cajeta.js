@@ -8,11 +8,11 @@ define([
     // Create an alias for namespace brevity.
     var Html5 = Cajeta.View.Html5;
 
-    var div = new Html5.Div({ id: 'formExampleDiv' });
+    var div = new Html5.Div({ cid: 'formExampleDiv' });
     div.setTemplate('formExampleDiv', formExampleDiv);
 
     var form = new Cajeta.View.Form({
-        id: 'testForm',
+        cid: 'testForm',
         modelPath: 'testForm',
         onSubmit: function() {
             var myData = model.getByComponent(this);
@@ -23,60 +23,62 @@ define([
     });
 
     form.addChild(new Html5.Label({
-        id: 'firstLabel',
+        cid: 'firstLabel',
         modelValue: 'My Label Text'
     }));
 
     form.addChild(new Html5.TextInput({
-        id: 'firstTextField',
+        cid: 'firstTextField',
         modelValue: 'First Example Text'
     }));
 
     form.addChild(new Html5.TextInput({
-        id: 'secondTextField',
+        cid: 'secondTextField',
         modelValue: 'Second Example Text'
     }));
 
     // Add Checkboxes
     form.addChild(new Html5.CheckboxInput({
-        id: 'greenColor',
+        cid: 'greenColor',
         modelValue: 'true'
     }));
 
     form.addChild(new Html5.CheckboxInput({
-        id: 'blueColor'
+        cid: 'blueColor'
     }));
 
     form.addChild(new Html5.CheckboxInput({
-        id: 'redColor',
+        cid: 'redColor',
         modelValue: 'true'
     }));
 
     // Add RadioGroup
     var radioGroup = new Html5.RadioGroup({
-        id: 'dietGroup',
+        cid: 'dietGroup',
         modelValue: 'omnivore'
     });
 
-    radioGroup.addChild(new Html5.RadioInput({ id: 'vegetarian', properties: { checked: true } }));
-    radioGroup.addChild(new Html5.RadioInput({ id: 'pescatarian' }));
-    radioGroup.addChild(new Html5.RadioInput({ id: 'omnivore' }));
+    radioGroup.addChild(new Html5.RadioInput({ cid: 'vegetarian', properties: { checked: true } }));
+    radioGroup.addChild(new Html5.RadioInput({ cid: 'pescatarian' }));
+    radioGroup.addChild(new Html5.RadioInput({ cid: 'omnivore' }));
 
     // TextArea, example of how to have a default value that doesn't get committed
     form.addChild(new Html5.TextArea({
-        id: 'textArea',
+        cid: 'textArea',
         modelPath: 'testForm.description',
         attributes: { cols: 100, rows: 5 },
         promptValue: 'Enter a description here'
     }));
 
+    // TODO Decide how best to handle the situation where we need to populate both the displayed set of options, as well
+    // TODO as the selection state, in the model.  They can't both be modelValue.
     form.addChild(new Html5.Select({
-        id: 'selectStatic'
+        cid: 'selectStatic'
     }));
 
     form.addChild(new Html5.Select({
-        id: 'selectProgrammatic',
-        options: [
+        cid: 'selectProgrammatic',
+        modelValue: [
             { type: 'option', label: 'First Option', value: 'firstOption' },
             { type: 'option', label: 'Second Option', value: 'secondOption'},
             { type: 'option', label: 'Third Option', value: 'thirdOption' }
@@ -84,8 +86,8 @@ define([
     }));
 
     form.addChild(new Html5.Select({
-        id: 'selectProgrammaticOption',
-        options: [
+        cid: 'selectProgrammaticOption',
+        modelValue: [
             { type: 'optgroup', label: 'First Option', options: [
                 { type: 'option', label: 'First Child Option', value: 'firstChildOption'},
                 { type: 'option', label: 'Second Child Option', value: 'secondChildOption' }]},
@@ -95,8 +97,8 @@ define([
     }));
 
     form.addChild(new Html5.Select({
-        id: 'selectMultiProgrammatic',
-        options: [
+        cid: 'selectMultiProgrammatic',
+        modelValue: [
             { type: 'option', label: 'First Multi Option', value: 'firstMultiOption' },
             { type: 'option', label: 'Second Multi Option', value: 'secondMultiOption' },
             { type: 'option', label: 'Third Multi Option', value: 'thirdMultiOption' }
@@ -106,7 +108,7 @@ define([
     form.addChild(radioGroup);
 
     form.addChild(new Html5.Button({
-        id: 'submitButton',
+        cid: 'submitButton',
         onHtmlClick: function() {
             form.onSubmit();
         }

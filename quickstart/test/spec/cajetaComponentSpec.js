@@ -17,7 +17,7 @@ define([
                 modelValue: 'super'
             });
 
-            it('throws an exception on instantiation without a componentId', function() {
+            it('throws an exception on instantiation without a cid', function() {
                 expect(function() { new Cajeta.View.Component(); }).toThrow(Cajeta.ERROR_COMPONENT_COMPONENTID_UNDEFINED);
             });
 
