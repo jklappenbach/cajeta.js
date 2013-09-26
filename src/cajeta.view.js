@@ -9,20 +9,23 @@ define([
     'jquery',
     'cajetaCore',
     'model'
-], function($, Cajeta, model) {
-    Cajeta.View = {
+], function($, cajeta, model) {
+    cajeta.view = {
+        author: 'Julian Klappenbach',
+        version: '0.0.1',
+        license: 'MIT 2013'
     };
 
-    Cajeta.View.EventCallback = $.extend(true, Function.prototype, {
+    cajeta.view.EventCallback = $.extend(true, Function.prototype, {
         setInstance: function(instance) { this.instance = instance; }
     });
 
     /**
-     * Component, the base for all Cajeta view classes.  Components feature an API for child management,
+     * Component, the base for all cajeta view classes.  Components feature an API for child management,
      * rendering and state management.
      *
      */
-    Cajeta.View.Component = Cajeta.Class.extend({
+    cajeta.view.Component = cajeta.Class.extend({
         /**
          * Constructor supports mixins for fast definitions.  If only a few methods are needed, this
          * can be an easier way of extending functionality than inheritance.  A id for the component must be specified.
@@ -41,15 +44,15 @@ define([
          */
         initialize: function(properties) {
             if (properties === undefined || (properties.cid === undefined && properties.tid === undefined))
-                throw Cajeta.ERROR_COMPONENT_CID_UNDEFINED;
+                throw new Error(cajeta.ERROR_COMPONENT_CID_UNDEFINED);
 
-            if (properties.datasourceId !== undefined) {
+            if (properties.dsid !== undefined) {
                 if (properties.modelAdaptor === undefined) {
-                    this.mixin(new Cajeta.View.ModelAdaptor({
-                        datasourceId: properties.datasourceId,
+                    this.mixin(new cajeta.view.ComponentModelAdaptor({
+                        dsid: properties.dsid,
                         modelPath: properties.modelPath
                     }));
-                    delete properties.datasourceId;
+                    delete properties.dsid;
                 } else {
                     this.mixin(properties.modelAdaptor);
                     delete properties.modelAdaptor;
@@ -318,11 +321,16 @@ define([
          * @param component
          */
         addChild: function(component) {
-            var id = component.cid;
-            if (id == undefined || id == '') {
-                throw Cajeta.ERROR_COMPONENT_CID_UNDEFINED;
+            if (component instanceof cajeta.view.Factory) {
+                this.factory = component;
+                this.factory.parent = this;
+            } else {
+                var id = component.cid;
+                if (id == undefined || id == '') {
+                    throw new Error(cajeta.ERROR_COMPONENT_CID_UNDEFINED);
+                }
+                this.children[id] = component;
             }
-            this.children[id] = component;
             component.parent = this;
         },
 
@@ -391,7 +399,7 @@ define([
                 }
             }
             if (this.template === undefined) {
-                throw Cajeta.ERROR_COMPONENT_INVALIDTEMPLATE.format(this.getCanonicalId(), tid);
+                throw new Error(cajeta.ERROR_COMPONENT_INVALIDTEMPLATE.format(this.getCanonicalId(), tid));
             }
         },
         getTemplate: function() {
@@ -421,21 +429,17 @@ define([
                 // store it as a template, and remove it from the markup
                 if (this.tid !== undefined) {
                     this.template = $('*[tid = "' + this.tid + '"]');
-//                    this.template = $(type + '[tid = "' + this.tid + '"]');
                     if (this.template.length == 0) {
-                        throw Cajeta.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.tid);
+                        throw new Error(cajeta.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.tid));
                     } else if (this.template.length > 1) {
-                        throw Cajeta.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.tid);
+                        throw new Error(cajeta.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.tid));
                     }
-                    $('*[tid = "' + this.tid + '"]').detach();
-                    // TODO provide synchronization with settings made before docking
                 } else {
                     this.dom = $('*[cid = "' + this.cid + '"]');
-//                    this.dom = $(type + '[cid = "' + this.cid + '"]');
                     if (this.dom.length == 0) {
-                        throw Cajeta.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.cid);
+                        throw new Error(cajeta.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.cid));
                     } else if (this.dom.length > 1) {
-                        throw Cajeta.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.cid);
+                        throw new Error(cajeta.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.cid));
                     }
 
                     // If we have a template assigned to this component, then inject it, replacing the
@@ -468,7 +472,11 @@ define([
                     this.bindHtmlEvents();
 
                     // Add to the application component map at this point.
-                    model.componentMap[this.getCanonicalId()] = this;
+                    model.components[this.getCanonicalId()] = this;
+
+                    // Dock any factories we may have
+                    if (this.factory !== undefined)
+                        this.factory.dock();
                 }
             }
         },
@@ -486,7 +494,20 @@ define([
                 this.dom.detach();
             }
 
-            model.removeListener(this);
+            cajeta.message.dispatch(this);
+        },
+
+        /**
+         *
+         */
+        inject: function() {
+            if (this.parent === undefined)
+                throw new Error('cajeta.view.Component.parent must be defined in order to inject');
+            this.template.removeAttr('tid')
+            this.parent.dom.append(this.template);
+            delete this.tid;
+            delete this.template;
+            this.dock();
         },
 
         /**
@@ -496,21 +517,18 @@ define([
          */
         updateModelPath: function() {
             var recurseParents = function(parent) {
-                if (parent !== undefined)
-                {
+                var result = undefined;
+                if (parent !== undefined) {
                     if (parent.modelPath !== undefined) {
-                        if (parent.modelPath.indexOf('.') > 0 && !(parent instanceof Cajeta.View.Form)) {
+                        if (parent.modelPath.indexOf('.') > 0 && !(parent instanceof cajeta.view.Form)) {
                             var base = recurseParents(parent.parent);
-                            return base + '.' + parent.modelPath;
+                            result = base + '.' + parent.modelPath;
                         } else {
-                            return parent.modelPath;
+                            result = parent.modelPath;
                         }
-                    } else {
-                        return undefined;
                     }
-                } else {
-                    return undefined;
                 }
+                return result;
             }
             var base = recurseParents(this.parent);
             if (base !== undefined)
@@ -520,11 +538,15 @@ define([
         },
 
         bindModel: function() {
-            if (this.datasourceId !== undefined) {
+            if (this.dsid !== undefined) {
                 if (this.modelPath === undefined)
                     this.updateModelPath();
 
-                model.addListener(this, Cajeta.Events.EVENT_MODELCACHE_CHANGED);
+                cajeta.message.dispatch.subscribe(this, 'model:publish', {
+                    id: cajeta.message.EVENT_MODELCACHE_ADDED,
+                    dsid: this.dsid,
+                    modelPath: this.modelPath
+                });
 
                 // We may observe the following priorities for setting state:
                 // this.modelValue > model.getByComponent > this.getComponentValue
@@ -563,7 +585,7 @@ define([
                         var eventData = new Object();
                         eventData['that'] = this;
                         eventData['fnName'] = name;
-                        this.dom.bind(eventName, eventData, Cajeta.View.Component.htmlEventDispatch);
+                        this.dom.bind(eventName, eventData, cajeta.view.Component.htmlEventDispatch);
                     }
                 }
             }
@@ -631,11 +653,11 @@ define([
          */
         clone: function(idSuffix) {
             var updateIds = function(component, idSuffix) {
-                component.setId(component.id + idSuffix);
+                component.setId(component.cid + idSuffix);
                 if (component.dom !== undefined) {
-                    component.dom.attr('cid', component.id);
+                    component.dom.attr('cid', component.cid);
                 } else if (component.template !== undefined) {
-                    component.template.attr('cid', component.id);
+                    component.template.attr('cid', component.cid);
                 }
                 for (var cid in component.children) {
                     if (cid !== undefined) {
@@ -646,17 +668,21 @@ define([
 
             // First a deep copy to capture our component graph
             var copy = $.extend(true, {}, this);
+            if (copy.cid === undefined)
+                copy.cid = copy.tid;
 
             // $.extend won't copy dom elements, but we only need to copy the root
             // level.  All children should dock into the root's fragment.
             if (this.dom !== undefined) {
                 copy.dom = this.dom.clone();
             } else if (this.template !== undefined) {
-                copy.template = this.template;
+                copy.template = this.template.clone();
             }
 
             // Recurse to update IDs
             updateIds(copy, idSuffix);
+
+            return copy;
         }
     });
 
@@ -670,50 +696,158 @@ define([
      * create an additional copy of its docked component (complete with all of its children), update the IDs
      * (appending with a 0-based index), and add these copies to the Repeater's component.
      */
-    Cajeta.View.Repeater = Cajeta.View.Component.extend({
+    cajeta.view.Factory = cajeta.message.Subscriber.extend({
         initialize: function(properties) {
-            properties = properties || {};
-            var self = properties.self || this;
-            properties.self = self.super;
-            this.overwrite = this.overwrite || true;
-            self.super.initialize.call(this, properties);
-            if (this.content === undefined)
-                throw "Error: Cajeta.View.Repeater.content must be defined";
+            if (properties.dsid === undefined)
+                throw new Error("cajeta.view.Factory.dsid must be defined");
+            $.extend(true, this, properties);
+            this.templates = this.templates || {};
+            this.rules = this.rules || [];
+            this.empty = this.empty || true;
+            this.id = this.dsid + ':' + this.modelPath || this.uri;
+            this.factoryIds = {};
         },
 
         /**
-         * First, dock using the normal base implementation.  Once the components are successfully docked,
-         * the repeater will use the model to determine how many additional sets will be added.
+         *
          */
         dock: function() {
-            if (!this.isDocked()) {
-                var self = (arguments.length > 0) ? arguments[0] : this;
-                self.super.dock.call(this, self.super);
-//                this.content.dock();
+            if (!this.parent.isDocked())
+                throw new Error('parent component must be docked');
 
-                if (this.overwrite) {
-
-                } else {
-
+            var templates = this.templates;
+            var list = [];
+            this.parent.dom.find('*[tid]').each(function() {
+                var htmlTemplate = $(this);
+                var tid = htmlTemplate.attr('tid');
+                if (tid !== undefined && tid != '') {
+                    var template = new cajeta.view.Component({ tid: tid });
+                    template.dock();
+                    templates[tid] = template;
                 }
-                var data = model.getByComponent(this);
-                var i = 0;
-                for (var row in data) {
-                    var child = this.content.clone('[' + i + ']');
-                    this.dom.append(child.dom);
-                    this.addChild(child);
-                    child.dock();
-                }
+                list.push(htmlTemplate);
+            });
+
+            // We have to do this outside of the initial iteration as we can't detach until everything is docked and
+            // templatized
+            for (var id in list) {
+                list[id].detach();
             }
+
+            if (this.empty == true) {
+                this.parent.dom.empty();
+            }
+
+            if (this.modelPath !== undefined) {
+                cajeta.message.dispatch.subscribe(this, 'model:publish', {
+                    dsid: this.dsid,
+                    modelPath: this.modelPath
+                });
+            } else {
+                cajeta.message.subscribe(this, 'ds:publish', {
+                    dsid: this.dsid,
+                    status: 'success'
+                });
+            }
+            cajeta.ds.get(this.dsid).get({
+                modelPath: this.modelPath,
+                uri: this.uri
+            });
+        },
+
+        /**
+         * This listener callback receives notification from the model when data is ready.  It assumes the data
+         * will be in a specific format, and will create clones of templates, each with a cid made unique through
+         * concatenating it's index in the list.  A simple set of rules, passed in through the constructor, or
+         * otherwise populated, will be leveraged to alter the components.  For customized datasets, override/mixin
+         * this method with a replacement.
+         *
+         * Format:
+         *
+         * var simple =         [{ tid: 'optionTemplate', [value: 'value1',] [prop: { key, 'value' }]
+         *                          [attr: { key, 'value' },] [css: { key, 'value' }] },
+         *                       { tid: 'optionTemplate', ...}, ...];
+         * var withChildren =   [{ tid: 'trTemplate',
+         *                          children: [{ tid: 'leftLabelTemplate', value: 'value1' },
+         *                                     { tid: 'middleLabelTemplate', value: 'value2' },
+         *                                     { tid: 'rightLabelTemplate', value: 'value3' }]}, ...];
+         *
+         *
+         * @param msg
+         */
+        onMessage: function(msg) {
+            var dataset = msg.data;
+
+            for (var row in dataset) {
+                this.transform(this.parent, dataset[row], this.nextId(dataset[row].tid));
+            }
+        },
+
+        nextId: function(tid) {
+            var index = this.factoryIds[tid];
+            if (index === undefined)
+                index = 0;
+            this.factoryIds[tid] = index + 1;
+            return index;
+        },
+
+        /**
+         * Transform a dataset result row into a component graph
+         *
+         * @param parent The parent component, target for injection of new elements
+         * @param dataset The dataset
+         * @param index The index of the row in the iterated dataset
+         * @return {*}
+         */
+        transform: function(parent, dataset, index) {
+            if (dataset.tid === undefined)
+                return null;
+
+            if (this.templates[dataset.tid] === undefined)
+                throw new Error('tid ' + dataset.tid + ' was not found in the available templates');
+
+            var child = this.templates[dataset.tid].clone(index);
+            child.parent = parent;
+
+            if (dataset.value !== undefined)
+                child.setComponentValue(dataset.value);
+
+            for (var key in dataset.attr) {
+                child.attr(key, dataset.attr[key]);
+            }
+
+            for (var key in dataset.prop) {
+                child.prop(key, dataset.prop[key]);
+            }
+
+            for (var key in dataset.css) {
+                child.css(key, dataset.css[key]);
+            }
+
+            if (dataset.text !== undefined) {
+                child.text(dataset.text);
+            }
+            for (var rule in this.rules) {
+                rule.do(child, index);
+            }
+            child.inject();
+
+            var subindex = 0;
+            for (var childId in dataset.children) {
+                this.transform(child, dataset.children[childId], index + '_' + subindex++);
+            }
+
+            return child;
         }
     });
+
 
     /**
      *
      * @param event
      * @return {*}
      */
-    Cajeta.View.Component.htmlEventDispatch = function(event) {
+    cajeta.view.Component.htmlEventDispatch = function(event) {
         return event.data.that[event.data.fnName].call(event.data.that, event);
     };
 
@@ -721,14 +855,14 @@ define([
      *
      *
      */
-    Cajeta.View.Page = Cajeta.View.Component.extend({
+    cajeta.view.Page = cajeta.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             if (this.title === undefined)
-                this.title = Cajeta.DEFAULT_PAGETITLE;
+                this.title = cajeta.DEFAULT_PAGETITLE;
             this.setElementType('body');
         },
         setTitle: function(title) {
@@ -741,8 +875,12 @@ define([
             document.title = this.title;
         },
 
+        /**
+         * Insert the template for this page into the body of the DOM.
+         */
         dock: function() {
-            $('body').html(this.template);
+            this.dom = $('body');
+            this.dom.html(this.template.html());
         },
 
         getViewState: function() {
@@ -752,7 +890,7 @@ define([
         },
 
         /**
-         * See Cajeta.Component.render for documentation on this method.
+         * See cajeta.Component.render for documentation on this method.
          */
         render: function() {
             this.super.render.call(this, this.super);
@@ -764,11 +902,11 @@ define([
      *
      *
      */
-    Cajeta.Application = Cajeta.Class.extend({
+    cajeta.Application = cajeta.Class.extend({
         initialize: function(properties) {
             $.extend(true, this, properties);
             if (this.id === undefined)
-                throw 'Error: Cajeta.Application.id must be defined';
+                throw new Error('cajeta.Application.id must be defined');
 
             this.viewStateAliasMap = this.viewStateAliasMap || {};
             this.anchor = this.anchor || '';
@@ -822,7 +960,7 @@ define([
                 // for the application, and populate the (browser's) url with the anchor,
                 // bootstrapping the render.
                 if (this.anchor === undefined || this.anchor == '') {
-                    var viewStateId = Cajeta.homePage;
+                    var viewStateId = cajeta.homePage;
                     this.anchor = viewStateId;
 
                     if (model !== undefined && model.enableHistory == true) {
@@ -871,7 +1009,7 @@ define([
                 }
             } else {
                 // The url was incorrectly modified.  Go back to default state
-                this.setUrlAnchor(Cajeta.homePage + "=" + model.getStateId());
+                this.setUrlAnchor(cajeta.homePage + "=" + model.getStateId());
             }
         },
 
@@ -900,11 +1038,12 @@ define([
          *
          */
         render: function() {
-            try {
-                this.currentPage.render();
-            } catch (e) {
-                alert(JSON.stringify(e));
-            }
+            this.currentPage.render();
+//            try {
+//                this.currentPage.render();
+//            } catch (e) {
+//                alert(JSON.stringify(e));
+//            }
         },
 
         /**
@@ -913,7 +1052,7 @@ define([
          * @param page The page to add
          */
         addPage: function(page) {
-            model.componentMap[page.getId()] = page;
+            model.components[page.getId()] = page;
             if (this.currentPage == null) {
                 this.currentPage = page;
             }
@@ -925,10 +1064,10 @@ define([
          * @param fromUrl
          */
         setCurrentPage: function(page, fromUrl) {
-            var component = model.componentMap[page];
+            var component = model.components[page];
 
             if (component === undefined)
-                throw Cajeta.str.ERROR_APPLICATION_PAGE_UNDEFINED.format(page);
+                throw new Error(cajeta.str.ERROR_APPLICATION_PAGE_UNDEFINED.format(page));
 
             if (this.currentPage !== undefined) {
                 if (this.currentPage != component) {
@@ -953,7 +1092,7 @@ define([
                 var viewStateEntries = viewStateId.split(':');
                 for (var i = 0; i < viewStateEntries.length; i++) {
                     var componentState = viewStateEntries[i].split('.');
-                    var component = model.componentMap[componentState[0]];
+                    var component = model.components[componentState[0]];
                     if (component !== undefined) {
                         if (componentState.length > 0) {
                             if (i == 0)
@@ -963,8 +1102,8 @@ define([
                         }
                     } else {
                         // We have an invalid viewStateId!  Set it to the homePage
-                        viewStateId = Cajeta.homePage;
-                        page = model.componentMap[viewStateId];
+                        viewStateId = cajeta.homePage;
+                        page = model.components[viewStateId];
                         break;
                     }
                 }
@@ -1044,20 +1183,13 @@ define([
      *  2.  If a modelPath has been given, and doesn't contain dots ('.'), the modelPath will be set to 'form.[modelPath]'.
      *  3.  If the modelPath contains dots, it will be used without modification.
      */
-    Cajeta.View.Form = Cajeta.View.Component.extend({
+    cajeta.view.Form = cajeta.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             this.elementType = 'form';
-        },
-
-        /**
-         *
-         */
-        onSubmit: function() {
-
         }
     });
 
@@ -1068,27 +1200,27 @@ define([
      * This class maintains variables that resolve (and bind) a component to a model entry.
      * Component.setModelAdaptor.
      */
-    Cajeta.View.ModelAdaptor = Cajeta.Events.Listener.extend({
+    cajeta.view.ComponentModelAdaptor = cajeta.message.Subscriber.extend({
         initialize: function(properties) {
             properties = properties || {};
+            if (properties.dsid === undefined)
+                throw new Error('cajeta.view.ComponentModelAdaptor.dsid must be defined');
             $.extend(true, this, properties);
-            if (this.datasourceId === undefined)
-                throw 'Error: Cajeta.View.ModelAdaptor.datasourceId must be defined';
         },
         /**
-         * Handles ModelCache change events, applying new data to the component and html.
-         * Override this for additional functionality
+         * Override this to provide customized handling of change events from the model
          *
-         * @param event The event containing updated data
+         * @param msg The event containing updated data
          */
-        onEvent: function(event) {
-            if (event.getId() == Cajeta.Events.EVENT_MODELCACHE_CHANGED) {
-                this.setComponentValue(event.getData(), true);
+        onMessage: function(msg) {
+            if (msg.id == cajeta.message.EVENT_MODELCACHE_ADDED) {
+                this.setComponentValue(msg.data, true);
             }
         },
-        getEventOperand: function() {
-            return this.datasourceId + ':' + this.modelPath;
-        },
+
+        /**
+         * Override this method to provide handling for customized component types
+         */
         onComponentChanged: function() {
             if (this.modelPath !== undefined) {
                 model.setByComponent(this);
@@ -1096,5 +1228,5 @@ define([
         }
     });
 
-    return Cajeta;
+    return cajeta;
 });

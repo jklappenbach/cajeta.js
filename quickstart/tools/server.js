@@ -46,9 +46,63 @@ var server = http.createServer(function (request, response) {
             response.write('404 Not Found\n');
             response.end();
         }
+    } else if (uri.indexOf('/formExample/selectDynamicGroup') >= 0) {
+        console.log('Processing for /formExample/selectDynamicGroup');
+        if (request.method == 'GET') {
+            response.writeHead(200, "OK", { 'Content-Type': 'application/json' });
+            var optgroups = [ 'red', 'green', 'blue', 'yello' ];
+            var result = [];
+            for (var optgroup in optgroups) {
+                var element = {
+                    tid: 'optgroup',
+                    attr: { label: optgroups[optgroup] },
+                    children: { }
+                }
+                for (var j = 0; j < 5; j++) {
+                    element.children[j] = {
+                        tid: 'option-b',
+                        attr: { value: optgroups[optgroup] + j },
+                        text: optgroups[optgroup] + ' ' + j
+                    }
+                }
+                result.push(element);
+            }
+            console.log(JSON.stringify(result));
+            response.end(JSON.stringify(result));
+        }
+    } else if (uri.indexOf('/formExample/selectDynamicMulti') >= 0) {
+        console.log('Processing for /formExample/selectDynamicMulti');
+        if (request.method == 'GET') {
+            response.writeHead(200, "OK", { 'Content-Type': 'application/json' });
+            var result = [];
+            for (var i = 0; i < 8; i++) {
+                var element = {
+                    tid: 'option-c',
+                    attr: { value: 'option' + i },
+                    text: 'Option ' + i
+                }
+                result.push(element);
+            }
+            response.end(JSON.stringify(result));
+        }
+    } else if (uri.indexOf('/formExample/selectDynamic') >= 0) {
+        console.log('Processing for /formExample/selectDynamic');
+        if (request.method == 'GET') {
+            response.writeHead(200, "OK", { 'Content-Type': 'application/json' });
+            var result = [];
+            for (var i = 0; i < 20; i++) {
+                var element = {
+                    tid: 'option-a',
+                    attr: { value: 'option' + i },
+                    text: 'Option ' + i
+                }
+                result.push(element);
+            }
+            response.end(JSON.stringify(result));
+        }
     } else {
         var filename = path.join(__dirname, '../site', uri);
-        console.log('File Name: ' + filename);
+//        console.log('File Name: ' + filename);
         // Else, it's for a static file
         fs.exists(filename, function (exists) {
             try {

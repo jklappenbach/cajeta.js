@@ -2,7 +2,7 @@ define(
     ['jquery', 'cajetaModel'],
     function($, Cajeta) {
         // First test classes and extend functionality
-        return describe('Cajeta.Model.StateCache', function() {
+        return describe('Cajeta.model.State', function() {
 
             var stateCache = null;
             var data00 = {
@@ -49,7 +49,7 @@ define(
             }
 
             it('instantiates with no arguments', function() {
-                stateCache = new Cajeta.Model.StateCache({
+                stateCache = new Cajeta.model.State({
                     applicationId: 'stateCacheSpec'
                 });
                 expect(stateCache).not.toBeNull();

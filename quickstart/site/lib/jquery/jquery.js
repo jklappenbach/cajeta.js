@@ -4386,8 +4386,8 @@ jQuery.event = {
 		}
 
 		// Init the element's event structure and main handler, if this is the first
-		if ( !(events = elemData.events) ) {
-			events = elemData.events = {};
+		if ( !(events = elemData.message) ) {
+			events = elemData.message = {};
 		}
 		if ( !(eventHandle = elemData.handle) ) {
 			eventHandle = elemData.handle = function( e ) {
@@ -4479,7 +4479,7 @@ jQuery.event = {
 			special, handlers, type, namespaces, origType,
 			elemData = data_priv.hasData( elem ) && data_priv.get( elem );
 
-		if ( !elemData || !(events = elemData.events) ) {
+		if ( !elemData || !(events = elemData.message) ) {
 			return;
 		}
 
@@ -4572,7 +4572,7 @@ jQuery.event = {
 		// Caller can pass in a jQuery.Event object, Object, or just an event type string
 		event = event[ jQuery.expando ] ?
 			event :
-			new jQuery.Event( type, typeof event === "object" && event );
+			new jQuery.message( type, typeof event === "object" && event );
 
 		// Trigger bitmask: & 1 for native handlers; & 2 for jQuery (always true)
 		event.isTrigger = onlyHandlers ? 2 : 3;
@@ -4626,7 +4626,7 @@ jQuery.event = {
 				special.bindType || type;
 
 			// jQuery handler
-			handle = ( data_priv.get( cur, "events" ) || {} )[ event.type ] && data_priv.get( cur, "handle" );
+			handle = ( data_priv.get( cur, "message" ) || {} )[ event.type ] && data_priv.get( cur, "handle" );
 			if ( handle ) {
 				handle.apply( cur, data );
 			}
@@ -4679,7 +4679,7 @@ jQuery.event = {
 		var i, j, ret, matched, handleObj,
 			handlerQueue = [],
 			args = core_slice.call( arguments ),
-			handlers = ( data_priv.get( this, "events" ) || {} )[ event.type ] || [],
+			handlers = ( data_priv.get( this, "message" ) || {} )[ event.type ] || [],
 			special = jQuery.event.special[ event.type ] || {};
 
 		// Use the fix-ed jQuery.Event rather than the (read-only) native event
@@ -4839,7 +4839,7 @@ jQuery.event = {
 		}
 		copy = fixHook.props ? this.props.concat( fixHook.props ) : this.props;
 
-		event = new jQuery.Event( originalEvent );
+		event = new jQuery.message( originalEvent );
 
 		i = copy.length;
 		while ( i-- ) {
@@ -4918,7 +4918,7 @@ jQuery.event = {
 		// Fake originalEvent to avoid donor's stopPropagation, but if the
 		// simulated event prevents default then we do the same on the donor.
 		var e = jQuery.extend(
-			new jQuery.Event(),
+			new jQuery.message(),
 			event,
 			{
 				type: type,
@@ -4943,10 +4943,10 @@ jQuery.removeEvent = function( elem, type, handle ) {
 	}
 };
 
-jQuery.Event = function( src, props ) {
+jQuery.message = function( src, props ) {
 	// Allow instantiation without the 'new' keyword
-	if ( !(this instanceof jQuery.Event) ) {
-		return new jQuery.Event( src, props );
+	if ( !(this instanceof jQuery.message) ) {
+		return new jQuery.message( src, props );
 	}
 
 	// Event object
@@ -4978,7 +4978,7 @@ jQuery.Event = function( src, props ) {
 
 // jQuery.Event is based on DOM3 Events as specified by the ECMAScript Language Binding
 // http://www.w3.org/TR/2003/WD-DOM-Level-3-Events-20030331/ecma-script-binding.html
-jQuery.Event.prototype = {
+jQuery.message.prototype = {
 	isDefaultPrevented: returnFalse,
 	isPropagationStopped: returnFalse,
 	isImmediatePropagationStopped: returnFalse,
@@ -5890,7 +5890,7 @@ jQuery.extend({
 				key = elem[ data_priv.expando ];
 
 				if ( key && (data = data_priv.cache[ key ]) ) {
-					events = Object.keys( data.events || {} );
+					events = Object.keys( data.message || {} );
 					if ( events.length ) {
 						for ( j = 0; (type = events[j]) !== undefined; j++ ) {
 							if ( special[ type ] ) {
@@ -5976,11 +5976,11 @@ function cloneCopyEvent( src, dest ) {
 	if ( data_priv.hasData( src ) ) {
 		pdataOld = data_priv.access( src );
 		pdataCur = data_priv.set( dest, pdataOld );
-		events = pdataOld.events;
+		events = pdataOld.message;
 
 		if ( events ) {
 			delete pdataCur.handle;
-			pdataCur.events = {};
+			pdataCur.message = {};
 
 			for ( type in events ) {
 				for ( i = 0, l = events[ type ].length; i < l; i++ ) {

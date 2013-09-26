@@ -4,21 +4,21 @@ define([
     'model'
 ], function(Cajeta, template, model) {
         // First test classes and extend functionality
-        return describe('Cajeta.View.Component', function() {
-            var component = new Cajeta.View.Component({
+        return describe('Cajeta.view.Component', function() {
+            var component = new Cajeta.view.Component({
                 id: 'test',
                 modelPath: 'testForm.data',
                 modelValue: 'forests'
             });
 
-            var component2 = new Cajeta.View.Component({
+            var component2 = new Cajeta.view.Component({
                 id: 'test2',
                 modelPath: 'testForm.data2',
                 modelValue: 'super'
             });
 
             it('throws an exception on instantiation without a cid', function() {
-                expect(function() { new Cajeta.View.Component(); }).toThrow(Cajeta.ERROR_COMPONENT_COMPONENTID_UNDEFINED);
+                expect(function() { new Cajeta.view.Component(); }).toThrow(Cajeta.ERROR_COMPONENT_COMPONENTID_UNDEFINED);
             });
 
             it('accepts attribute changes before attaching a template, or docking', function() {
@@ -29,9 +29,9 @@ define([
             });
 
             it('can be bound to the model', function() {
-                model.addListener(component, Cajeta.Events.EVENT_MODELCACHE_CHANGED);
+                model.subscribe(component, Cajeta.message.EVENT_MODELCACHE_ADDED);
                 expect(function() { component.onComponentChanged() }).not.toThrow();
-                model.addListener(component2, Cajeta.Events.EVENT_MODELCACHE_CHANGED);
+                model.subscribe(component2, Cajeta.message.EVENT_MODELCACHE_ADDED);
                 expect(function() { component2.setComponentValue('delicious') }).not.toThrow();
             });
 
@@ -43,11 +43,11 @@ define([
             it('can set the model value through the component', function() {
                 component.setComponentValue('three');
                 expect(model.get(component.modelPath,
-                        component.datasourceId)).toEqual('three');
+                        component.dsid)).toEqual('three');
             });
 
             it('Updates component value in response to model changes', function() {
-                model.set(component.modelPath, 'eight', component.datasourceId);
+                model.set(component.modelPath, 'eight', component.dsid);
                 expect(component.getComponentValue()).toEqual('eight');
             });
 

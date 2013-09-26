@@ -9,17 +9,26 @@ define([
     'jquery',
     'cajetaCore',
     'jcookies'
-], function($, Cajeta, jCookies) {
-    Cajeta.Datasource = {
+], function($, cajeta, jCookies) {
+
+    /**
+     * The namespace for datasource definitions.
+     * @type {Object}
+     */
+    cajeta.ds = {
+        author: 'Julian Klappenbach',
+        version: '0.0.1',
+        license: 'MIT 2013',
         cache: {},
+        TOPIC_DS_PUBLISH: 'ds:publish',
         set: function(datasource) {
             this.cache[datasource.getId()] = datasource;
         },
-        get: function(datasourceId) {
-            return this.cache[datasourceId];
+        get: function(dsid) {
+            return this.cache[dsid];
         }
-
     };
+
     /**
      * AbstractRestDS provides an abstract, REST based API definition for datasources.  For the default datasource
      * interface, REST was chosen as the protocol can easily be abstracted to just about any other, and it natively
@@ -37,11 +46,13 @@ define([
      *
      * @type {*}
      */
-    Cajeta.Datasource.AbstractRestDS = Cajeta.Class.extend({
+    cajeta.ds.AbstractRestDS = cajeta.Class.extend({
         initialize: function(properties) {
             $.extend(true, this, properties);
             if (this.id === undefined)
-                throw 'Cajeta.Datasource.AbstractRestDS.id must be defined';
+                throw new Error('cajeta.ds.AbstractRestDS.id must be defined');
+            if (this.async === undefined)
+                this.async = true;
         },
 
         getId: function() {
@@ -60,8 +71,8 @@ define([
          * @returns The requestId, which is either the the provided requestId, or the generated uri if the id is omitted.
          */
         get: function(parameters) {
-            throw 'Error: A call was made to an abstract method.  ' +
-                'You must provide an override for a valid object definition';
+            throw new Error('A call was made to an abstract method.  ' +
+                'You must provide an override for a valid object definition');
         },
 
         /**
@@ -76,8 +87,8 @@ define([
          * @param parameters (optional) An object containing uriTemplate values, uriTemplate, or a requestId for the operations
          */
         put: function(data, parameters) {
-            throw 'Error: A call was made to an abstract method.  You must provide an override ' +
-                'for a valid object definition';
+            throw new Error('A call was made to an abstract method.  You must provide an override ' +
+                'for a valid object definition');
         },
         /**
          * Async method, returning a boolean to indicate whether or not the method was
@@ -91,8 +102,8 @@ define([
          * @param parameters (optional) An object containing uriTemplate values, uriTemplate, or a requestId for the operations
          */
         post: function(data, parameters) {
-            throw 'Error: A call was made to an abstract method.  You must provide an override ' +
-                'for a valid object definition';
+            throw new Error('A call was made to an abstract method.  You must provide an override ' +
+                'for a valid object definition');
 
         },
 
@@ -105,18 +116,8 @@ define([
          * @param parameters (optional) An object containing uriTemplate values, uriTemplate, or a requestId for the operations
          */
         del: function(parameters) {
-            throw 'Error: A call was made to an abstract method.  You must provide an override ' +
-                'for a valid object definition';
-        },
-        /**
-         * Called upon error for methods with async return values (get, post).  Override for custom behavior.
-         *
-         * @access public
-         * @param event
-         * @param requestId
-         */
-        onError: function(event, requestId) {
-            alert("An error occured: " + JSON.stringify(event));
+            throw new Error('A call was made to an abstract method.  You must provide an override ' +
+                'for a valid object definition');
         },
 
         /**
@@ -125,10 +126,19 @@ define([
          * if this.modelPath is defined.
          *
          * @access public
-         * @param data
-         * @param requestId A value that was returned by the initiating POST or GET call
+         * @param msg The message, to be published on the topic for this datasource
          */
-        onComplete: function(data, requestId) { },
+        onComplete: function(msg) {
+            cajeta.message.dispatch.publish('ds:publish', msg);
+        },
+
+        /**
+         *
+         * @param event
+         */
+        onError: function(event) {
+
+        },
 
         /**
          * Utility method to produce a uri from a template and either the parameters of a provided argument,
@@ -139,7 +149,7 @@ define([
          */
         getUri: function(parameters) {
             parameters = parameters || {};
-            var uri = parameters.uriTemplate || this.uriTemplate;
+            var uri =  parameters.uri || parameters.uriTemplate || this.uriTemplate;
             var index, key, value;
 
             while ((index = uri.indexOf('{')) >= 0) {
@@ -157,20 +167,30 @@ define([
         },
 
         processResult: function(data, parameters) {
-            if (this.async || parameters.async) {
+            var uri = this.getUri(parameters);
+            var requestId = parameters.requestId || uri;
+            var msg = new cajeta.message.Message({
+                id: uri,
+                dsid: this.id,
+                modelPath: this.modelPath || parameters.modelPath,
+                method: parameters.method,
+                requestId: requestId,
+                status: 'ok',
+                data: data
+            });
+            if (this.async == true || parameters.async == true) {
                 var callback = parameters.onComplete || this.onComplete;
-                var requestId = parameters.requestId || this.getUri(parameters);
                 window.setTimeout(function() {
-                    callback(data, requestId);
+                    callback(msg);
                 }, 1);
                 return requestId;
             } else {
-                return data;
+                return msg;
             }
         }
     });
 
-    Cajeta.Datasource.MemoryDS = Cajeta.Datasource.AbstractRestDS.extend({
+    cajeta.ds.MemoryDS = cajeta.ds.AbstractRestDS.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -190,6 +210,7 @@ define([
          */
         get: function(parameters) {
             parameters = parameters || {};
+            parameters.method = 'get';
             var data = this.cache[this.getUri(parameters)];
             return this.processResult(data, parameters);
         },
@@ -205,9 +226,12 @@ define([
          * @param parameters (optional) Additional parameters, including a uriTemplate, parameters for the instance template, etc.
          */
         put: function(data, parameters) {
+            parameters = parameters || {};
+            parameters.method = 'put';
             this.cache[this.getUri(parameters)] = data;
             return true;
         },
+
         /**
          * Delete the resource identified by a uri.  If no parameters are provided, the method should assume that
          * the uriTemplate is a member property, and any parameters are to be derived from the application modelCache.
@@ -216,6 +240,8 @@ define([
          * @param parameters (optional) The parameters used to fill in the uriTemplate parameters.
          */
         del: function(parameters) {
+            parameters = parameters || {};
+            parameters.method = 'delete';
             var uri = this.getUri(parameters), result;
             if (this.cache[uri] !== undefined) {
                 delete this.cache(uri);
@@ -227,13 +253,14 @@ define([
         }
     });
 
-    Cajeta.Datasource.CookieDS = Cajeta.Datasource.AbstractRestDS.extend({
+    cajeta.ds.CookieDS = cajeta.ds.AbstractRestDS.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
         },
+
         /**
          * Async method, returning a boolean to indicate whether or not the method was
          * executed sucessfully.  Any result will be dispatched to onComplete.  If no parameters are provided,
@@ -245,6 +272,7 @@ define([
          */
         get: function(parameters) {
             parameters = parameters || {};
+            parameters.method = 'get';
             var uri = this.getUri(parameters);
             var data = jCookies.get(this.getUri(parameters));
             if (data == null) data = undefined;
@@ -262,9 +290,12 @@ define([
          * @param parameters (optional) The parameters used to fill in the uriTemplate parameters.
          */
         put: function(data, parameters) {
+            parameters = parameters || {};
+            parameters.method = 'put';
             jCookies.set(this.getUri(parameters), data);
             return true;
         },
+
         /**
          * Delete the resource identified by a uri.  If no parameters are provided, the method should assume that
          * the uriTemplate is a member property, and any parameters are to be derived from the application modelCache.
@@ -273,6 +304,8 @@ define([
          * @param parameters (optional) The parameters used to fill in the uriTemplate parameters.
          */
         del: function(parameters) {
+            parameters = parameters || {};
+            parameters.method = 'delete';
             jCookies.del(this.getUri(parameters));
             return true;
         }
@@ -282,7 +315,7 @@ define([
      * Only provided as a POC.  Unsupported in FF, and IE.
      * @type {*}
      */
-    Cajeta.Datasource.DbRestDS = Cajeta.Datasource.AbstractRestDS.extend({
+    cajeta.ds.DbRestDS = cajeta.ds.AbstractRestDS.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -294,6 +327,7 @@ define([
             });
 
         },
+
         /**
          * Async method, returning a boolean to indicate whether or not the method was
          * executed sucessfully.  Any result will be dispatched to onComplete.  If no parameters are provided,
@@ -305,6 +339,7 @@ define([
          */
         get: function(parameters) {
             parameters = parameters || {};
+            parameters.method = 'get';
             var requestId = parameters.requestId || this.getUri(parameters);
             this.db.transaction(
                 function (tx) {
@@ -330,6 +365,8 @@ define([
          * @param parameters (optional) Additional parameters, including a uriTemplate, parameters for the instance template, etc.
          */
         put: function(data, parameters) {
+            parameters = parameters || {};
+            parameters.method = 'put';
             var uri = this.getUri(parameters);
             this.db.transaction(function(tx) {
                 tx.executeSql('INSERT INTO cache (uri, data) VALUES (' + uri + ', ' + data + ')');
@@ -345,6 +382,8 @@ define([
          * @param parameters (optional) The parameters used to fill in the uriTemplate parameters.
          */
         del: function(parameters) {
+            parameters = parameters || {};
+            parameters.method = 'delete';
             var uri = this.getUri(parameters);
             this.db.transaction(function(tx) {
                 tx.executeSql('DELETE FROM cache WHERE uri = "' + uri + '"');
@@ -355,25 +394,32 @@ define([
     });
 
 
-    Cajeta.Datasource.AjaxDS = Cajeta.Datasource.AbstractRestDS.extend({
+    /**
+     *
+     * @type {*}
+     */
+    cajeta.ds.AjaxDS = cajeta.ds.AbstractRestDS.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
-            this.contentType = 'application/json';
             this.headers = this.headers || {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             };
         },
         get: function(parameters) {
+            parameters = parameters || {};
+            parameters.method = 'get';
             var uri = this.getUri(parameters);
             parameters = this.params(parameters);
             parameters.type = 'GET';
             return $.ajax(uri, parameters);
         },
         put: function(data, parameters) {
+            parameters = parameters || {};
+            parameters.method = 'put';
             var uri = this.getUri(parameters);
             parameters = this.params(parameters);
             parameters.type = 'PUT';
@@ -381,6 +427,8 @@ define([
             return $.ajax(uri, parameters);
         },
         post: function(data, parameters) {
+            parameters = parameters || {};
+            parameters.method = 'post';
             var uri = this.getUri(parameters);
             parameters = this.params(parameters);
             parameters.type = 'POST';
@@ -388,22 +436,55 @@ define([
             return $.ajax(uri, parameters);
         },
         del: function(parameters) {
+            parameters = parameters || {};
+            parameters.method = 'delete';
             var uri = this.getUri(parameters);
             parameters = this.params(parameters);
             parameters.type = 'DELETE';
             return $.ajax(uri, parameters);
         },
+        onComplete: function(data, textStatus, xhr, parameters) {
+            var self = (arguments.length > 4) ? arguments[4] : this;
+            var msg = new cajeta.message.Message({
+                id: parameters.requestId || '0',
+                dsid: this.id,
+                method: this.method,
+                modelPath: this.modelPath || parameters.modelPath,
+                data: data,
+                status: textStatus
+            })
+            self.super.onComplete.call(this, msg);
+        },
+        onError: function(jqXHR, textStatus, errorThrown, parameters) {
+            alert('ERROR');
+        },
+        /**
+         * Normalizes parameters into those expected by jQuery's Ajax implementation.
+         *
+         * @param parameters
+         * @return {*}
+         */
         params: function(parameters) {
+            var headers = parameters.headers || this.headers;
+            var ds = this;
+            var success = function(data, textStatus, xhr) {
+                ds.onComplete(data, textStatus, xhr, parameters);
+            };
+
+            var error = function(xhr, textStatus, errorThrown) {
+                ds.onError(xhr, textStatus, errorThrown, parameters);
+            }
             return $.extend(parameters, {
-                complete: parameters.onComplete || parameters.complete || this.onComplete || this.complete,
-                error:  parameters.onError || parameters.error || this.onError || this.error,
+                success: parameters.onComplete || success,
+                error:  parameters.onError || error,
                 processData: false,
-                headers: parameters.headers || this.headers,
+                headers: headers,
                 async: parameters.async || this.async,
-                contentType: parameters.contentType || this.contentType
+                contentType: headers['Content-Type'] || 'application/json'
             });
+
         }
     });
 
-    return Cajeta;
+    return cajeta;
 });

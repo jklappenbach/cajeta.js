@@ -5,12 +5,13 @@ define([
 ], function($, Cajeta, uiExampleDiv) {
 
     // Create an alias for namespace brevity.
-    var Html5 = Cajeta.View.Html5;
+    var Html5 = Cajeta.view.html5;
 
     var div = new Html5.Div({ cid: 'uiExampleDiv' });
     div.setTemplate('uiExampleDiv', uiExampleDiv);
 
-    var repeater = new Cajeta.View.Repeater({
+ /*
+    var repeater = new Cajeta.View.Factory({
         cid: 'repeaterExample',
         elementType: 'table',
         modelValue: {
@@ -23,6 +24,6 @@ define([
     });
 
     div.addChild(repeater);
-
+*/
     return div;
 });

@@ -1,5 +1,5 @@
-define(['cajetaModel'], function(Cajeta) {
-    var model = new Cajeta.Model.ModelCache({
+define(['cajetaModel'], function(cajeta) {
+    var model = new cajeta.model.Model({
         enableHistory: true,
         enableJsonDelta: true
     });

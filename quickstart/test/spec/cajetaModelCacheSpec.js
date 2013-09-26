@@ -2,7 +2,7 @@ define(
     ['jquery', 'cajeta', 'application', 'model'],
     function(Cajeta, $, app, model) {
         // First test classes and extend functionality
-        return describe('Cajeta.Model.ModelCache', function() {
+        return describe('Cajeta.model.Model', function() {
             var dataGraph = {
                 one: 'one',
                 two: 'two',

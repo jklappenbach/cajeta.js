@@ -8,9 +8,9 @@ define([
 ], function($, Cajeta, formExampleDiv, uiExampleDiv, serverInteractionDiv, homePageText) {
     
     // Create an alias for shortening namespace.
-    var Html5 = Cajeta.View.Html5;
+    var Html5 = Cajeta.view.html5;
 
-    var homePage = new Cajeta.View.Page({ cid: Cajeta.homePage });
+    var homePage = new Cajeta.view.Page({ cid: Cajeta.homePage });
     homePage.setTemplate('homePage', homePageText);
 
     var tabs = new Html5.TabList({ cid: 'tabs', contentId: 'content' });

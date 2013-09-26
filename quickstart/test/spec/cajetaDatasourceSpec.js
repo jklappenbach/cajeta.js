@@ -2,14 +2,14 @@ define(
     ['cajetaDS'],
     function(Cajeta) {
         // First test classes and extend functionality
-        return describe('Cajeta.Datasource', function() {
+        return describe('Cajeta.ds', function() {
             var data = {
                 one: 'one',
                 two: 'two',
                 three: 'three'
             };
             it('provides a MemoryDS', function() {
-                var ds = new Cajeta.Datasource.MemoryDS({
+                var ds = new Cajeta.ds.MemoryDS({
                     id: 'memDS',
                     uriTemplate: 'unitTest/cacheEntries/{key}',
                     async: false
@@ -42,7 +42,7 @@ define(
                 });
             });
             it('provides a CookieDS', function() {
-                var ds = new Cajeta.Datasource.CookieDS({
+                var ds = new Cajeta.ds.CookieDS({
                     id: 'cookieDS',
                     uriTemplate: 'unitTest/cacheEntries/{key}',
                     async: false
@@ -115,7 +115,7 @@ define(
 //            });
 
             it('provides an AjaxDS', function() {
-                var ds = new Cajeta.Datasource.AjaxDS({
+                var ds = new Cajeta.ds.AjaxDS({
                     id: 'ajaxDS',
                     modelPath: 'unitTest/cacheEntries',
                     uriTemplate: 'http://localhost:8888/unitTest/cacheEntries/{key}',

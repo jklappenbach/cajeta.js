@@ -9,30 +9,31 @@ define([
     'jquery',
     'cajetaDS',
     'vcdiff'
-], function($, Cajeta, vcDiff) {
+], function($, cajeta, vcDiff) {
 
     /**
      * The Model, as in traditional MVC architectures, defines the architecture and interfaces for how data is
      * structured and managed.
      */
-    Cajeta.Model = {
+    cajeta.model = {
         STATECACHE_SETTINGS_URI: '/{applicationId}/stateCache/settings',
         STATECACHE_STATES_URI: '/{applicationId}/stateCache/states',
         STATECACHE_STATE_URI: '/{applicationId}/stateCache/states/{stateId}',
         STATECACHE_DATASOURCE_ID: 'STATECACHE_DATASOURCE'
     };
 
-    Cajeta.Model.StateCacheDS = Cajeta.Datasource.MemoryDS.extend({
+    cajeta.model.StateDS = cajeta.ds.MemoryDS.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
+            properties.async = false;
             self.super.initialize.call(this, properties);
         },
         post: function(data, parameters) {
             var uri = this.getUri(parameters);
             var settings = this.cache[this.getUri({
-                uriTemplate: Cajeta.Model.STATECACHE_SETTINGS_URI,
+                uriTemplate: cajeta.model.STATECACHE_SETTINGS_URI,
                 applicationId: parameters.applicationId
             })];
             this.cache[uri + '/' + settings.nextId] = data;
@@ -63,12 +64,12 @@ define([
      * The default datasource for stateCache settings is memory, appearing as always uninitialized to the client
      * at startup.
      */
-    Cajeta.Datasource.set(new Cajeta.Model.StateCacheDS({
-        id: Cajeta.Model.STATECACHE_DATASOURCE_ID
+    cajeta.ds.set(new cajeta.model.StateDS({
+        id: cajeta.model.STATECACHE_DATASOURCE_ID
     }));
 
     /**
-     * Cajeta.ModelSnapshotCache must support the following use cases:
+     * cajeta.ModelSnapshotCache must support the following use cases:
      *  1.  Add a new snapshot to the collection, using Snapshot's compress
      *      function (currently delta compression) to reduce overhead
      *  2.  Maintain a set of "key frame" snapshots, so that the number of delta-decompression
@@ -81,21 +82,22 @@ define([
      *  5.  Support an API that can easily be overridden for remote server implementation.  It would be cool
      *      to have application snapshot state stored centrally for mobile applications.
      */
-    Cajeta.Model.StateCache = Cajeta.Class.extend({
+    cajeta.model.State = cajeta.Class.extend({
         initialize: function(properties) {
             properties = properties || {};
             $.extend(true, this, properties);
             this.applicationId = this.applicationId || 'defaultAppId';
             this.vcd = new vcDiff.Vcdiff();
             this.vcd.blockSize = 3;
-
-            this.dsStateCache = Cajeta.Datasource.get(Cajeta.Model.STATECACHE_DATASOURCE_ID);
-            this.settings = this.dsStateCache.get({
+            this.dsidState = this.dsidState || cajeta.model.STATECACHE_DATASOURCE_ID
+            this.dsState = cajeta.ds.get(this.dsidState);
+            this.settings = this.dsState.get({
                 applicationId: this.applicationId,
-                uriTemplate: Cajeta.Model.STATECACHE_SETTINGS_URI
-            });
+                uriTemplate: cajeta.model.STATECACHE_SETTINGS_URI,
+                async: false
+            }).data;
             if (this.settings === undefined) {
-                throw 'Error: StateCache datasource incorrectly configured!';
+                throw new Error('StateCache datasource incorrectly configured!');
             }
             this.modelJson = '{ }';
         },
@@ -111,9 +113,9 @@ define([
             } else {
                 data = json;
             }
-            this.settings.stateId = this.dsStateCache.post(data, {
+            this.settings.stateId = this.dsState.post(data, {
                 applicationId: this.applicationId,
-                uriTemplate: Cajeta.Model.STATECACHE_STATES_URI
+                uriTemplate: cajeta.model.STATECACHE_STATES_URI
             });
             this.modelJson = json;
             return this.settings.stateId;
@@ -127,22 +129,22 @@ define([
          */
         load: function(stateId) {
             var startId = stateId - (stateId % this.settings.keyPeriod);
-            this.modelJson = this.dsStateCache.get({
-                uriTemplate: Cajeta.Model.STATECACHE_STATE_URI,
+            this.modelJson = this.dsState.get({
+                uriTemplate: cajeta.model.STATECACHE_STATE_URI,
                 applicationId: this.applicationId,
                 stateId: startId
             });
             if (this.modelJson === undefined)
-                throw Cajeta.ERROR_STATECACHE_LOADFAILURE;
+                throw new Error(cajeta.ERROR_STATECACHE_LOADFAILURE);
             var delta;
             for (var i = startId + 1; i <= stateId; i++) {
-                delta = this.dsStateCache.get({
-                    uriTemplate: Cajeta.Model.STATECACHE_STATE_URI,
+                delta = this.dsState.get({
+                    uriTemplate: cajeta.model.STATECACHE_STATE_URI,
                     applicationId: this.applicationId,
                     stateId: i
                 })
                 if (delta === undefined)
-                    throw Cajeta.ERROR_STATECACHE_LOADFAILURE;
+                    throw new Error(cajeta.ERROR_STATECACHE_LOADFAILURE);
                 this.modelJson = this.vcd.decode(this.modelJson, delta);
             }
             this.settings.stateId = stateId;
@@ -152,9 +154,9 @@ define([
 
 
     /**
-     * <h1>Cajeta.Model.ModelCache</h1>
+     * <h1>cajeta.Model.ModelCache</h1>
      *
-     * Cajeta.ModelCache provides a centralized container and services for an application's data model.
+     * cajeta.ModelCache provides a centralized container and services for an application's data model.
      * By placing the data for the application's model in a tree under a single element, we gain some significant
      * benefits.  First, it becomes a simple matter to bind components to data, ensuring that any changes are reflected
      * in a mapped two-way relationship.  Second, we gain the ability to easily distil application state into the
@@ -166,13 +168,13 @@ define([
      * <h2>Cache to Component Surjection</h2>
      * In providing bindings between components and values in the cache, the framework supports a surjection, or a
      * one-to-many (1:*) between a model node value and a set of components.  Components map their internal DOM
-     * state to the model using a mixin of a Cajeta.View.ModelAdaptor instance.  When one component's state is modified,
+     * state to the model using a mixin of a cajeta.View.ModelAdaptor instance.  When one component's state is modified,
      * it's changes are persisted to the model, which then uses its internal mappings to identify the other components
      * to notify.
      *
      * <h2>Datasource Support</h2>
      * ModelCache has been designed around the support of multiple datasources by first providing a central
-     * access point for shared datasources.  It further provides support by segmenting the cache by datasourceId,
+     * access point for shared datasources.  It further provides support by segmenting the cache by dsid,
      * simplifying design, and preventing possible namespace collisions in result sets (both sets could have foo.bar
      * as a valid path).   This has implications on potential designs for model structures.
      *
@@ -190,7 +192,7 @@ define([
      * logic of that data to components, however they see fit.  The important
      *      *
      */
-    Cajeta.Model.ModelCache = Cajeta.Events.EventDispatch.extend({
+    cajeta.model.Model = cajeta.message.Subscriber.extend({
         /**
          * @param properties
          */
@@ -198,34 +200,38 @@ define([
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
+            properties.id = properties.id || 'theModel';
             self.super.initialize.call(this, properties);
 
-            this.componentMap = this.componentMap || {};
-            this.nodeMap = this.nodeMap || {};
-            this.stateCache = this.stateCache || new Cajeta.Model.StateCache();
+            this.components = this.components || {};
+            this.nodes = this.nodes || {};
+            this.state = this.state || new cajeta.model.State();
 
             // First, see if we've been initialized with a desired stateId.  If not,
             // check to see if we have one in a cookie.  Otherwise, set it to zero.
-            this.stateId = this.stateCache.getStateId();
+            this.stateId = this.state.getStateId();
             if (this.stateId != 0)
-                this.stateCache.load(this.stateId);
+                this.state.load(this.stateId);
 
             if (this.autoSnapshot === undefined)
                 this.autoSnapshot = false;
+
+            // Add our subscriptions
+            cajeta.message.dispatch.subscribe(this, cajeta.ds.TOPIC_DS_PUBLISH, { status: 'success' })
         },
 
         /**
-         * Sets a node in the model cache.  If datasourceId is ommitted, it will default to LOCAL_DATASOURCE.  If
+         * Sets a node in the model cache.  If dsid is ommitted, it will default to LOCAL_DATASOURCE.  If
          * component is present, it will prevent the notification of an update to the issuing component.
          *
          * @param modelPath The path to the node in the model cache
          * @param value The value to set
-         * @param datasourceId (optional) The ID of the datasource, defaults to 'local'
-         * @param component (optional) The issuing component, prevent cyclical updates.
+         * @param dsid (optional) The ID of the datasource, defaults to 'local'
+         * @param source (optional) The issuing component, prevent cyclical updates.
          */
-        set: function(modelPath, value, datasourceId, component) {
-            datasourceId = datasourceId || Cajeta.LOCAL_DATASOURCE;
-            modelPath = datasourceId + ':' + modelPath;
+        set: function(modelPath, value, dsid, source) {
+            dsid = dsid || cajeta.LOCAL_DATASOURCE;
+            modelPath = dsid + ':' + modelPath;
 
             // Find out if we have a single key, or a walk, and populate the map
             // if necessary to support the parent
@@ -235,14 +241,13 @@ define([
                 parentPath = modelPath.substring(0, index);
                 key = modelPath.substring(index + 1);
                 var paths = modelPath.substring(0, index).split('.');
-                node = this.nodeMap;
+                node = this.nodes;
                 for (var pathKey in paths) {
-                    node = Cajeta.safeEntry(paths[pathKey], node);
+                    node = cajeta.safeProperty(paths[pathKey], node);
                 }
-//                node = this.nodeMap[parentPath];
             } else  {
                 key = modelPath;
-                node = this.nodeMap;
+                node = this.nodes;
             }
 
             // Then remove the indexes on child nodes of the element to be replaced
@@ -251,14 +256,17 @@ define([
             node[key] = value;
 
             // And index the children of the new value
-            this._addNodeMapEntries(modelPath, value, component);
+            this._addNodeMapEntries(modelPath, value, source);
 
             // Take a snapshot if we have auto set
             if (this.autoSnapshot == true)
-                this.stateCache.add(this.state);
+                this.state.add(this.state);
 
             // And send out a general notification on model changed.
-            this.dispatchEvent(new Cajeta.Events.Event({ id: Cajeta.Events.EVENT_MODELCACHE_CHANGED }));
+            cajeta.message.dispatch.publish('model:publish', new cajeta.message.Message({
+                id: cajeta.message.EVENT_MODELCACHE_ADDED,
+                source: source
+            }));
         },
 
         /**
@@ -266,18 +274,18 @@ define([
          * @param component
          */
         setByComponent: function(component) {
-            this.set(component.modelPath, component.getComponentValue(), component.datasourceId, component);
+            this.set(component.modelPath, component.getComponentValue(), component.dsid, component);
         },
 
         /**
          * Returns a node from the object graph
          * @param modelPath
-         * @param datasourceId
+         * @param dsid
          * @return {*}
          */
-        get: function(modelPath, datasourceId) {
-            var path = (datasourceId || Cajeta.LOCAL_DATASOURCE) + ':' + modelPath;
-            return this.nodeMap[path];
+        get: function(modelPath, dsid) {
+            var path = (dsid || cajeta.LOCAL_DATASOURCE) + ':' + modelPath;
+            return this.nodes[path];
         },
 
         /**
@@ -286,47 +294,51 @@ define([
          * @return {*}
          */
         getByComponent: function(component) {
-            return this.get(component.modelPath, component.datasourceId);
+            return this.get(component.modelPath, component.dsid);
         },
 
         /**
          * Removes a node from the model.
          *
          * @param modelPath The path to the parent node for removal
-         * @param datasourceId (optional) The ID of the datasource, defaults to 'local'
+         * @param dsid (optional) The ID of the datasource, defaults to 'local'
+         * @param source (optional) The source of the call, used to prevent cycles on notification
          */
-        remove: function(modelPath, datasourceId) {
-            datasourceId = datasourceId || Cajeta.LOCAL_DATASOURCE;
-            modelPath = datasourceId + ':' + modelPath;
+        remove: function(modelPath, dsid, source) {
+            dsid = dsid || cajeta.LOCAL_DATASOURCE;
+            modelPath = dsid + ':' + modelPath;
 
-            if (this.nodeMap[modelPath] !== undefined) {
+            if (this.nodes[modelPath] !== undefined) {
                 var index = modelPath.lastIndexOf('.');
                 var parent, key;
                 if (index >= 0) {
-                    parent = this.nodeMap[modelPath.substring(0, index)];
+                    parent = this.nodes[modelPath.substring(0, index)];
                     key = modelPath.substring(index + 1);
                 } else {
-                    parent = this.nodeMap[modelPath];
+                    parent = this.nodes[modelPath];
                     key = modelPath;
                 }
 
-                this._removeNodeMapEntries(modelPath, this.nodeMap[modelPath])
+                this._removeNodeMapEntries(modelPath, this.nodes[modelPath])
                 delete parent[key];
             }
 
-            var event = new Cajeta.Events.Event({ id: Cajeta.Events.EVENT_MODELCACHE_CHANGED });
-            this.dispatchEvent(event);
+            var msg = new cajeta.message.Message({
+                id: cajeta.message.EVENT_MODELCACHE_ADDED,
+                source: source
+            });
+            cajeta.message.dispatch.publish('model:publish', msg);
         },
 
         /**
          * Clear all entries from the map
          */
         clearAll: function() {
-            this.nodeMap = {};
+            this.nodes = {};
         },
 
         getStateId: function() {
-            return this.stateCache.getStateId();
+            return this.state.getStateId();
         },
 
         /**
@@ -336,7 +348,7 @@ define([
          * @return The new stateId
          */
         saveState: function() {
-            return this.stateCache.add(this.nodeMap);
+            return this.state.add(this.nodes);
         },
 
         /**
@@ -348,31 +360,42 @@ define([
          */
         loadState: function(stateId) {
             // First, check to see that the session ID matches our current...
-            if (stateId == this.stateCache.getStateId())
+            if (stateId == this.state.getStateId())
                 return;
 
-            this.nodeMap = this.stateCache.load(stateId);
+            this.nodes = this.state.load(stateId);
 
             // Now, notify all the things...
-            for (var eventKey in this.eventListenerMap) {
+            for (var eventKey in this.topics) {
                 if (eventKey !== undefined) {
-                    var event = new Cajeta.Events.Event({
-                        id: Cajeta.Events.EVENT_MODELCACHE_CHANGED,
+                    var event = new cajeta.message.Message({
+                        id: cajeta.message.EVENT_MODELCACHE_ADDED,
                         op: eventKey
                     });
-                    var listeners = this.eventListenerMap[eventKey];
+                    var listeners = this.topics[eventKey];
                     for (var listenerId in listeners) {
                         if (listenerId !== undefined) {
-                            listeners[listenerId].onEvent(event);
+                            listeners[listenerId].onMessage(event);
                         }
                     }
                 }
             }
         },
 
+        onMessage: function(msg) {
+            if (msg.data !== undefined && msg.modelPath !== undefined &&
+                msg.dsid !== undefined) {
+                if (msg.method == 'delete')
+                    this.remove(msg.modelPath, msg.dsid);
+                else
+                    this.set(msg.modelPath, msg.data, msg.dsid);
+            }
+        },
+
         /**
-         * @private Internal method to recursively remove object graphs from the nodeMap
+         * Internal method to recursively remove object graphs from the nodeMap
          *
+         * @private
          * @param modelPath The current model path to delete.
          * @param node The current node for recursion
          */
@@ -384,7 +407,7 @@ define([
                     }
                 }
             }
-            delete this.nodeMap[modelPath];
+            delete this.nodes[modelPath];
         },
 
         /**
@@ -392,27 +415,30 @@ define([
          *
          * @param modelPath The model path of the map in the current frame.
          * @param value A node in the object graph to add, algorithm will recurse to all leaves.
-         * @param component Used to prevent cycles in update notification
+         * @param source Used to prevent cycles in notification
          */
-        _addNodeMapEntries: function(modelPath, value, component) {
-            this.nodeMap[modelPath] = value;
-            if (typeof value == "object") {
+        _addNodeMapEntries: function(modelPath, value, source) {
+            this.nodes[modelPath] = value;
+            if (typeof value == "object" && !(value instanceof Array)) {
                 for (var name in value) {
                     if (name !== undefined) {
-                        this.nodeMap[modelPath + '.' + name] = value[name];
-                        this._addNodeMapEntries(modelPath + '.' + name, value[name], component);
+                        this.nodes[modelPath + '.' + name] = value[name];
+                        this._addNodeMapEntries(modelPath + '.' + name, value[name], source);
                     }
                 }
             }
 
             // And notify any components bound to this modelPath...
-            this.dispatchEvent(new Cajeta.Events.Event({
-                id: Cajeta.Events.EVENT_MODELCACHE_CHANGED,
-                op: modelPath,
-                data: value
-            }), component);
+            var temp = modelPath.split(':');
+            cajeta.message.dispatch.publish('model:publish', new cajeta.message.Message({
+                id: cajeta.message.EVENT_MODELCACHE_ADDED,
+                dsid: temp[0],
+                modelPath: temp[1],
+                data: value,
+                source: source
+            }));
         }
     });
 
-    return Cajeta;
+    return cajeta;
 });

@@ -26,10 +26,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.'
  */
 
-define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
-    Cajeta.View.Html5.Svg = { }
+define(['jquery', 'cajetaView', 'html5'], function($, cajeta, html5) {
+    cajeta.view.html5.Svg = { }
 
-    Cajeta.View.Html5.Svg.Svg = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Svg = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -38,7 +38,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.Group = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Group = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -47,7 +47,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.Definitions = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Definitions = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -56,7 +56,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.LinearGradient = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.LinearGradient = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -65,7 +65,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.RadialGradient = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.RadialGradient = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -74,7 +74,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.GradientStop = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.GradientStop = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -83,7 +83,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.Path = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Path = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -92,7 +92,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.Pattern = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Pattern = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -101,7 +101,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.ClipPath = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.ClipPath = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -110,7 +110,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.Mask = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Mask = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -119,7 +119,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.Rectangle = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Rectangle = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -127,7 +127,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
             this.elementType = 'rect';
         }
     });
-    Cajeta.View.Html5.Svg.Circle = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Circle = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -136,7 +136,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.Ellipse = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Ellipse = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -145,7 +145,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.Line = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Line = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -154,7 +154,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.PolyLine = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.PolyLine = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -163,7 +163,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.Polygon = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Polygon = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -172,7 +172,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.Font = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Font = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -180,7 +180,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
             this.elementType = 'font';
         }
     });
-    Cajeta.View.Html5.Svg.Glyph = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Glyph = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -188,7 +188,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
             this.elementType = 'glyph';
         }
     });
-    Cajeta.View.Html5.Svg.MissingGlyph = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.MissingGlyph = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -196,7 +196,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
             this.elementType = 'missing-glyph';
         }
     });
-    Cajeta.View.Html5.Svg.HorizontalKern = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.HorizontalKern = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -204,7 +204,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
             this.elementType = 'hkern';
         }
     });
-    Cajeta.View.Html5.Svg.VerticalKern = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.VerticalKern = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -213,7 +213,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.FontFace = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.FontFace = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -221,7 +221,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
             this.elementType = 'font-face';
         }
     });
-    Cajeta.View.Html5.Svg.FontFaceSource = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.FontFaceSource = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -229,7 +229,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
             this.elementType = 'font-face-src';
         }
     });
-    Cajeta.View.Html5.Svg.FontFaceUri = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.FontFaceUri = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -237,7 +237,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
             this.elementType = 'font-face-uri';
         }
     });
-    Cajeta.View.Html5.Svg.FontFaceFormat = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.FontFaceFormat = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -245,7 +245,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
             this.elementType = 'font-face-format';
         }
     });
-    Cajeta.View.Html5.Svg.FontFaceName = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.FontFaceName = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -254,7 +254,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.Text = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Text = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -263,7 +263,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.TextSpan = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.TextSpan = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -272,7 +272,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.Marker = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Marker = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -281,7 +281,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.ColorProfile = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.ColorProfile = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -290,7 +290,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.Metadata = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Metadata = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -299,7 +299,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.Style = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Style = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -336,7 +336,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
      * 15.24 Filter primitive ‘feTurbulence’
      * @type {*}
      */
-    Cajeta.View.Html5.Svg.Filter = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Filter = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -345,7 +345,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.View = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.view = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -354,7 +354,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.Description = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Description = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -362,7 +362,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
             this.elementType = 'desc';
         }
     });
-    Cajeta.View.Html5.Svg.Script = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Script = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -371,7 +371,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    Cajeta.View.Html5.Svg.Animate = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Animate = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -379,7 +379,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
             this.elementType = 'animate';
         }
     });
-    Cajeta.View.Html5.Svg.Set = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.Set = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -387,7 +387,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
             this.elementType = 'set';
         }
     });
-    Cajeta.View.Html5.Svg.AnimateMotion = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.AnimateMotion = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -395,7 +395,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
             this.elementType = 'animateMotion';
         }
     });
-    Cajeta.View.Html5.Svg.AnimateColor = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.AnimateColor = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -403,7 +403,7 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
             this.elementType = 'animateColor';
         }
     });
-    Cajeta.View.Html5.Svg.AnimateTransform = Cajeta.View.Component.extend({
+    cajeta.view.html5.Svg.AnimateTransform = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -412,5 +412,5 @@ define(['jquery', 'cajetaView', 'html5'], function($, Cajeta, Html5) {
         }
     });
 
-    return Cajeta.View.Html5.Svg;
+    return cajeta.view.html5.Svg;
 });

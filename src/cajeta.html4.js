@@ -28,10 +28,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
-    Cajeta.View.Html4 = {};
+define(['jquery', 'cajetaView', 'model'], function($, cajeta, model) {
+    cajeta.view.Html4 = {};
 
-    Cajeta.View.Html4.Div = Cajeta.View.Component.extend({
+    cajeta.view.Html4.Div = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -52,7 +52,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
         }
     });
 
-    Cajeta.View.Html4.UnorderedList = Cajeta.View.Component.extend({
+    cajeta.view.Html4.UnorderedList = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -73,7 +73,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
         }
     });
 
-    Cajeta.View.Html4.Link = Cajeta.View.Component.extend({
+    cajeta.view.Html4.Link = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -95,7 +95,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
         }
     });
 
-    Cajeta.View.Html4.Span = Cajeta.View.Component.extend({
+    cajeta.view.Html4.Span = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -116,7 +116,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
         }
     });
 
-    Cajeta.View.Html4.Img = Cajeta.View.Component.extend({
+    cajeta.view.Html4.Img = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -161,7 +161,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
 
     });
 
-    Cajeta.View.Html4.Label = Cajeta.View.Component.extend({
+    cajeta.view.Html4.Label = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -185,7 +185,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
     /**
      *
      */
-    Cajeta.View.Html4.Input = Cajeta.View.Component.extend({
+    cajeta.view.Html4.Input = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -203,7 +203,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
     /**
      *
      */
-    Cajeta.View.Html4.TextInput = Cajeta.View.Html4.Input.extend({
+    cajeta.view.Html4.TextInput = cajeta.view.Html4.Input.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -218,9 +218,9 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
 
     /**
      * Manages an HTML4 RadioInput control
-     * State handling should be provided by Cajeta.View.ComponentGroup.
+     * State handling should be provided by cajeta.View.ComponentGroup.
      */
-    Cajeta.View.Html4.RadioInput = Cajeta.View.Html4.Input.extend({
+    cajeta.view.Html4.RadioInput = cajeta.view.Html4.Input.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -240,7 +240,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
     /**
      * Manages an HTML4 CheckboxInput control
      */
-    Cajeta.View.Html4.CheckboxInput = Cajeta.View.Html4.Input.extend({
+    cajeta.view.Html4.CheckboxInput = cajeta.view.Html4.Input.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -258,7 +258,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
     /**
      *
      */
-    Cajeta.View.Html4.TextArea = Cajeta.View.Component.extend({
+    cajeta.view.Html4.TextArea = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -274,7 +274,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
      *
      * @type {*}
      */
-    Cajeta.View.Html4.Legend = Cajeta.View.Component.extend({
+    cajeta.view.Html4.Legend = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -287,7 +287,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
      *
      * @type {*}
      */
-    Cajeta.View.Html4.Select = Cajeta.View.Component.extend({
+    cajeta.view.Html4.Select = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -379,7 +379,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
                 }
                 return value;
             } else {
-                throw 'The component must be docked and active to make this call.';
+                throw new Error('The component must be docked and active to make this call.');
             }
         },
         $onHtmlChange: function(event) {
@@ -390,7 +390,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
     /**
      *
      */
-    Cajeta.View.Html4.Image = Cajeta.View.Component.extend({
+    cajeta.view.Html4.Image = cajeta.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -420,7 +420,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
         }
     });
 
-    Cajeta.View.Html4.TabList = Cajeta.View.Html4.UnorderedList.extend({
+    cajeta.view.Html4.TabList = cajeta.view.Html4.UnorderedList.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -429,7 +429,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
                 this.content = properties['content'];
             } else {
                 var contentId = properties['contentId'] === undefined ? 'content' : properties['contentId'];
-                this.content = new Cajeta.View.Html4.Div({ cid: contentId });
+                this.content = new cajeta.view.Html4.Div({ cid: contentId });
             }
             this.tabEntries = new Array();
             this.selectedIndex = 0;
@@ -451,7 +451,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
                     eventData['that'] = this;
                     eventData['fnName'] = '$onTabClick';
                     eventData['index'] = i;
-                    listItem.click(eventData, Cajeta.View.Component.htmlEventDispatch);
+                    listItem.click(eventData, cajeta.view.Component.htmlEventDispatch);
                     this.dom.append(listItem);
                     this.tabEntries[i].component.css("display", i == 0 ? "" : "none");
                     this.content.dom.append(this.tabEntries[i].component.template);
@@ -460,9 +460,9 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
         },
         addChild: function(tabEntry) {
             if (tabEntry.component === undefined || tabEntry.title === undefined)
-                throw 'Invalid tabEntry submitted to tabControl "' + this.cid + '".';
+                throw new Error('Invalid tabEntry submitted to tabControl "' + this.cid + '".');
             if (tabEntry.component.template === undefined)
-                throw 'Only components with valid templates may be used as tab children.';
+                throw new Error('Only components with valid templates may be used as tab children.');
 
             // We set the contentId to dock using existing logic
             this.tabEntries.push(tabEntry);
@@ -483,7 +483,7 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
          */
         setCss: function(cssClassMap) {
             if (cssClassMap.selected === undefined)
-                throw 'Argument must contain map entry for "selected".  See documentation for more on supported states';
+                throw new Error('Argument must contain map entry for "selected".  See documentation for more on supported states');
 
             this.cssClassMap = cssClassMap;
         },
@@ -500,5 +500,5 @@ define(['jquery', 'cajetaView', 'model'], function($, Cajeta, model) {
         }
     });
 
-    return Cajeta;
+    return cajeta;
 });

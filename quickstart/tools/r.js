@@ -758,7 +758,7 @@ var requirejs, require, define, xpcUtil;
                     if (mod) {
                         //Set error on module, so it skips timeout checks.
                         mod.error = err;
-                        if (mod.events.error) {
+                        if (mod.message.error) {
                             notified = true;
                             mod.emit('error', err);
                         }
@@ -949,7 +949,7 @@ var requirejs, require, define, xpcUtil;
         }
 
         Module = function (map) {
-            this.events = getOwn(undefEvents, map.id) || {};
+            this.message = getOwn(undefEvents, map.id) || {};
             this.map = map;
             this.shim = getOwn(config.shim, map.id);
             this.depExports = [];
@@ -980,7 +980,7 @@ var requirejs, require, define, xpcUtil;
                 if (errback) {
                     //Register for errors on this module.
                     this.on('error', errback);
-                } else if (this.events.error) {
+                } else if (this.message.error) {
                     //If no errback already, but there are error listeners
                     //on this module, set up an errback to pass to the deps.
                     errback = bind(this, function (err) {
@@ -1093,7 +1093,7 @@ var requirejs, require, define, xpcUtil;
                             //errbacks should not be called for failures in
                             //their callbacks (#699). However if a global
                             //onError is set, use that.
-                            if ((this.events.error && this.map.isDefine) ||
+                            if ((this.message.error && this.map.isDefine) ||
                                 req.onError !== defaultOnError) {
                                 try {
                                     exports = context.execCb(id, factory, depExports, exports);
@@ -1208,7 +1208,7 @@ var requirejs, require, define, xpcUtil;
                             //can be traced for cycles.
                             this.depMaps.push(normalizedMap);
 
-                            if (this.events.error) {
+                            if (this.message.error) {
                                 normalizedMod.on('error', bind(this, function (err) {
                                     this.emit('error', err);
                                 }));
@@ -1376,22 +1376,22 @@ var requirejs, require, define, xpcUtil;
             },
 
             on: function (name, cb) {
-                var cbs = this.events[name];
+                var cbs = this.message[name];
                 if (!cbs) {
-                    cbs = this.events[name] = [];
+                    cbs = this.message[name] = [];
                 }
                 cbs.push(cb);
             },
 
             emit: function (name, evt) {
-                each(this.events[name], function (cb) {
+                each(this.message[name], function (cb) {
                     cb(evt);
                 });
                 if (name === 'error') {
                     //Now that the error handler was triggered, remove
                     //the listeners, since this broken Module instance
                     //can stay around for a while in the registry.
-                    delete this.events[name];
+                    delete this.message[name];
                 }
             }
         };
@@ -1705,8 +1705,8 @@ var requirejs, require, define, xpcUtil;
                             //Hold on to listeners in case the
                             //module will be attempted to be reloaded
                             //using a different config.
-                            if (mod.events.defined) {
-                                undefEvents[id] = mod.events;
+                            if (mod.message.defined) {
+                                undefEvents[id] = mod.message;
                             }
 
                             cleanRegistry(id);
@@ -14838,7 +14838,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
         return d;
     }
     function DefaultsError(msg, defs) {
-        this.msg = msg;
+        this.message = msg;
         this.defs = defs;
     }
     function defaults(args, defs, croak) {
@@ -17545,7 +17545,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                 if (node instanceof AST_Assign && node.left instanceof AST_SymbolRef) sym = node.left; else if (node instanceof AST_ForIn && node.init instanceof AST_SymbolRef) sym = node.init;
                 if (sym && (sym.undeclared() || sym.global() && sym.scope !== sym.definition().scope)) {
                     AST_Node.warn("{msg}: {name} [{file}:{line},{col}]", {
-                        msg: sym.undeclared() ? "Accidental global?" : "Assignment to global",
+                        message: sym.undeclared() ? "Accidental global?" : "Assignment to global",
                         name: sym.name,
                         file: sym.start.file,
                         line: sym.start.line,
