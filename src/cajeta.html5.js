@@ -26,15 +26,13 @@
  * OTHER DEALINGS IN THE SOFTWARE.'
  */
 
-define(['jquery', 'cajetaView', 'model'], function($, cajeta, model) {
+define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
     cajeta.view.html5 = {
         author: 'Julian Klappenbach',
         version: '0.0.1',
         license: 'MIT 2013',
-        str: {
-            ERROR_TABLIST_INVALID_TABENTRY: 'A TabEntry was submitted to tabControl "{0}" with missing attributes.',
-            ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED: 'TabEntry "{0}" submitted to tabControl "{1}" with no template.'
-        }
+        ERROR_TABLIST_INVALID_TABENTRY: 'A TabEntry was submitted to tabControl "{0}" with missing attributes.',
+        ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED: 'TabEntry "{0}" submitted to tabControl "{1}" with no template.'
     };
 
     cajeta.view.html5.Div = cajeta.view.Component.extend({
@@ -57,7 +55,7 @@ define(['jquery', 'cajetaView', 'model'], function($, cajeta, model) {
             properties.modelEncoding = 'text';
             self.super.initialize.call(this, properties);
         },
-        updateModelPath: function() { }
+        populateModelPath: function() { }
     });
 
     cajeta.view.html5.UnorderedList = cajeta.view.Component.extend({
@@ -169,7 +167,7 @@ define(['jquery', 'cajetaView', 'model'], function($, cajeta, model) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            properties.dsid = properties.dsid || cajeta.LOCAL_DATASOURCE;
+            properties.dsid = properties.dsid || cajeta.ds.LOCAL;
             self.super.initialize.call(this, properties);
         },
         getComponentValue: function() {
@@ -212,7 +210,7 @@ define(['jquery', 'cajetaView', 'model'], function($, cajeta, model) {
         _onHtmlChange: function(event) {
             this.parent.onComponentChanged();
         },
-        updateModelPath: function() { }
+        populateModelPath: function() { }
     });
 
     /**
@@ -224,7 +222,7 @@ define(['jquery', 'cajetaView', 'model'], function($, cajeta, model) {
             var self = properties.self || this;
             properties.self = self.super;
             properties.modelEncoding = 'prop:checked';
-            properties.dsid = properties.dsid || cajeta.LOCAL_DATASOURCE;
+            properties.dsid = properties.dsid || cajeta.ds.LOCAL;
             self.super.initialize.call(this, properties);
         }
     });
@@ -239,7 +237,7 @@ define(['jquery', 'cajetaView', 'model'], function($, cajeta, model) {
             properties.self = self.super;
             properties.elementType = 'textarea';
             properties.modelEncoding = 'text';
-            properties.dsid = properties.dsid || cajeta.LOCAL_DATASOURCE;
+            properties.dsid = properties.dsid || cajeta.ds.LOCAL;
             self.super.initialize.call(this, properties);
         },
         _onHtmlChange: function(event) {
@@ -289,7 +287,7 @@ define(['jquery', 'cajetaView', 'model'], function($, cajeta, model) {
             var self = properties.self || this;
             properties.self = self.super;
             properties.order = []; // A list of ids to track order (maps are not order preserving)
-            properties.dsid = properties.dsid || cajeta.LOCAL_DATASOURCE;
+            properties.dsid = properties.dsid || cajeta.ds.LOCAL;
             self.super.initialize.call(this, properties);
         },
 
@@ -332,7 +330,7 @@ define(['jquery', 'cajetaView', 'model'], function($, cajeta, model) {
                 model.components[this.cid] = this;
 
                 // Compute the modelPath
-                this.updateModelPath();
+                this.populateModelPath();
 
                 // First, if a modelValue has been declared, this will override the existing HTML, or even
                 // child component settings.  If we don't have a modelValue declared, then we need to get the
@@ -359,7 +357,7 @@ define(['jquery', 'cajetaView', 'model'], function($, cajeta, model) {
 
                 // Bind the component to the model
                 cajeta.message.dispatch.subscribe('model:publish', this, {
-                    id: cajeta.message.EVENT_MODELCACHE_ADDED,
+                    id: cajeta.message.MESSAGE_MODEL_NODEADDED,
                     modelPath: this.modelPath,
                     dsid: this.dsid
                 });
@@ -377,7 +375,7 @@ define(['jquery', 'cajetaView', 'model'], function($, cajeta, model) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
             properties.elementType = 'select';
-            properties.dsid = properties.dsid || cajeta.LOCAL_DATASOURCE;
+            properties.dsid = properties.dsid || cajeta.ds.LOCAL;
             properties.selectedType = properties.selectedType || 'index'; // value || index
             self.super.initialize.call(this, properties);
             if (this.factory !== undefined) {
@@ -459,6 +457,14 @@ define(['jquery', 'cajetaView', 'model'], function($, cajeta, model) {
             self.super.initialize.call(this, properties);
         },
 
+        setPage: function(page) {
+            var self = (arguments.length > 1) ? arguments[1] : this;
+            self.super.setPage.call(this, page, self.super);
+            for (var id in this.tabEntries) {
+                this.tabEntries[id].component.setPage(page);
+            }
+        },
+
         /**
          * Custom override for dock.  The child components are rendered in series to the content div. CSS tags
          * are then used to show only one child at a time.
@@ -500,10 +506,13 @@ define(['jquery', 'cajetaView', 'model'], function($, cajeta, model) {
          */
         addChild: function(tabEntry) {
             if (tabEntry.component === undefined || tabEntry.title === undefined)
-                throw new Error(cajeta.view.html5.str.ERROR_TABLIST_INVALID_TABENTRY.format(this.cid));
+                throw new Error(cajeta.view.html5.ERROR_TABLIST_INVALID_TABENTRY.format(this.cid));
             if (tabEntry.component.template === undefined)
-                throw new Error(cajeta.view.html5.str.ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED.format(
+                throw new Error(cajeta.view.html5.ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED.format(
                     tabEntry.component.id, this.cid));
+
+            if (this.page !== undefined)
+                tabEntry.component.page = this.page;
 
             // We set the contentId to dock using existing logic
             this.tabEntries.push(tabEntry);

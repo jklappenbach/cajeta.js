@@ -70,6 +70,30 @@ var server = http.createServer(function (request, response) {
             console.log(JSON.stringify(result));
             response.end(JSON.stringify(result));
         }
+    } else if (uri.indexOf('/formExample/selectDynamicAlt') >= 0) {
+        console.log('Processing for /formExample/selectDynamicAlt');
+        if (request.method == 'GET') {
+            response.writeHead(200, "OK", { 'Content-Type': 'application/json' });
+            var optgroups = [ 'red', 'green', 'blue', 'yello' ];
+            var result = [];
+            for (var optgroup in optgroups) {
+                var element = {
+                    tid: 'optgroup',
+                    attr: { label: optgroups[optgroup] },
+                    children: { }
+                }
+                for (var j = 0; j < 5; j++) {
+                    element.children[j] = {
+                        tid: 'option',
+                        attr: { value: optgroups[optgroup] + j },
+                        text: optgroups[optgroup] + ' ' + j
+                    }
+                }
+                result.push(element);
+            }
+            console.log(JSON.stringify(result));
+            response.end(JSON.stringify(result));
+        }
     } else if (uri.indexOf('/formExample/selectDynamicMulti') >= 0) {
         console.log('Processing for /formExample/selectDynamicMulti');
         if (request.method == 'GET') {

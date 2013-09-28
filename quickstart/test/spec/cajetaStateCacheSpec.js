@@ -1,10 +1,10 @@
 define(
-    ['jquery', 'cajetaModel'],
-    function($, Cajeta) {
+    ['jquery', 'cajeta.model', 'ds'],
+    function($, cajeta, ds) {
         // First test classes and extend functionality
-        return describe('Cajeta.model.State', function() {
+        return describe('cajeta.model.State', function() {
 
-            var stateCache = null;
+            var state = null;
             var data00 = {
             };
             var data01 = {
@@ -49,31 +49,31 @@ define(
             }
 
             it('instantiates with no arguments', function() {
-                stateCache = new Cajeta.model.State({
+                state = new cajeta.model.State({
                     applicationId: 'stateCacheSpec'
                 });
-                expect(stateCache).not.toBeNull();
-                expect(stateCache.getStateId()).toEqual(0);
-                expect(stateCache.settings.keyPeriod).toEqual(10);
+                expect(state).not.toBeNull();
+                expect(state.getStateId()).toEqual(0);
+                expect(state.settings.keyPeriod).toEqual(10);
             });
 
             it('stores a state entry and increments the state ID', function() {
-                stateCache.add(data00);
-                expect(stateCache.getStateId()).toEqual(0);
-                expect(stateCache.modelJson).toEqual(JSON.stringify(data00));
+                state.add(data00);
+                expect(state.getStateId()).toEqual(0);
+                expect(state.modelJson).toEqual(JSON.stringify(data00));
             });
 
             it('stores another state entry and increments the state ID', function() {
-                stateCache.add(data01);
+                state.add(data01);
                 expect(data00).not.toEqual(data01);
-                expect(stateCache.getStateId()).toEqual(1);
-                expect(stateCache.modelJson).toEqual(JSON.stringify(data01));
+                expect(state.getStateId()).toEqual(1);
+                expect(state.modelJson).toEqual(JSON.stringify(data01));
             });
 
             it('retrieves state entries', function() {
-                var data = stateCache.load(0);
+                var data = state.load(0);
                 expect(data).toEqual(data00);
-                var data = stateCache.load(1);
+                var data = state.load(1);
                 expect(data).toEqual(data01);
             });
 
@@ -83,54 +83,54 @@ define(
                 };
 
                 data.two = 'two';
-                stateCache.add(data);
+                state.add(data);
                 data.three = 'three';
-                stateCache.add(data);
+                state.add(data);
                 data.four = 'four';
-                stateCache.add(data);
+                state.add(data);
                 data.five = 'five';
-                stateCache.add(data);
+                state.add(data);
                 data.six= 'six';
-                stateCache.add(data);
+                state.add(data);
                 data.seven = 'seven';
-                stateCache.add(data);
+                state.add(data);
                 data.eight = 'eight';
-                stateCache.add(data);
+                state.add(data);
                 data.nine = 'nine';
-                stateCache.add(data);
+                state.add(data);
                 data.ten = 'ten';
-                stateCache.add(data);
+                state.add(data);
                 data.eleven = 'eleven';
-                stateCache.add(data);
+                state.add(data);
                 data.twelve = 'twelve';
-                stateCache.add(data);
+                state.add(data);
                 data.thirteen = 'thirteen';
-                stateCache.add(data);
+                state.add(data);
                 data.fourteen = 'fourteen';
-                stateCache.add(data);
+                state.add(data);
                 data.fifteen = 'fifteen';
-                stateCache.add(data);
+                state.add(data);
                 data.sixteen = 'sixteen';
-                stateCache.add(data);
+                state.add(data);
                 data.seventeen = 'seventeen';
-                stateCache.add(data);
+                state.add(data);
                 data.eighteen = 'eighteen';
-                stateCache.add(data);
-                expect(stateCache.getStateId()).toEqual(18);
+                state.add(data);
+                expect(state.getStateId()).toEqual(18);
             });
 
             it('can restore an arbitrary, non-key entry', function() {
-                expect(stateCache.load(5)).toEqual(data05);
-                expect(stateCache.load(15)).toEqual(data15);
+                expect(state.load(5)).toEqual(data05);
+                expect(state.load(15)).toEqual(data15);
             });
 
             it('can restore an arbitrary, key entry', function() {
-                expect(stateCache.load(10)).toEqual(data10);
-                expect(stateCache.load(0)).toEqual(data00);
+                expect(state.load(10)).toEqual(data10);
+                expect(state.load(0)).toEqual(data00);
             });
 
             it('throws an exception when invalid state IDs are submitted', function() {
-                expect(function() { stateCache.load(1000); }).toThrow(Cajeta.ERROR_STATECACHE_LOADFAILURE);
+                expect(function() { state.load(1000); }).toThrow(cajeta.ERROR_STATECACHE_LOADFAILURE);
             });
         });
     }

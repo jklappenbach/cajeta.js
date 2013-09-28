@@ -1,16 +1,16 @@
 define([
     'jquery',
-    'cajetaHtml5',
+    'cajeta.html5',
     'formExampleDiv',
     'uiExampleDiv',
     'serverInteractionDiv',
     'text!app/view/home/homePage.html'
-], function($, Cajeta, formExampleDiv, uiExampleDiv, serverInteractionDiv, homePageText) {
+], function($, cajeta, formExampleDiv, uiExampleDiv, serverInteractionDiv, homePageText) {
     
     // Create an alias for shortening namespace.
-    var Html5 = Cajeta.view.html5;
+    var Html5 = cajeta.view.html5;
 
-    var homePage = new Cajeta.view.Page({ cid: Cajeta.homePage });
+    var homePage = new cajeta.view.Page({ cid: cajeta.homePage });
     homePage.setTemplate('homePage', homePageText);
 
     var tabs = new Html5.TabList({ cid: 'tabs', contentId: 'content' });

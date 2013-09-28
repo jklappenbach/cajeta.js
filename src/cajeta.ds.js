@@ -7,7 +7,7 @@
  */
 define([
     'jquery',
-    'cajetaCore',
+    'cajeta.core',
     'jcookies'
 ], function($, cajeta, jCookies) {
 
@@ -20,13 +20,15 @@ define([
         version: '0.0.1',
         license: 'MIT 2013',
         cache: {},
-        TOPIC_DS_PUBLISH: 'ds:publish',
-        set: function(datasource) {
-            this.cache[datasource.getId()] = datasource;
-        },
-        get: function(dsid) {
-            return this.cache[dsid];
-        }
+        STATE_SETTINGS_URI: '/{applicationId}/stateCache/settings',
+        STATE_STATES_URI: '/{applicationId}/stateCache/states',
+        STATE_STATE_URI: '/{applicationId}/stateCache/states/{stateId}',
+        STATE_DATASOURCE_ID: 'STATECACHE_DATASOURCE',
+        MESSAGE_DATASOURCE_COMPLETE: 'MESSAGE_DATASOURCE_COMPLETE',
+        ERROR_STATE_LOADFAILURE: 'Unable to restore state',
+        TOPIC_PUBLISH: 'ds:publish',
+        LOCAL: 'local'
+
     };
 
     /**
@@ -483,6 +485,50 @@ define([
                 contentType: headers['Content-Type'] || 'application/json'
             });
 
+        }
+    });
+
+    // Default Implementations
+
+    /**
+     * The default, memory based state management datasource
+     */
+    cajeta.ds.DefaultStateDS = cajeta.ds.MemoryDS.extend({
+        initialize: function(properties) {
+            if (properties === undefined || properties.applicationId === undefined)
+                throw new Error('cajeta.ds.DefaultStateDS.applicationId must be defined');
+            properties = properties || {};
+            var self = properties.self || this;
+            properties.self = self.super;
+            properties.async = false;
+            properties.uriTemplate = cajeta.ds.STATE_STATE_URI;
+            properties.settingsUri = this.getUri({
+                uriTemplate: cajeta.ds.STATE_SETTINGS_URI,
+                applicationId: properties.applicationId
+            });
+            this.settings = {
+                stateId: 0,
+                nextId: 0,
+                keyPeriod: 10
+            };
+            self.super.initialize.call(this, properties);
+        },
+        post: function(data, parameters) {
+            parameters.stateId = parameters.stateId || this.settings.nextId;
+            var uri = this.getUri(parameters);
+            this.cache[uri] = data;
+            this.settings.stateId = this.settings.nextId++;
+            return this.processResult(this.settings.stateId, parameters);
+        },
+        get: function(parameters) {
+            var uri = this.getUri(parameters);
+            var data;
+            if (uri.indexOf('settings') >= 0) {
+                data = this.settings;
+            } else {
+                data = this.cache[uri];
+            }
+            return this.processResult(data, parameters);
         }
     });
 

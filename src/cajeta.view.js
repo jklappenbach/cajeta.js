@@ -7,9 +7,10 @@
  */
 define([
     'jquery',
-    'cajetaCore',
-    'model'
-], function($, cajeta, model) {
+    'cajeta.core',
+    'model',
+    'ds'
+], function($, cajeta, model, ds) {
     cajeta.view = {
         author: 'Julian Klappenbach',
         version: '0.0.1',
@@ -99,6 +100,20 @@ define([
                 return parent.getCanonicalId() + '.' + this.cid;
             else
                 return this.cid;
+        },
+
+        /**
+         * Sets the page, recursing over children
+         * @param page {cajeta.view.Page} The page of the component hierarchy
+         */
+        setPage: function(page) {
+            this.page = page;
+            for (var cid in this.children) {
+                this.children[cid].setPage(page);
+            }
+            if (this.factory !== undefined) {
+                this.factory.page = page;
+            }
         },
 
         /**
@@ -194,6 +209,20 @@ define([
                 }
                 this.attributes[name] = value;
             }
+        },
+
+        /**
+         * Remove the attribute from the dom / template element, as well as the component's internal state
+         * @param name The attribute name to remove
+         */
+        removeAttr: function(name) {
+            if (this.isDocked()) {
+                this.dom.removeAttr(name);
+            }
+            if (this.template !== undefined) {
+                this.template.removeAttr(name);
+            }
+            delete this.attributes[name];
         },
 
         /**
@@ -318,20 +347,23 @@ define([
          * Add a component as a child.  The component must have a valid id.  It's parent
          * attribute will be set to the owning component.
          *
-         * @param component
+         * @param child
          */
-        addChild: function(component) {
-            if (component instanceof cajeta.view.Factory) {
-                this.factory = component;
+        addChild: function(child) {
+            if (child instanceof cajeta.view.Factory) {
+                this.factory = child;
                 this.factory.parent = this;
             } else {
-                var id = component.cid;
-                if (id == undefined || id == '') {
+                var cid = child.cid;
+                if (cid == undefined || cid == '') {
                     throw new Error(cajeta.ERROR_COMPONENT_CID_UNDEFINED);
                 }
-                this.children[id] = component;
+                this.children[cid] = child;
             }
-            component.parent = this;
+            if (this.page !== undefined)
+                child.page = this.page;
+
+            child.parent = this;
         },
 
         /**
@@ -359,6 +391,30 @@ define([
             }
         },
 
+        _synchElementState: function(dom) {
+            for (var name in this.attributes) {
+                if (name !== undefined)
+                    dom.attr(name, this.attributes[name]);
+            }
+            this.attributes = {};
+
+            for (var name in this.properties) {
+                if (name !== undefined)
+                    dom.prop(name, this.properties[name]);
+            }
+            this.properties = {};
+
+            for (var name in this.cssAttributes) {
+                if (name !== undefined)
+                    dom.css(name, this.cssAttributes[name]);
+            }
+            this.cssAttributes = {};
+
+            if (this.textValue !== undefined)
+                dom.text(this.textValue);
+            delete this.textValue;
+        },
+
         /**
          * A template is a fragment of HTML that is injected into a target element upon docking.
          * If no template has been assigned, the exsting markup in the DOM will be used.
@@ -379,20 +435,7 @@ define([
                             this.template = $(temp[i]);
                             this.template.attr('cid', this.cid);
 
-                            for (var name in this.attributes) {
-                                if (name !== undefined)
-                                    this.template.attr(name, this.attributes[name]);
-                            }
-                            for (var name in this.properties) {
-                                if (name !== undefined)
-                                    this.template.prop(name, this.properties[name]);
-                            }
-                            for (var name in this.cssAttributes) {
-                                if (name !== undefined)
-                                    this.template.css(name, this.cssAttributes[name]);
-                            }
-                            if (this.textValue !== undefined)
-                                this.template.text(this.textValue);
+                            this._synchElementState(this.template);
                             break;
                         }
                     }
@@ -450,34 +493,21 @@ define([
 
                         // Ensure we have assigned the component ID to the fragment
                         this.attr('cid', this.cid);
-                    } else {
-                        // Otherwise, check for any settings that need to be transfered to the dom
-                        for (var name in this.attributes) {
-                            if (name !== undefined)
-                                this.dom.attr(name, this.attributes[name]);
-                        }
-                        for (var name in this.properties) {
-                            if (name !== undefined)
-                                this.dom.prop(name, this.properties[name]);
-                        }
-                        for (var name in this.cssAttributes) {
-                            if (name !== undefined)
-                                this.dom.css(name, this.cssAttributes[name]);
-                        }
-                        if (this.textValue !== undefined)
-                            this.dom.text(this.textValue);
                     }
-
-                    // Add listeners for our own datamodel, as well as jQuery based hooks
-                    this.bindHtmlEvents();
-
-                    // Add to the application component map at this point.
-                    model.components[this.getCanonicalId()] = this;
-
-                    // Dock any factories we may have
-                    if (this.factory !== undefined)
-                        this.factory.dock();
                 }
+
+                // Apply any cached element state properties that were made before we docked
+                this._synchElementState(this.dom);
+
+                // Add listeners for our own datamodel, as well as jQuery based hooks
+                this.bindHtmlEvents();
+
+                // Add to the application component map at this point.
+                model.components[this.getCanonicalId()] = this;
+
+                // Dock any factories we may have
+                if (this.factory !== undefined)
+                    this.factory.dock();
             }
         },
 
@@ -494,19 +524,28 @@ define([
                 this.dom.detach();
             }
 
-            cajeta.message.dispatch(this);
+            cajeta.message.dispatch.unsubscribe(this, 'model:publish');
         },
 
         /**
-         *
+         * Adds a new element based on either the component template, or it's internal state if the template
+         * has not been set.  This provides the ability to add templates programmatically, without having to draw upon
+         * resources defined in static html.
          */
         inject: function() {
             if (this.parent === undefined)
                 throw new Error('cajeta.view.Component.parent must be defined in order to inject');
-            this.template.removeAttr('tid')
-            this.parent.dom.append(this.template);
+
+            if (this.template !== undefined) {
+                this.template.removeAttr('tid')
+                this.parent.dom.append(this.template);
+                delete this.template;
+            } else {
+                var element = '<' + this.elementType + ' cid="' + this.cid + '" />';
+                var template = $(element);
+                this.parent.dom.append(template);
+            }
             delete this.tid;
-            delete this.template;
             this.dock();
         },
 
@@ -515,7 +554,7 @@ define([
          * reached, or a node containing a root modelPath (no dot operator) is found.  We'll have to play with it to
          * see what works best.
          */
-        updateModelPath: function() {
+        populateModelPath: function() {
             var recurseParents = function(parent) {
                 var result = undefined;
                 if (parent !== undefined) {
@@ -540,10 +579,10 @@ define([
         bindModel: function() {
             if (this.dsid !== undefined) {
                 if (this.modelPath === undefined)
-                    this.updateModelPath();
+                    this.populateModelPath();
 
                 cajeta.message.dispatch.subscribe(this, 'model:publish', {
-                    id: cajeta.message.EVENT_MODELCACHE_ADDED,
+                    id: cajeta.message.MESSAGE_MODEL_NODEADDED,
                     dsid: this.dsid,
                     modelPath: this.modelPath
                 });
@@ -704,8 +743,7 @@ define([
             this.templates = this.templates || {};
             this.rules = this.rules || [];
             this.empty = this.empty || true;
-            this.id = this.dsid + ':' + this.modelPath || this.uri;
-            this.factoryIds = {};
+            this.id = this.id || this.uri || this.dsid + ':' + this.modelPath;
         },
 
         /**
@@ -749,7 +787,7 @@ define([
                     status: 'success'
                 });
             }
-            cajeta.ds.get(this.dsid).get({
+            ds[this.dsid].get({
                 modelPath: this.modelPath,
                 uri: this.uri
             });
@@ -784,10 +822,10 @@ define([
         },
 
         nextId: function(tid) {
-            var index = this.factoryIds[tid];
+            var index = this.page.factoryIds[tid];
             if (index === undefined)
                 index = 0;
-            this.factoryIds[tid] = index + 1;
+            this.page.factoryIds[tid] = index + 1;
             return index;
         },
 
@@ -864,6 +902,7 @@ define([
             if (this.title === undefined)
                 this.title = cajeta.DEFAULT_PAGETITLE;
             this.setElementType('body');
+            this.factoryIds = {};
         },
         setTitle: function(title) {
             this.title = title;
@@ -881,6 +920,7 @@ define([
         dock: function() {
             this.dom = $('body');
             this.dom.html(this.template.html());
+            this.setPage(this);
         },
 
         getViewState: function() {
@@ -1213,7 +1253,7 @@ define([
          * @param msg The event containing updated data
          */
         onMessage: function(msg) {
-            if (msg.id == cajeta.message.EVENT_MODELCACHE_ADDED) {
+            if (msg.id == cajeta.message.MESSAGE_MODEL_NODEADDED) {
                 this.setComponentValue(msg.data, true);
             }
         },

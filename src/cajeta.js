@@ -6,7 +6,7 @@
  * Empty, facade include, meant to provide a single target for an application.
  */
 define([
-    'cajetaView'
+    'cajeta.view'
 ], function(Cajeta) {
     return Cajeta;
 });

@@ -1,13 +1,13 @@
 define([
     'jquery',
-    'cajetaHtml5',
+    'cajeta.html5',
     'text!app/view/home/serverInteractionDiv.html'
-], function($, Cajeta, serverInteractionDiv) {
+], function($, cajeta, serverInteractionDiv) {
 
     // Create an alias for namespace brevity.
-    var Html5 = Cajeta.view.html5;
+    var html5 = cajeta.view.html5;
 
-    var div = new Html5.Div({ cid: 'serverInteraction' });
+    var div = new html5.Div({ cid: 'serverInteraction' });
     div.setTemplate('serverInteractionDiv', serverInteractionDiv);
     return div;
 });

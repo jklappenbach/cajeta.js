@@ -28,7 +28,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-define(['jquery', 'cajetaView', 'model'], function($, cajeta, model) {
+define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
     cajeta.view.Html4 = {};
 
     cajeta.view.Html4.Div = cajeta.view.Component.extend({

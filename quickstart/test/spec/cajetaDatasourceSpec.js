@@ -1,15 +1,15 @@
 define(
-    ['cajetaDS'],
-    function(Cajeta) {
+    ['cajeta.ds'],
+    function(cajeta) {
         // First test classes and extend functionality
-        return describe('Cajeta.ds', function() {
+        return describe('cajeta.ds', function() {
             var data = {
                 one: 'one',
                 two: 'two',
                 three: 'three'
             };
             it('provides a MemoryDS', function() {
-                var ds = new Cajeta.ds.MemoryDS({
+                var ds = new cajeta.ds.MemoryDS({
                     id: 'memDS',
                     uriTemplate: 'unitTest/cacheEntries/{key}',
                     async: false
@@ -17,13 +17,13 @@ define(
 
                 ds.put(data, { key: '00' });
 
-                expect(ds.get({ key: '00' })).toEqual(data);
-                expect(ds.get({ key: '01' })).toBeUndefined();
+                expect(ds.get({ key: '00' }).data).toEqual(data);
+                expect(ds.get({ key: '01' }).data).toBeUndefined();
 
                 var result = null;
 
-                var complete = function(data, requestId) {
-                    result = data;
+                var complete = function(msg) {
+                    result = msg.data;
                 };
 
                 ds.get({
@@ -42,7 +42,7 @@ define(
                 });
             });
             it('provides a CookieDS', function() {
-                var ds = new Cajeta.ds.CookieDS({
+                var ds = new cajeta.ds.CookieDS({
                     id: 'cookieDS',
                     uriTemplate: 'unitTest/cacheEntries/{key}',
                     async: false
@@ -52,13 +52,13 @@ define(
                     key: '00'
                 });
 
-                expect(ds.get({ key: '00' })).toEqual(data);
-                expect(ds.get({ key: '01' })).toBeUndefined();
+                expect(ds.get({ key: '00' }).data).toEqual(data);
+                expect(ds.get({ key: '01' }).data).toBeUndefined();
 
                 var result = null;
 
-                var complete = function(data, requestId) {
-                    result = data;
+                var complete = function(msg) {
+                    result = msg.data;
                 };
 
                 ds.get({
@@ -79,7 +79,7 @@ define(
 
 // Unsupported on Firefox and IE (what a mess)
 //            it('provides a DatabaseDS', function() {
-//                var ds = new Cajeta.Datasource.DbRestDS({
+//                var ds = new cajeta.Datasource.DbRestDS({
 //                    id: 'dbDS',
 //                    uriTemplate: 'unitTest/cacheEntries/{key}',
 //                    async: false
@@ -115,7 +115,7 @@ define(
 //            });
 
             it('provides an AjaxDS', function() {
-                var ds = new Cajeta.ds.AjaxDS({
+                var ds = new cajeta.ds.AjaxDS({
                     id: 'ajaxDS',
                     modelPath: 'unitTest/cacheEntries',
                     uriTemplate: 'http://localhost:8888/unitTest/cacheEntries/{key}',

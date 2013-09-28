@@ -7,66 +7,32 @@
  */
 define([
     'jquery',
-    'cajetaDS',
-    'vcdiff'
-], function($, cajeta, vcDiff) {
+    'cajeta.ds',
+    'vcdiff',
+    'ds'
+], function($, cajeta, vcDiff, ds) {
 
     /**
      * The Model, as in traditional MVC architectures, defines the architecture and interfaces for how data is
      * structured and managed.
      */
     cajeta.model = {
-        STATECACHE_SETTINGS_URI: '/{applicationId}/stateCache/settings',
-        STATECACHE_STATES_URI: '/{applicationId}/stateCache/states',
-        STATECACHE_STATE_URI: '/{applicationId}/stateCache/states/{stateId}',
-        STATECACHE_DATASOURCE_ID: 'STATECACHE_DATASOURCE'
+        author: 'Julian Klappenbach',
+        version: '0.0.1',
+        license: 'MIT 2013',
+        MESSAGE_MODEL_NODEADDED: 'MESSAGE_MODEL_NODEADDED',
+        MESSAGE_MODEL_NODEREMOVED: 'MESSAGE_MODEL_NODEREMOVED',
+        ERROR_MODEL_NOSTATECONFIGIURED: 'StateCache datasource incorrectly configured'
     };
 
-    cajeta.model.StateDS = cajeta.ds.MemoryDS.extend({
-        initialize: function(properties) {
-            properties = properties || {};
-            var self = properties.self || this;
-            properties.self = self.super;
-            properties.async = false;
-            self.super.initialize.call(this, properties);
-        },
-        post: function(data, parameters) {
-            var uri = this.getUri(parameters);
-            var settings = this.cache[this.getUri({
-                uriTemplate: cajeta.model.STATECACHE_SETTINGS_URI,
-                applicationId: parameters.applicationId
-            })];
-            this.cache[uri + '/' + settings.nextId] = data;
-            settings.stateId = settings.nextId++;
-            return this.processResult(settings.stateId, parameters);
-        },
-        get: function(parameters) {
-            var uri = this.getUri(parameters);
-            var data;
-            if (uri.indexOf('settings') >= 0) {
-                data = this.cache[uri];
-                if (data === undefined) {
-                    data = {
-                        stateId: 0,
-                        nextId: 0,
-                        keyPeriod: 10
-                    };
-                    this.cache[uri] = data;
-                }
-            } else {
-                data = this.cache[uri];
-            }
-            return this.processResult(data, parameters);
-        }
-    });
-
     /**
-     * The default datasource for stateCache settings is memory, appearing as always uninitialized to the client
-     * at startup.
+     * If the developer hasn't provided a value, we'll add a default, memory state interface
      */
-    cajeta.ds.set(new cajeta.model.StateDS({
-        id: cajeta.model.STATECACHE_DATASOURCE_ID
-    }));
+    if (ds[cajeta.ds.STATE_DATASOURCE_ID] === undefined) {
+        ds[cajeta.ds.STATE_DATASOURCE_ID] =  new cajeta.ds.DefaultStateDS({
+            id: cajeta.ds.STATE_DATASOURCE_ID
+        });
+    }
 
     /**
      * cajeta.ModelSnapshotCache must support the following use cases:
@@ -89,15 +55,20 @@ define([
             this.applicationId = this.applicationId || 'defaultAppId';
             this.vcd = new vcDiff.Vcdiff();
             this.vcd.blockSize = 3;
-            this.dsidState = this.dsidState || cajeta.model.STATECACHE_DATASOURCE_ID
-            this.dsState = cajeta.ds.get(this.dsidState);
+            this.dsidState = this.dsidState || cajeta.ds.STATE_DATASOURCE_ID
+            this.dsState = ds[this.dsidState];
+
+            if (this.dsState === undefined)
+                throw new Error(cajeta.model.ERROR_MODEL_NOSTATECONFIGIURED);
+
             this.settings = this.dsState.get({
                 applicationId: this.applicationId,
-                uriTemplate: cajeta.model.STATECACHE_SETTINGS_URI,
+                uriTemplate: cajeta.ds.STATE_SETTINGS_URI,
                 async: false
             }).data;
+
             if (this.settings === undefined) {
-                throw new Error('StateCache datasource incorrectly configured!');
+                throw new Error(cajeta.model.ERROR_MODEL_NOSTATECONFIGIURED);
             }
             this.modelJson = '{ }';
         },
@@ -114,9 +85,8 @@ define([
                 data = json;
             }
             this.settings.stateId = this.dsState.post(data, {
-                applicationId: this.applicationId,
-                uriTemplate: cajeta.model.STATECACHE_STATES_URI
-            });
+                applicationId: this.applicationId
+            }).data;
             this.modelJson = json;
             return this.settings.stateId;
         },
@@ -130,21 +100,20 @@ define([
         load: function(stateId) {
             var startId = stateId - (stateId % this.settings.keyPeriod);
             this.modelJson = this.dsState.get({
-                uriTemplate: cajeta.model.STATECACHE_STATE_URI,
+                uriTemplate: cajeta.ds.STATE_STATE_URI,
                 applicationId: this.applicationId,
                 stateId: startId
-            });
+            }).data;
             if (this.modelJson === undefined)
-                throw new Error(cajeta.ERROR_STATECACHE_LOADFAILURE);
+                throw new Error(cajeta.ds.ERROR_STATE_LOADFAILURE);
             var delta;
             for (var i = startId + 1; i <= stateId; i++) {
                 delta = this.dsState.get({
-                    uriTemplate: cajeta.model.STATECACHE_STATE_URI,
                     applicationId: this.applicationId,
                     stateId: i
-                })
+                }).data;
                 if (delta === undefined)
-                    throw new Error(cajeta.ERROR_STATECACHE_LOADFAILURE);
+                    throw new Error(cajeta.ds.ERROR_STATE_LOADFAILURE);
                 this.modelJson = this.vcd.decode(this.modelJson, delta);
             }
             this.settings.stateId = stateId;
@@ -217,7 +186,7 @@ define([
                 this.autoSnapshot = false;
 
             // Add our subscriptions
-            cajeta.message.dispatch.subscribe(this, cajeta.ds.TOPIC_DS_PUBLISH, { status: 'success' })
+            cajeta.message.dispatch.subscribe(this, cajeta.ds.TOPIC_PUBLISH, { status: 'success' })
         },
 
         /**
@@ -230,7 +199,7 @@ define([
          * @param source (optional) The issuing component, prevent cyclical updates.
          */
         set: function(modelPath, value, dsid, source) {
-            dsid = dsid || cajeta.LOCAL_DATASOURCE;
+            dsid = dsid || cajeta.ds.LOCAL;
             modelPath = dsid + ':' + modelPath;
 
             // Find out if we have a single key, or a walk, and populate the map
@@ -264,7 +233,7 @@ define([
 
             // And send out a general notification on model changed.
             cajeta.message.dispatch.publish('model:publish', new cajeta.message.Message({
-                id: cajeta.message.EVENT_MODELCACHE_ADDED,
+                id: cajeta.model.MESSAGE_MODEL_NODEADDED,
                 source: source
             }));
         },
@@ -284,7 +253,7 @@ define([
          * @return {*}
          */
         get: function(modelPath, dsid) {
-            var path = (dsid || cajeta.LOCAL_DATASOURCE) + ':' + modelPath;
+            var path = (dsid || cajeta.ds.LOCAL) + ':' + modelPath;
             return this.nodes[path];
         },
 
@@ -305,7 +274,7 @@ define([
          * @param source (optional) The source of the call, used to prevent cycles on notification
          */
         remove: function(modelPath, dsid, source) {
-            dsid = dsid || cajeta.LOCAL_DATASOURCE;
+            dsid = dsid || cajeta.ds.LOCAL;
             modelPath = dsid + ':' + modelPath;
 
             if (this.nodes[modelPath] !== undefined) {
@@ -324,7 +293,7 @@ define([
             }
 
             var msg = new cajeta.message.Message({
-                id: cajeta.message.EVENT_MODELCACHE_ADDED,
+                id: cajeta.model.MESSAGE_MODEL_NODEADDED,
                 source: source
             });
             cajeta.message.dispatch.publish('model:publish', msg);
@@ -369,7 +338,7 @@ define([
             for (var eventKey in this.topics) {
                 if (eventKey !== undefined) {
                     var event = new cajeta.message.Message({
-                        id: cajeta.message.EVENT_MODELCACHE_ADDED,
+                        id: cajeta.model.MESSAGE_MODEL_NODEADDED,
                         op: eventKey
                     });
                     var listeners = this.topics[eventKey];
@@ -431,7 +400,7 @@ define([
             // And notify any components bound to this modelPath...
             var temp = modelPath.split(':');
             cajeta.message.dispatch.publish('model:publish', new cajeta.message.Message({
-                id: cajeta.message.EVENT_MODELCACHE_ADDED,
+                id: cajeta.model.MESSAGE_MODEL_NODEADDED,
                 dsid: temp[0],
                 modelPath: temp[1],
                 data: value,

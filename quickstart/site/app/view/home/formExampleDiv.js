@@ -1,18 +1,9 @@
 define([
     'jquery',
-    'cajetaHtml5',
+    'cajeta.html5',
     'text!app/view/home/formExampleDiv.html',
     'model'
 ], function($, cajeta, formExampleDiv, model) {
-
-    cajeta.ds.set(new cajeta.ds.AjaxDS({
-        id: 'formExampleDS',
-        headers: {
-            'Accept' : "application/json; charset=UTF-8",
-            'Content-Type' : "application/json; charset=UTF-8"
-        },
-        uriTemplate: 'http://localhost:8888/formExample/selectSet'
-    }));
 
     // Create an alias for namespace brevity.
     var html5 = cajeta.view.html5;
@@ -109,6 +100,27 @@ define([
             dsid: 'formExampleDS',
             uri: '/formExample/selectDynamicMulti',
             modelPath: 'ui.selectDynamicMulti'
+        })
+    }));
+
+    form.addChild(new html5.Select({
+        cid: 'selectDynamicAlt',
+        factory: new cajeta.view.Factory({
+            dsid: 'formExampleDS',
+            uri: '/formExample/selectDynamicAlt',
+            modelPath: 'ui.selectDynamicAlt',
+            templates: {
+                optgroup: new cajeta.view.Component({
+                    elementType: 'optgroup',
+                    tid: 'optgroup',
+                    modelEncoding: 'attr:value'
+                }),
+                option: new cajeta.view.Component({
+                    elementType: 'option',
+                    tid: 'option',
+                    modelEncoding: 'attr:value'
+                })
+            }
         })
     }));
 

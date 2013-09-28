@@ -26,7 +26,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.'
  */
 
-define(['jquery', 'cajetaView', 'html5'], function($, cajeta, html5) {
+define(['jquery', 'cajeta.view', 'html5'], function($, cajeta, html5) {
     cajeta.view.html5.Svg = { }
 
     cajeta.view.html5.Svg.Svg = cajeta.view.Component.extend({

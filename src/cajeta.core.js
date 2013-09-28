@@ -41,7 +41,6 @@ define([
         ERROR_DATASOURCE_MODELPATH_UNDEFINED: 'cajeta.ds.Ajax.modelPath must be defined',
         ERROR_AJAX_DATASOURCEID_UNDEFINED: 'cajeta.ds.Ajax.dsid must be defined',
         ERROR_RESTAJAX_URITEMPLATE_UNDEFINED: 'A cajeta.ds.RestAjax.uriTemplate must be defined in properties',
-        ERROR_STATECACHE_LOADFAILURE: 'Unable to restore state',
         ERROR_MODELCACHE_PATH_UNDEFINED: '"{0}" could not be resolved to an entry',
         ERROR_MODELADAPTOR_MODELPATH_UNDEFINED: 'modelPath must be defined',
         ERROR_COMPONENT_MODELADAPTOR_UNDEFINED: 'cajeta.view.Component.modelAdaptor must be defined for "{0}"',
@@ -52,7 +51,6 @@ define([
         ERROR_MODELADAPTOR_COMPONENT_UNDEFINED: 'cajeta.view.ComponentModelAdaptor.component must be defined',
         ERROR_APPLICATION_PAGE_UNDEFINED: 'Page "{0}" undefined',
         DEFAULT_PAGETITLE: 'Default cajeta Page',
-        LOCAL_DATASOURCE: 'local',
         safeProperty: function(key, map) {
             var entry = map[key];
             if (entry === undefined) {
@@ -156,11 +154,7 @@ define([
      * The namespace for messaging, including the system-wide message, topic-based message dispatch
      * @type {Object}
      */
-    cajeta.message = {
-        EVENT_MODELCACHE_ADDED: 'EVENT_MODELCACHE_ADDED',
-        EVENT_MODELCACHE_REMOVED: 'EVENT_MODELCACHE_REMOVED',
-        EVENT_DATASOURCE_COMPLETE: 'EVENT_DATASOURCE_COMPLETE'
-    };
+    cajeta.message = { };
 
     /**
      * An event object not only represents the notification of an event to subscribers in the system, it also
@@ -206,9 +200,9 @@ define([
          * Dispatch an message to a topic
          * @param topic
          * @param msg
-         * @param guaranteed (optional) True, if the message is to be queued if undelivered
+         * @param queue (optional) True, if the message is to be queued if undelivered
          */
-        publish: function(topic, msg, guaranteed) {
+        publish: function(topic, msg, queue) {
             var subscribers = this.topics[topic];
             var sent = false;
             if (subscribers !== undefined) {
@@ -222,7 +216,7 @@ define([
                     }
                 }
             }
-            if (!sent && guaranteed) {
+            if (!sent && queue) {
                 cajeta.safeArray(topic, this.queued).push(msg);
             }
         },

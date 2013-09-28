@@ -1,6 +1,6 @@
-define(['jquery', 'cajeta', 'application'], function($, Cajeta, app) {
+define(['jquery', 'cajeta', 'application'], function($, cajeta, app) {
         // First test classes and extend functionality
-        return describe('Cajeta.Application tests', function() {
+        return describe('cajeta.Application tests', function() {
             it('Expects a valid application', function() {
                 expect(app).toBeDefined();
             });

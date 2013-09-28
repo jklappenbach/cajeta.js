@@ -1,5 +1,5 @@
 define(
-    ['cajetaHtml5'],
+    ['cajeta.html5'],
     function(html5) {
 
     }
