@@ -1,11 +1,11 @@
 define([
     'jquery',
-    'cajeta.html5',
-    'text!app/view/home/uiExampleDiv.html'
-], function($, cajeta, uiExampleDiv) {
+    'infusion.html5',
+    'text!app/view/home/examples/uiExampleDiv.html'
+], function($, infusion, uiExampleDiv) {
 
     // Create an alias for namespace brevity.
-    var html5 = cajeta.view.html5;
+    var html5 = infusion.view.html5;
 
     var div = new html5.Div({ cid: 'uiExampleDiv' });
     div.setTemplate('uiExampleDiv', uiExampleDiv);

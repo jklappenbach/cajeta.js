@@ -7,16 +7,16 @@
  */
 define([
     'jquery',
-    'cajeta.ds',
+    'infusion.ds',
     'vcdiff',
     'ds'
-], function($, cajeta, vcDiff, ds) {
+], function($, infusion, vcDiff, ds) {
 
     /**
      * The Model, as in traditional MVC architectures, defines the architecture and interfaces for how data is
      * structured and managed.
      */
-    cajeta.model = {
+    infusion.model = {
         author: 'Julian Klappenbach',
         version: '0.0.1',
         license: 'MIT 2013',
@@ -28,14 +28,14 @@ define([
     /**
      * If the developer hasn't provided a value, we'll add a default, memory state interface
      */
-    if (ds[cajeta.ds.STATE_DATASOURCE_ID] === undefined) {
-        ds[cajeta.ds.STATE_DATASOURCE_ID] =  new cajeta.ds.DefaultStateDS({
-            id: cajeta.ds.STATE_DATASOURCE_ID
+    if (ds[infusion.ds.STATE_DATASOURCE_ID] === undefined) {
+        ds[infusion.ds.STATE_DATASOURCE_ID] =  new infusion.ds.DefaultStateDS({
+            id: infusion.ds.STATE_DATASOURCE_ID
         });
     }
 
     /**
-     * cajeta.ModelSnapshotCache must support the following use cases:
+     * infusion.ModelSnapshotCache must support the following use cases:
      *  1.  Add a new snapshot to the collection, using Snapshot's compress
      *      function (currently delta compression) to reduce overhead
      *  2.  Maintain a set of "key frame" snapshots, so that the number of delta-decompression
@@ -48,27 +48,27 @@ define([
      *  5.  Support an API that can easily be overridden for remote server implementation.  It would be cool
      *      to have application snapshot state stored centrally for mobile applications.
      */
-    cajeta.model.State = cajeta.Class.extend({
+    infusion.model.State = infusion.Class.extend({
         initialize: function(properties) {
             properties = properties || {};
             $.extend(true, this, properties);
             this.applicationId = this.applicationId || 'defaultAppId';
             this.vcd = new vcDiff.Vcdiff();
             this.vcd.blockSize = 3;
-            this.dsidState = this.dsidState || cajeta.ds.STATE_DATASOURCE_ID
+            this.dsidState = this.dsidState || infusion.ds.STATE_DATASOURCE_ID
             this.dsState = ds[this.dsidState];
 
             if (this.dsState === undefined)
-                throw new Error(cajeta.model.ERROR_MODEL_NOSTATECONFIGIURED);
+                throw new Error(infusion.model.ERROR_MODEL_NOSTATECONFIGIURED);
 
             this.settings = this.dsState.get({
                 applicationId: this.applicationId,
-                uriTemplate: cajeta.ds.STATE_SETTINGS_URI,
+                uriTemplate: infusion.ds.STATE_SETTINGS_URI,
                 async: false
             }).data;
 
             if (this.settings === undefined) {
-                throw new Error(cajeta.model.ERROR_MODEL_NOSTATECONFIGIURED);
+                throw new Error(infusion.model.ERROR_MODEL_NOSTATECONFIGIURED);
             }
             this.modelJson = '{ }';
         },
@@ -100,12 +100,12 @@ define([
         load: function(stateId) {
             var startId = stateId - (stateId % this.settings.keyPeriod);
             this.modelJson = this.dsState.get({
-                uriTemplate: cajeta.ds.STATE_STATE_URI,
+                uriTemplate: infusion.ds.STATE_STATE_URI,
                 applicationId: this.applicationId,
                 stateId: startId
             }).data;
             if (this.modelJson === undefined)
-                throw new Error(cajeta.ds.ERROR_STATE_LOADFAILURE);
+                throw new Error(infusion.ds.ERROR_STATE_LOADFAILURE);
             var delta;
             for (var i = startId + 1; i <= stateId; i++) {
                 delta = this.dsState.get({
@@ -113,7 +113,7 @@ define([
                     stateId: i
                 }).data;
                 if (delta === undefined)
-                    throw new Error(cajeta.ds.ERROR_STATE_LOADFAILURE);
+                    throw new Error(infusion.ds.ERROR_STATE_LOADFAILURE);
                 this.modelJson = this.vcd.decode(this.modelJson, delta);
             }
             this.settings.stateId = stateId;
@@ -123,9 +123,9 @@ define([
 
 
     /**
-     * <h1>cajeta.Model.ModelCache</h1>
+     * <h1>infusion.Model.ModelCache</h1>
      *
-     * cajeta.ModelCache provides a centralized container and services for an application's data model.
+     * infusion.ModelCache provides a centralized container and services for an application's data model.
      * By placing the data for the application's model in a tree under a single element, we gain some significant
      * benefits.  First, it becomes a simple matter to bind components to data, ensuring that any changes are reflected
      * in a mapped two-way relationship.  Second, we gain the ability to easily distil application state into the
@@ -137,7 +137,7 @@ define([
      * <h2>Cache to Component Surjection</h2>
      * In providing bindings between components and values in the cache, the framework supports a surjection, or a
      * one-to-many (1:*) between a model node value and a set of components.  Components map their internal DOM
-     * state to the model using a mixin of a cajeta.View.ModelAdaptor instance.  When one component's state is modified,
+     * state to the model using a mixin of a infusion.View.ModelAdaptor instance.  When one component's state is modified,
      * it's changes are persisted to the model, which then uses its internal mappings to identify the other components
      * to notify.
      *
@@ -161,7 +161,7 @@ define([
      * logic of that data to components, however they see fit.  The important
      *      *
      */
-    cajeta.model.Model = cajeta.message.Subscriber.extend({
+    infusion.model.Model = infusion.message.Subscriber.extend({
         /**
          * @param properties
          */
@@ -174,7 +174,7 @@ define([
 
             this.components = this.components || {};
             this.nodes = this.nodes || {};
-            this.state = this.state || new cajeta.model.State();
+            this.state = this.state || new infusion.model.State();
 
             // First, see if we've been initialized with a desired stateId.  If not,
             // check to see if we have one in a cookie.  Otherwise, set it to zero.
@@ -186,7 +186,7 @@ define([
                 this.autoSnapshot = false;
 
             // Add our subscriptions
-            cajeta.message.dispatch.subscribe(this, cajeta.ds.TOPIC_PUBLISH, { status: 'success' })
+            infusion.message.dispatch.subscribe(this, infusion.ds.TOPIC_PUBLISH, { status: 'success' });
         },
 
         /**
@@ -198,8 +198,9 @@ define([
          * @param dsid (optional) The ID of the datasource, defaults to 'local'
          * @param source (optional) The issuing component, prevent cyclical updates.
          */
+
         set: function(modelPath, value, dsid, source) {
-            dsid = dsid || cajeta.ds.LOCAL;
+            dsid = dsid || infusion.ds.LOCAL;
             modelPath = dsid + ':' + modelPath;
 
             // Find out if we have a single key, or a walk, and populate the map
@@ -212,7 +213,7 @@ define([
                 var paths = modelPath.substring(0, index).split('.');
                 node = this.nodes;
                 for (var pathKey in paths) {
-                    node = cajeta.safeProperty(paths[pathKey], node);
+                    node = infusion.safeProperty(paths[pathKey], node);
                 }
             } else  {
                 key = modelPath;
@@ -232,8 +233,8 @@ define([
                 this.state.add(this.state);
 
             // And send out a general notification on model changed.
-            cajeta.message.dispatch.publish('model:publish', new cajeta.message.Message({
-                id: cajeta.model.MESSAGE_MODEL_NODEADDED,
+            infusion.message.dispatch.publish('model:publish', new infusion.message.Message({
+                id: infusion.model.MESSAGE_MODEL_NODEADDED,
                 source: source
             }));
         },
@@ -253,7 +254,7 @@ define([
          * @return {*}
          */
         get: function(modelPath, dsid) {
-            var path = (dsid || cajeta.ds.LOCAL) + ':' + modelPath;
+            var path = (dsid || infusion.ds.LOCAL) + ':' + modelPath;
             return this.nodes[path];
         },
 
@@ -274,7 +275,7 @@ define([
          * @param source (optional) The source of the call, used to prevent cycles on notification
          */
         remove: function(modelPath, dsid, source) {
-            dsid = dsid || cajeta.ds.LOCAL;
+            dsid = dsid || infusion.ds.LOCAL;
             modelPath = dsid + ':' + modelPath;
 
             if (this.nodes[modelPath] !== undefined) {
@@ -292,11 +293,11 @@ define([
                 delete parent[key];
             }
 
-            var msg = new cajeta.message.Message({
-                id: cajeta.model.MESSAGE_MODEL_NODEADDED,
+            var msg = new infusion.message.Message({
+                id: infusion.model.MESSAGE_MODEL_NODEADDED,
                 source: source
             });
-            cajeta.message.dispatch.publish('model:publish', msg);
+            infusion.message.dispatch.publish('model:publish', msg);
         },
 
         /**
@@ -337,8 +338,8 @@ define([
             // Now, notify all the things...
             for (var eventKey in this.topics) {
                 if (eventKey !== undefined) {
-                    var event = new cajeta.message.Message({
-                        id: cajeta.model.MESSAGE_MODEL_NODEADDED,
+                    var event = new infusion.message.Message({
+                        id: infusion.model.MESSAGE_MODEL_NODEADDED,
                         op: eventKey
                     });
                     var listeners = this.topics[eventKey];
@@ -399,8 +400,8 @@ define([
 
             // And notify any components bound to this modelPath...
             var temp = modelPath.split(':');
-            cajeta.message.dispatch.publish('model:publish', new cajeta.message.Message({
-                id: cajeta.model.MESSAGE_MODEL_NODEADDED,
+            infusion.message.dispatch.publish('model:publish', new infusion.message.Message({
+                id: infusion.model.MESSAGE_MODEL_NODEADDED,
                 dsid: temp[0],
                 modelPath: temp[1],
                 data: value,
@@ -409,5 +410,5 @@ define([
         }
     });
 
-    return cajeta;
+    return infusion;
 });

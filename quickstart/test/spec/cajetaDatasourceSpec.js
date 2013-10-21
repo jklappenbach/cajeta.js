@@ -1,15 +1,15 @@
 define(
-    ['cajeta.ds'],
-    function(cajeta) {
+    ['infusion.ds'],
+    function(infusion) {
         // First test classes and extend functionality
-        return describe('cajeta.ds', function() {
+        return describe('infusion.ds', function() {
             var data = {
                 one: 'one',
                 two: 'two',
                 three: 'three'
             };
             it('provides a MemoryDS', function() {
-                var ds = new cajeta.ds.MemoryDS({
+                var ds = new infusion.ds.MemoryDS({
                     id: 'memDS',
                     uriTemplate: 'unitTest/cacheEntries/{key}',
                     async: false
@@ -42,7 +42,7 @@ define(
                 });
             });
             it('provides a CookieDS', function() {
-                var ds = new cajeta.ds.CookieDS({
+                var ds = new infusion.ds.CookieDS({
                     id: 'cookieDS',
                     uriTemplate: 'unitTest/cacheEntries/{key}',
                     async: false
@@ -79,7 +79,7 @@ define(
 
 // Unsupported on Firefox and IE (what a mess)
 //            it('provides a DatabaseDS', function() {
-//                var ds = new cajeta.Datasource.DbRestDS({
+//                var ds = new infusion.Datasource.DbRestDS({
 //                    id: 'dbDS',
 //                    uriTemplate: 'unitTest/cacheEntries/{key}',
 //                    async: false
@@ -115,7 +115,7 @@ define(
 //            });
 
             it('provides an AjaxDS', function() {
-                var ds = new cajeta.ds.AjaxDS({
+                var ds = new infusion.ds.AjaxDS({
                     id: 'ajaxDS',
                     modelPath: 'unitTest/cacheEntries',
                     uriTemplate: 'http://localhost:8888/unitTest/cacheEntries/{key}',

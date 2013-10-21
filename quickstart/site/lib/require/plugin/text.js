@@ -27,7 +27,7 @@ define(['module'], function (module) {
 
         strip: function (content) {
             //Strips <?xml ...?> declarations so that external SVG and XML
-            //documents can be added to a document without worry. Also, if the string
+            //about can be added to a document without worry. Also, if the string
             //is an HTML document, only the part inside the body tag is returned.
             if (content) {
                 content = content.replace(xmlRegExp, "");
@@ -138,6 +138,13 @@ define(['module'], function (module) {
             onLoad(content);
         },
 
+        /**
+         * The Load method required by RequireJS for the plugin contract
+         * @param name
+         * @param req
+         * @param onLoad
+         * @param config
+         */
         load: function (name, req, onLoad, config) {
             //Name has format: some.module.filext!strip
             //The strip part is optional.

@@ -1,23 +1,30 @@
 define([
     'jquery',
-    'cajeta.html5',
-    'formExampleDiv',
-    'uiExampleDiv',
-    'serverInteractionDiv',
-    'text!app/view/home/homePage.html'
-], function($, cajeta, formExampleDiv, uiExampleDiv, serverInteractionDiv, homePageText) {
+    'infusion.html5',
+    'text!app/view/home/homePage.html',
+    'about.tabs',
+    'api.tabs',
+    'blog.tabs',
+    'download.tabs',
+    'examples.tabs',
+    'guide.tabs',
+    'community.tabs'
+], function($, infusion, homePageText, about, api, blog, download, examples, guide, community) {
     
     // Create an alias for shortening namespace.
-    var Html5 = cajeta.view.html5;
+    var html5 = infusion.view.html5;
 
-    var homePage = new cajeta.view.Page({ cid: cajeta.homePage });
+    var homePage = new infusion.view.Page({ cid: infusion.homePage });
     homePage.setTemplate('homePage', homePageText);
 
-    var tabs = new Html5.TabList({ cid: 'tabs', contentId: 'content' });
-    tabs.addChild({ title: 'Html5 Form Example', component: formExampleDiv });
-    tabs.addChild({ title: 'UI Examples', component: uiExampleDiv });
-    tabs.addChild({ title: 'Server Interaction Example', component: serverInteractionDiv });
-    homePage.addChild(tabs);
+//    var tabs = new html5.TabList({ cid: 'tabs', contentId: 'content' });
+//    tabs.addChild({ title: 'About', component: about });
+//    tabs.addChild({ title: 'Guide', component: guide });
+//    tabs.addChild({ title: 'API', component: api });
+//    tabs.addChild({ title: 'Examples', component: examples });
+//    tabs.addChild({ title: 'Community', component: community });
+//    tabs.addChild({ title: 'Download', component: download });
+//    homePage.addChild(tabs);
 
     return homePage;
 });

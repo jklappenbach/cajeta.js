@@ -1,22 +1,22 @@
 define([
     'jquery',
-    'cajeta.html5',
-    'text!app/view/home/formExampleDiv.html',
+    'infusion.html5',
+    'text!app/view/home/examples/formExampleDiv.html',
     'model'
-], function($, cajeta, formExampleDiv, model) {
+], function($, infusion, formExampleDiv, model) {
 
     // Create an alias for namespace brevity.
-    var html5 = cajeta.view.html5;
+    var html5 = infusion.view.html5;
 
     var div = new html5.Div({ cid: 'formExampleDiv' });
     div.setTemplate('formExampleDiv', formExampleDiv);
 
-    var form = new cajeta.view.Form({
+    var form = new infusion.view.Form({
         cid: 'testForm',
         modelPath: 'testForm',
         onSubmit: function() {
             var myData = model.getByComponent(this);
-//            var ds = cajeta.Datasource.get('dsApp');
+//            var ds = infusion.Datasource.get('dsApp');
 //            ds.post(myData);
             return false;
         }
@@ -43,9 +43,7 @@ define([
         modelValue: 'true'
     }));
 
-    form.addChild(new html5.CheckboxInput({
-        cid: 'blueColor'
-    }));
+    form.addChild(new html5.CheckboxInput({ cid: 'blueColor' }));
 
     form.addChild(new html5.CheckboxInput({
         cid: 'redColor',
@@ -76,7 +74,7 @@ define([
 
     form.addChild(new html5.Select({
         cid: 'selectDynamic',
-        factory: new cajeta.view.Factory({
+        factory: new infusion.view.Factory({
             dsid: 'formExampleDS',
             uri: '/formExample/selectDynamic',
             modelPath: 'ui.selectDynamic'
@@ -86,7 +84,7 @@ define([
 
     form.addChild(new html5.Select({
         cid: 'selectDynamicGroup',
-        factory: new cajeta.view.Factory({
+        factory: new infusion.view.Factory({
             dsid: 'formExampleDS',
             uri: '/formExample/selectDynamicGroup',
             modelPath: 'ui.selectDynamicGroup'
@@ -96,7 +94,7 @@ define([
 
     form.addChild(new html5.Select({
         cid: 'selectDynamicMulti',
-        factory: new cajeta.view.Factory({
+        factory: new infusion.view.Factory({
             dsid: 'formExampleDS',
             uri: '/formExample/selectDynamicMulti',
             modelPath: 'ui.selectDynamicMulti'
@@ -105,17 +103,17 @@ define([
 
     form.addChild(new html5.Select({
         cid: 'selectDynamicAlt',
-        factory: new cajeta.view.Factory({
+        factory: new infusion.view.Factory({
             dsid: 'formExampleDS',
             uri: '/formExample/selectDynamicAlt',
             modelPath: 'ui.selectDynamicAlt',
             templates: {
-                optgroup: new cajeta.view.Component({
+                optgroup: new infusion.view.Component({
                     elementType: 'optgroup',
                     tid: 'optgroup',
                     modelEncoding: 'attr:value'
                 }),
-                option: new cajeta.view.Component({
+                option: new infusion.view.Component({
                     elementType: 'option',
                     tid: 'option',
                     modelEncoding: 'attr:value'

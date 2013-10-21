@@ -1,5 +1,5 @@
-define(['cajeta.model'], function(cajeta) {
-    var model = new cajeta.model.Model({
+define(['infusion.model'], function(infusion) {
+    var model = new infusion.model.Model({
         enableHistory: true,
         enableJsonDelta: true
     });

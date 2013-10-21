@@ -7,26 +7,26 @@
  */
 define([
     'jquery',
-    'cajeta.core',
+    'infusion.core',
     'model',
     'ds'
-], function($, cajeta, model, ds) {
-    cajeta.view = {
+], function($, infusion, model, ds) {
+    infusion.view = {
         author: 'Julian Klappenbach',
         version: '0.0.1',
         license: 'MIT 2013'
     };
 
-    cajeta.view.EventCallback = $.extend(true, Function.prototype, {
+    infusion.view.EventCallback = $.extend(true, Function.prototype, {
         setInstance: function(instance) { this.instance = instance; }
     });
 
     /**
-     * Component, the base for all cajeta view classes.  Components feature an API for child management,
+     * Component, the base for all infusion view classes.  Components feature an API for child management,
      * rendering and state management.
      *
      */
-    cajeta.view.Component = cajeta.Class.extend({
+    infusion.view.Component = infusion.Class.extend({
         /**
          * Constructor supports mixins for fast definitions.  If only a few methods are needed, this
          * can be an easier way of extending functionality than inheritance.  A id for the component must be specified.
@@ -45,11 +45,11 @@ define([
          */
         initialize: function(properties) {
             if (properties === undefined || (properties.cid === undefined && properties.tid === undefined))
-                throw new Error(cajeta.ERROR_COMPONENT_CID_UNDEFINED);
+                throw new Error(infusion.ERROR_COMPONENT_CID_UNDEFINED);
 
             if (properties.dsid !== undefined) {
                 if (properties.modelAdaptor === undefined) {
-                    this.mixin(new cajeta.view.ComponentModelAdaptor({
+                    this.mixin(new infusion.view.ComponentModelAdaptor({
                         dsid: properties.dsid,
                         modelPath: properties.modelPath
                     }));
@@ -104,7 +104,7 @@ define([
 
         /**
          * Sets the page, recursing over children
-         * @param page {cajeta.view.Page} The page of the component hierarchy
+         * @param page {infusion.view.Page} The page of the component hierarchy
          */
         setPage: function(page) {
             this.page = page;
@@ -350,13 +350,13 @@ define([
          * @param child
          */
         addChild: function(child) {
-            if (child instanceof cajeta.view.Factory) {
+            if (child instanceof infusion.view.Factory) {
                 this.factory = child;
                 this.factory.parent = this;
             } else {
                 var cid = child.cid;
                 if (cid == undefined || cid == '') {
-                    throw new Error(cajeta.ERROR_COMPONENT_CID_UNDEFINED);
+                    throw new Error(infusion.ERROR_COMPONENT_CID_UNDEFINED);
                 }
                 this.children[cid] = child;
             }
@@ -442,7 +442,7 @@ define([
                 }
             }
             if (this.template === undefined) {
-                throw new Error(cajeta.ERROR_COMPONENT_INVALIDTEMPLATE.format(this.getCanonicalId(), tid));
+                throw new Error(infusion.ERROR_COMPONENT_INVALIDTEMPLATE.format(this.getCanonicalId(), tid));
             }
         },
         getTemplate: function() {
@@ -473,16 +473,16 @@ define([
                 if (this.tid !== undefined) {
                     this.template = $('*[tid = "' + this.tid + '"]');
                     if (this.template.length == 0) {
-                        throw new Error(cajeta.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.tid));
+                        throw new Error(infusion.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.tid));
                     } else if (this.template.length > 1) {
-                        throw new Error(cajeta.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.tid));
+                        throw new Error(infusion.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.tid));
                     }
                 } else {
                     this.dom = $('*[cid = "' + this.cid + '"]');
                     if (this.dom.length == 0) {
-                        throw new Error(cajeta.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.cid));
+                        throw new Error(infusion.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.cid));
                     } else if (this.dom.length > 1) {
-                        throw new Error(cajeta.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.cid));
+                        throw new Error(infusion.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.cid));
                     }
 
                     // If we have a template assigned to this component, then inject it, replacing the
@@ -524,7 +524,7 @@ define([
                 this.dom.detach();
             }
 
-            cajeta.message.dispatch.unsubscribe(this, 'model:publish');
+            infusion.message.dispatch.unsubscribe(this, 'model:publish');
         },
 
         /**
@@ -534,10 +534,10 @@ define([
          */
         inject: function() {
             if (this.parent === undefined)
-                throw new Error('cajeta.view.Component.parent must be defined in order to inject');
+                throw new Error('infusion.view.Component.parent must be defined in order to inject');
 
             if (this.template !== undefined) {
-                this.template.removeAttr('tid')
+                this.template.removeAttr('tid');
                 this.parent.dom.append(this.template);
                 delete this.template;
             } else {
@@ -559,7 +559,7 @@ define([
                 var result = undefined;
                 if (parent !== undefined) {
                     if (parent.modelPath !== undefined) {
-                        if (parent.modelPath.indexOf('.') > 0 && !(parent instanceof cajeta.view.Form)) {
+                        if (parent.modelPath.indexOf('.') > 0 && !(parent instanceof infusion.view.Form)) {
                             var base = recurseParents(parent.parent);
                             result = base + '.' + parent.modelPath;
                         } else {
@@ -581,8 +581,8 @@ define([
                 if (this.modelPath === undefined)
                     this.populateModelPath();
 
-                cajeta.message.dispatch.subscribe(this, 'model:publish', {
-                    id: cajeta.message.MESSAGE_MODEL_NODEADDED,
+                infusion.message.dispatch.subscribe(this, 'model:publish', {
+                    id: infusion.message.MESSAGE_MODEL_NODEADDED,
                     dsid: this.dsid,
                     modelPath: this.modelPath
                 });
@@ -624,7 +624,7 @@ define([
                         var eventData = new Object();
                         eventData['that'] = this;
                         eventData['fnName'] = name;
-                        this.dom.bind(eventName, eventData, cajeta.view.Component.htmlEventDispatch);
+                        this.dom.bind(eventName, eventData, infusion.view.Component.htmlEventDispatch);
                     }
                 }
             }
@@ -735,10 +735,10 @@ define([
      * create an additional copy of its docked component (complete with all of its children), update the IDs
      * (appending with a 0-based index), and add these copies to the Repeater's component.
      */
-    cajeta.view.Factory = cajeta.message.Subscriber.extend({
+    infusion.view.Factory = infusion.message.Subscriber.extend({
         initialize: function(properties) {
             if (properties.dsid === undefined)
-                throw new Error("cajeta.view.Factory.dsid must be defined");
+                throw new Error("infusion.view.Factory.dsid must be defined");
             $.extend(true, this, properties);
             this.templates = this.templates || {};
             this.rules = this.rules || [];
@@ -759,7 +759,7 @@ define([
                 var htmlTemplate = $(this);
                 var tid = htmlTemplate.attr('tid');
                 if (tid !== undefined && tid != '') {
-                    var template = new cajeta.view.Component({ tid: tid });
+                    var template = new infusion.view.Component({ tid: tid });
                     template.dock();
                     templates[tid] = template;
                 }
@@ -777,12 +777,12 @@ define([
             }
 
             if (this.modelPath !== undefined) {
-                cajeta.message.dispatch.subscribe(this, 'model:publish', {
+                infusion.message.dispatch.subscribe(this, 'model:publish', {
                     dsid: this.dsid,
                     modelPath: this.modelPath
                 });
             } else {
-                cajeta.message.subscribe(this, 'ds:publish', {
+                infusion.message.subscribe(this, 'ds:publish', {
                     dsid: this.dsid,
                     status: 'success'
                 });
@@ -885,7 +885,7 @@ define([
      * @param event
      * @return {*}
      */
-    cajeta.view.Component.htmlEventDispatch = function(event) {
+    infusion.view.Component.htmlEventDispatch = function(event) {
         return event.data.that[event.data.fnName].call(event.data.that, event);
     };
 
@@ -893,14 +893,14 @@ define([
      *
      *
      */
-    cajeta.view.Page = cajeta.view.Component.extend({
+    infusion.view.Page = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
             self.super.initialize.call(this, properties);
             if (this.title === undefined)
-                this.title = cajeta.DEFAULT_PAGETITLE;
+                this.title = infusion.DEFAULT_PAGETITLE;
             this.setElementType('body');
             this.factoryIds = {};
         },
@@ -919,7 +919,20 @@ define([
          */
         dock: function() {
             this.dom = $('body');
+
+            // html() grabs only the innerHtml, so we start with this (preserving the original body element)
             this.dom.html(this.template.html());
+
+            // Set the styles
+            var styles = this.template[0].style;
+            for (var style in styles) {
+                var parts = style.split(':');
+                this.dom.css(parts[0], parts[1]);
+            }
+
+            // And the class
+            this.dom.attr('class', this.template.attr('class'));
+
             this.setPage(this);
         },
 
@@ -930,7 +943,7 @@ define([
         },
 
         /**
-         * See cajeta.Component.render for documentation on this method.
+         * See infusion.Component.render for documentation on this method.
          */
         render: function() {
             this.super.render.call(this, this.super);
@@ -942,11 +955,11 @@ define([
      *
      *
      */
-    cajeta.Application = cajeta.Class.extend({
+    infusion.Application = infusion.Class.extend({
         initialize: function(properties) {
             $.extend(true, this, properties);
             if (this.id === undefined)
-                throw new Error('cajeta.Application.id must be defined');
+                throw new Error('infusion.Application.id must be defined');
 
             this.viewStateAliasMap = this.viewStateAliasMap || {};
             this.anchor = this.anchor || '';
@@ -1000,7 +1013,7 @@ define([
                 // for the application, and populate the (browser's) url with the anchor,
                 // bootstrapping the render.
                 if (this.anchor === undefined || this.anchor == '') {
-                    var viewStateId = cajeta.homePage;
+                    var viewStateId = infusion.homePage;
                     this.anchor = viewStateId;
 
                     if (model !== undefined && model.enableHistory == true) {
@@ -1049,7 +1062,7 @@ define([
                 }
             } else {
                 // The url was incorrectly modified.  Go back to default state
-                this.setUrlAnchor(cajeta.homePage + "=" + model.getStateId());
+                this.setUrlAnchor(infusion.homePage + "=" + model.getStateId());
             }
         },
 
@@ -1107,7 +1120,7 @@ define([
             var component = model.components[page];
 
             if (component === undefined)
-                throw new Error(cajeta.str.ERROR_APPLICATION_PAGE_UNDEFINED.format(page));
+                throw new Error(infusion.ERROR_APPLICATION_PAGE_UNDEFINED.format(page));
 
             if (this.currentPage !== undefined) {
                 if (this.currentPage != component) {
@@ -1142,7 +1155,7 @@ define([
                         }
                     } else {
                         // We have an invalid viewStateId!  Set it to the homePage
-                        viewStateId = cajeta.homePage;
+                        viewStateId = infusion.homePage;
                         page = model.components[viewStateId];
                         break;
                     }
@@ -1223,7 +1236,7 @@ define([
      *  2.  If a modelPath has been given, and doesn't contain dots ('.'), the modelPath will be set to 'form.[modelPath]'.
      *  3.  If the modelPath contains dots, it will be used without modification.
      */
-    cajeta.view.Form = cajeta.view.Component.extend({
+    infusion.view.Form = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -1240,11 +1253,11 @@ define([
      * This class maintains variables that resolve (and bind) a component to a model entry.
      * Component.setModelAdaptor.
      */
-    cajeta.view.ComponentModelAdaptor = cajeta.message.Subscriber.extend({
+    infusion.view.ComponentModelAdaptor = infusion.message.Subscriber.extend({
         initialize: function(properties) {
             properties = properties || {};
             if (properties.dsid === undefined)
-                throw new Error('cajeta.view.ComponentModelAdaptor.dsid must be defined');
+                throw new Error('infusion.view.ComponentModelAdaptor.dsid must be defined');
             $.extend(true, this, properties);
         },
         /**
@@ -1253,7 +1266,7 @@ define([
          * @param msg The event containing updated data
          */
         onMessage: function(msg) {
-            if (msg.id == cajeta.message.MESSAGE_MODEL_NODEADDED) {
+            if (msg.id == infusion.message.MESSAGE_MODEL_NODEADDED) {
                 this.setComponentValue(msg.data, true);
             }
         },
@@ -1268,5 +1281,5 @@ define([
         }
     });
 
-    return cajeta;
+    return infusion;
 });

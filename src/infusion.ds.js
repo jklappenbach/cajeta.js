@@ -7,15 +7,15 @@
  */
 define([
     'jquery',
-    'cajeta.core',
+    'infusion.core',
     'jcookies'
-], function($, cajeta, jCookies) {
+], function($, infusion, jCookies) {
 
     /**
      * The namespace for datasource definitions.
      * @type {Object}
      */
-    cajeta.ds = {
+    infusion.ds = {
         author: 'Julian Klappenbach',
         version: '0.0.1',
         license: 'MIT 2013',
@@ -48,11 +48,11 @@ define([
      *
      * @type {*}
      */
-    cajeta.ds.AbstractRestDS = cajeta.Class.extend({
+    infusion.ds.AbstractRestDS = infusion.Class.extend({
         initialize: function(properties) {
             $.extend(true, this, properties);
             if (this.id === undefined)
-                throw new Error('cajeta.ds.AbstractRestDS.id must be defined');
+                throw new Error('infusion.ds.AbstractRestDS.id must be defined');
             if (this.async === undefined)
                 this.async = true;
         },
@@ -131,7 +131,7 @@ define([
          * @param msg The message, to be published on the topic for this datasource
          */
         onComplete: function(msg) {
-            cajeta.message.dispatch.publish('ds:publish', msg);
+            infusion.message.dispatch.publish('ds:publish', msg);
         },
 
         /**
@@ -171,7 +171,7 @@ define([
         processResult: function(data, parameters) {
             var uri = this.getUri(parameters);
             var requestId = parameters.requestId || uri;
-            var msg = new cajeta.message.Message({
+            var msg = new infusion.message.Message({
                 id: uri,
                 dsid: this.id,
                 modelPath: this.modelPath || parameters.modelPath,
@@ -192,7 +192,7 @@ define([
         }
     });
 
-    cajeta.ds.MemoryDS = cajeta.ds.AbstractRestDS.extend({
+    infusion.ds.MemoryDS = infusion.ds.AbstractRestDS.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -255,7 +255,7 @@ define([
         }
     });
 
-    cajeta.ds.CookieDS = cajeta.ds.AbstractRestDS.extend({
+    infusion.ds.CookieDS = infusion.ds.AbstractRestDS.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -317,7 +317,7 @@ define([
      * Only provided as a POC.  Unsupported in FF, and IE.
      * @type {*}
      */
-    cajeta.ds.DbRestDS = cajeta.ds.AbstractRestDS.extend({
+    infusion.ds.DatabaseDS = infusion.ds.AbstractRestDS.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -400,7 +400,7 @@ define([
      *
      * @type {*}
      */
-    cajeta.ds.AjaxDS = cajeta.ds.AbstractRestDS.extend({
+    infusion.ds.AjaxDS = infusion.ds.AbstractRestDS.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -447,14 +447,14 @@ define([
         },
         onComplete: function(data, textStatus, xhr, parameters) {
             var self = (arguments.length > 4) ? arguments[4] : this;
-            var msg = new cajeta.message.Message({
+            var msg = new infusion.message.Message({
                 id: parameters.requestId || '0',
                 dsid: this.id,
                 method: this.method,
                 modelPath: this.modelPath || parameters.modelPath,
                 data: data,
                 status: textStatus
-            })
+            });
             self.super.onComplete.call(this, msg);
         },
         onError: function(jqXHR, textStatus, errorThrown, parameters) {
@@ -493,17 +493,17 @@ define([
     /**
      * The default, memory based state management datasource
      */
-    cajeta.ds.DefaultStateDS = cajeta.ds.MemoryDS.extend({
+    infusion.ds.DefaultStateDS = infusion.ds.MemoryDS.extend({
         initialize: function(properties) {
             if (properties === undefined || properties.applicationId === undefined)
-                throw new Error('cajeta.ds.DefaultStateDS.applicationId must be defined');
+                throw new Error('infusion.ds.DefaultStateDS.applicationId must be defined');
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
             properties.async = false;
-            properties.uriTemplate = cajeta.ds.STATE_STATE_URI;
+            properties.uriTemplate = infusion.ds.STATE_STATE_URI;
             properties.settingsUri = this.getUri({
-                uriTemplate: cajeta.ds.STATE_SETTINGS_URI,
+                uriTemplate: infusion.ds.STATE_SETTINGS_URI,
                 applicationId: properties.applicationId
             });
             this.settings = {
@@ -532,5 +532,5 @@ define([
         }
     });
 
-    return cajeta;
+    return infusion;
 });

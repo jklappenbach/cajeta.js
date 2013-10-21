@@ -1,5 +1,5 @@
 /**
- * File: cajeta.html4.js
+ * File: infusion.html4.js
  *
  * This module contains the definitions for HTML4 based components.
  *
@@ -28,10 +28,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
-    cajeta.view.Html4 = {};
+define(['jquery', 'infusion.view', 'model'], function($, infusion, model) {
+    infusion.view.Html4 = {};
 
-    cajeta.view.Html4.Div = cajeta.view.Component.extend({
+    infusion.view.Html4.Div = infusion.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -52,7 +52,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         }
     });
 
-    cajeta.view.Html4.UnorderedList = cajeta.view.Component.extend({
+    infusion.view.Html4.UnorderedList = infusion.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -73,7 +73,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         }
     });
 
-    cajeta.view.Html4.Link = cajeta.view.Component.extend({
+    infusion.view.Html4.Link = infusion.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -95,7 +95,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         }
     });
 
-    cajeta.view.Html4.Span = cajeta.view.Component.extend({
+    infusion.view.Html4.Span = infusion.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -116,7 +116,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         }
     });
 
-    cajeta.view.Html4.Img = cajeta.view.Component.extend({
+    infusion.view.Html4.Img = infusion.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -161,7 +161,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
 
     });
 
-    cajeta.view.Html4.Label = cajeta.view.Component.extend({
+    infusion.view.Html4.Label = infusion.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -185,7 +185,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
     /**
      *
      */
-    cajeta.view.Html4.Input = cajeta.view.Component.extend({
+    infusion.view.Html4.Input = infusion.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -203,7 +203,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
     /**
      *
      */
-    cajeta.view.Html4.TextInput = cajeta.view.Html4.Input.extend({
+    infusion.view.Html4.TextInput = infusion.view.Html4.Input.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -218,9 +218,9 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
 
     /**
      * Manages an HTML4 RadioInput control
-     * State handling should be provided by cajeta.View.ComponentGroup.
+     * State handling should be provided by infusion.View.ComponentGroup.
      */
-    cajeta.view.Html4.RadioInput = cajeta.view.Html4.Input.extend({
+    infusion.view.Html4.RadioInput = infusion.view.Html4.Input.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -240,7 +240,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
     /**
      * Manages an HTML4 CheckboxInput control
      */
-    cajeta.view.Html4.CheckboxInput = cajeta.view.Html4.Input.extend({
+    infusion.view.Html4.CheckboxInput = infusion.view.Html4.Input.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -258,7 +258,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
     /**
      *
      */
-    cajeta.view.Html4.TextArea = cajeta.view.Component.extend({
+    infusion.view.Html4.TextArea = infusion.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -274,7 +274,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
      *
      * @type {*}
      */
-    cajeta.view.Html4.Legend = cajeta.view.Component.extend({
+    infusion.view.Html4.Legend = infusion.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -287,7 +287,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
      *
      * @type {*}
      */
-    cajeta.view.Html4.Select = cajeta.view.Component.extend({
+    infusion.view.Html4.Select = infusion.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -390,7 +390,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
     /**
      *
      */
-    cajeta.view.Html4.Image = cajeta.view.Component.extend({
+    infusion.view.Html4.Image = infusion.view.Component.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -420,7 +420,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         }
     });
 
-    cajeta.view.Html4.TabList = cajeta.view.Html4.UnorderedList.extend({
+    infusion.view.Html4.TabList = infusion.view.Html4.UnorderedList.extend({
         initialize: function(properties) {
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
@@ -429,7 +429,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
                 this.content = properties['content'];
             } else {
                 var contentId = properties['contentId'] === undefined ? 'content' : properties['contentId'];
-                this.content = new cajeta.view.Html4.Div({ cid: contentId });
+                this.content = new infusion.view.Html4.Div({ cid: contentId });
             }
             this.tabEntries = new Array();
             this.selectedIndex = 0;
@@ -451,7 +451,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
                     eventData['that'] = this;
                     eventData['fnName'] = '$onTabClick';
                     eventData['index'] = i;
-                    listItem.click(eventData, cajeta.view.Component.htmlEventDispatch);
+                    listItem.click(eventData, infusion.view.Component.htmlEventDispatch);
                     this.dom.append(listItem);
                     this.tabEntries[i].component.css("display", i == 0 ? "" : "none");
                     this.content.dom.append(this.tabEntries[i].component.template);
@@ -500,5 +500,5 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         }
     });
 
-    return cajeta;
+    return infusion;
 });

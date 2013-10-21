@@ -1,9 +1,9 @@
 define(
-    ['cajeta'],
-    function(cajeta) {
+    ['infusion'],
+    function(infusion) {
         // First test classes and extend functionality
         return describe('Cajeta Core', function() {
-            var Parent = cajeta.Class.extend({
+            var Parent = infusion.Class.extend({
                 initialize: function(properties) {
                     properties = properties || {};
                     this.cannonical = 'Parent';

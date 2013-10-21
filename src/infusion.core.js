@@ -1,5 +1,5 @@
 /**
- * cajeta.js
+ * infusion.js
  *
  * Copyright (c) 2012 Julian Klappenbach
  *
@@ -32,25 +32,25 @@ define([
     /**
      * Runtime info, including author, verison, and license information.
      */
-    var cajeta = {
+    var infusion = {
         author: 'Julian Klappenbach',
         version: '0.0.1',
         license: 'MIT 2013',
         homePage: 'homePage',
-        ERROR_EVENT_ID_UNDEFINED: 'cajeta.message.Message.id is undefined',
-        ERROR_DATASOURCE_MODELPATH_UNDEFINED: 'cajeta.ds.Ajax.modelPath must be defined',
-        ERROR_AJAX_DATASOURCEID_UNDEFINED: 'cajeta.ds.Ajax.dsid must be defined',
-        ERROR_RESTAJAX_URITEMPLATE_UNDEFINED: 'A cajeta.ds.RestAjax.uriTemplate must be defined in properties',
+        ERROR_EVENT_ID_UNDEFINED: 'infusion.message.Message.id is undefined',
+        ERROR_DATASOURCE_MODELPATH_UNDEFINED: 'infusion.ds.Ajax.modelPath must be defined',
+        ERROR_AJAX_DATASOURCEID_UNDEFINED: 'infusion.ds.Ajax.dsid must be defined',
+        ERROR_RESTAJAX_URITEMPLATE_UNDEFINED: 'A infusion.ds.RestAjax.uriTemplate must be defined in properties',
         ERROR_MODELCACHE_PATH_UNDEFINED: '"{0}" could not be resolved to an entry',
         ERROR_MODELADAPTOR_MODELPATH_UNDEFINED: 'modelPath must be defined',
-        ERROR_COMPONENT_MODELADAPTOR_UNDEFINED: 'cajeta.view.Component.modelAdaptor must be defined for "{0}"',
-        ERROR_COMPONENT_CID_UNDEFINED: 'cajeta.view.Component.cid must be defined',
+        ERROR_COMPONENT_MODELADAPTOR_UNDEFINED: 'infusion.view.Component.modelAdaptor must be defined for "{0}"',
+        ERROR_COMPONENT_CID_UNDEFINED: 'infusion.view.Component.cid must be defined',
         ERROR_COMPONENT_INVALIDTEMPLATE: 'Invalid template for "{0}"; must contain an element with a tid of "{1}"',
         ERROR_COMPONENT_DOCK_UNDEFINED: 'Dock failed, unable to resolve an element with cid "{0}" in target HTML',
         ERROR_COMPONENT_DOCK_MULTIPLE: 'Dock failed, more than one element was found with cid "{0}" in target HTML',
-        ERROR_MODELADAPTOR_COMPONENT_UNDEFINED: 'cajeta.view.ComponentModelAdaptor.component must be defined',
+        ERROR_MODELADAPTOR_COMPONENT_UNDEFINED: 'infusion.view.ComponentModelAdaptor.component must be defined',
         ERROR_APPLICATION_PAGE_UNDEFINED: 'Page "{0}" undefined',
-        DEFAULT_PAGETITLE: 'Default cajeta Page',
+        DEFAULT_PAGETITLE: 'Default infusion Page',
         safeProperty: function(key, map) {
             var entry = map[key];
             if (entry === undefined) {
@@ -82,11 +82,11 @@ define([
 
     // JavaScript object model, based on jQuery, but using some additional
     // strategies to enable polymorphism.
-    cajeta.Class = function() { };
+    infusion.Class = function() { };
 
     // A global flag to prevent the execution of constructors when in the class
     // definition phase.
-    cajeta.Class.defining = new Boolean();
+    infusion.Class.defining = new Boolean();
 
     /**
      * Use this method to extend an existing class.  While mixins are supported,
@@ -98,13 +98,13 @@ define([
      * @param definition The definition with which to extend the base object.
      * @return Object The extended object.
      */
-    cajeta.Class.extend = function(definition) {
-        cajeta.Class.defining = true;
+    infusion.Class.extend = function(definition) {
+        infusion.Class.defining = true;
 
         // A proxy constructor for objects, avoids calling constructors (initialize)
         // when object definition logic is executed.
         var child = function() {
-            if (!cajeta.Class.defining) {
+            if (!infusion.Class.defining) {
                 if (this.initialize !== undefined) {
                     this.initialize.apply(this, arguments);
                 }
@@ -118,18 +118,18 @@ define([
         $.extend(true, child.prototype, definition);
 
         child.extend = this.extend;
-        cajeta.Class.defining = false;
+        infusion.Class.defining = false;
         return child;
     };
 
     /**
-     * Allows other cajeta.Class or basic javascript structure to be mixed in with the caller.  This call
+     * Allows other infusion.Class or basic javascript structure to be mixed in with the caller.  This call
      * should be used over $.extend, as the 'super' function, parent class fn refrence, needs to be
      * mixed in, with existing properties preserved (initialize, etc).  $.extend will just overwrite.
      *
      * @param source
      */
-    cajeta.Class.prototype.mixin = function(source) {
+    infusion.Class.prototype.mixin = function(source) {
         for (var propertyName in source) {
             if (propertyName in this) {
                 if (propertyName == 'initialize' || propertyName == 'setInstance')
@@ -154,7 +154,7 @@ define([
      * The namespace for messaging, including the system-wide message, topic-based message dispatch
      * @type {Object}
      */
-    cajeta.message = { };
+    infusion.message = { };
 
     /**
      * An event object not only represents the notification of an event to subscribers in the system, it also
@@ -180,16 +180,16 @@ define([
      *
      * Subscribers to model updates will want to subscribe by dsid:modelPath
      */
-    cajeta.message.Message = cajeta.Class.extend({
+    infusion.message.Message = infusion.Class.extend({
         initialize: function(properties) {
             properties = properties || {};
             $.extend(true, this, properties);
             if (this.id === undefined)
-                throw new Error(cajeta.ERROR_EVENT_ID_UNDEFINED);
+                throw new Error(infusion.ERROR_EVENT_ID_UNDEFINED);
         }
     });
 
-    cajeta.message.MessageDispatch = cajeta.Class.extend({
+    infusion.message.MessageDispatch = infusion.Class.extend({
         initialize: function(properties) {
             if (properties !== undefined)
                 $.extend(true, this, properties);
@@ -217,7 +217,7 @@ define([
                 }
             }
             if (!sent && queue) {
-                cajeta.safeArray(topic, this.queued).push(msg);
+                infusion.safeArray(topic, this.queued).push(msg);
             }
         },
 
@@ -270,8 +270,8 @@ define([
          */
         subscribe: function(subscriber, topic, criteria) {
             if (subscriber === undefined || topic === undefined)
-                throw new Error('invalid registration parameters for cajeta.message.MessageDispatch.subscribe');
-            var subscribers = cajeta.safeProperty(topic, this.topics);
+                throw new Error('invalid registration parameters for infusion.message.MessageDispatch.subscribe');
+            var subscribers = infusion.safeProperty(topic, this.topics);
 
             var id = subscriber.cid || subscriber.id;
             subscribers[id] = { subscriber: subscriber, criteria: criteria };
@@ -305,14 +305,14 @@ define([
      * Abstract base object definition for listeners, intended for extension only
      * @type {*}
      */
-    cajeta.message.Subscriber = cajeta.Class.extend({
+    infusion.message.Subscriber = infusion.Class.extend({
         initialize: function(properties) {
             if (properties !== undefined) {
                 $.extend(true, this, properties);
             }
 
             if (this.id === undefined)
-                throw new Error('cajeta.message.Subscriber.id must be defined');
+                throw new Error('infusion.message.Subscriber.id must be defined');
         },
 
         getId: function() {
@@ -323,7 +323,7 @@ define([
         }
     });
 
-    cajeta.message.dispatch = new cajeta.message.MessageDispatch();
+    infusion.message.dispatch = new infusion.message.MessageDispatch();
 
-    return cajeta;
+    return infusion;
 });

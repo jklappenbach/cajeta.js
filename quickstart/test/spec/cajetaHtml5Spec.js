@@ -1,5 +1,5 @@
 define(
-    ['cajeta.html5'],
+    ['infusion.html5'],
     function(html5) {
 
     }

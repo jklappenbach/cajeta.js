@@ -1,5 +1,5 @@
 /**
- * File: cajeta.html5.js
+ * File: infusion.html5.js
  *
  * This module contains the definitions for HTML5 based components.
  * Copyright (c) 2012 Julian Bach
@@ -26,8 +26,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.'
  */
 
-define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
-    cajeta.view.html5 = {
+define(['jquery', 'infusion.view', 'model', 'ds', 'strings'], function($, infusion, model, ds, strings) {
+    infusion.view.html5 = {
         author: 'Julian Klappenbach',
         version: '0.0.1',
         license: 'MIT 2013',
@@ -35,7 +35,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED: 'TabEntry "{0}" submitted to tabControl "{1}" with no template.'
     };
 
-    cajeta.view.html5.Div = cajeta.view.Component.extend({
+    infusion.view.html5.Div = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -46,7 +46,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         }
     });
 
-    cajeta.view.html5.Button = cajeta.view.Component.extend({
+    infusion.view.html5.Button = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -58,7 +58,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         populateModelPath: function() { }
     });
 
-    cajeta.view.html5.UnorderedList = cajeta.view.Component.extend({
+    infusion.view.html5.UnorderedList = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -80,7 +80,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         }
     });
 
-    cajeta.view.html5.Table = cajeta.view.Component.extend({
+    infusion.view.html5.Table = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -90,7 +90,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         }
     });
 
-    cajeta.view.html5.TableRow = cajeta.view.Component.extend({
+    infusion.view.html5.TableRow = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -100,7 +100,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         }
     });
 
-    cajeta.view.html5.TableDivision = cajeta.view.Component.extend({
+    infusion.view.html5.TableDivision = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -110,7 +110,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         }
     });
 
-    cajeta.view.html5.Link = cajeta.view.Component.extend({
+    infusion.view.html5.Link = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -121,7 +121,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         }
     });
 
-    cajeta.view.html5.Span = cajeta.view.Component.extend({
+    infusion.view.html5.Span = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -132,7 +132,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         }
     });
 
-    cajeta.view.html5.Label = cajeta.view.Component.extend({
+    infusion.view.html5.Label = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -146,7 +146,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
     /**
      *
      */
-    cajeta.view.html5.Input = cajeta.view.Component.extend({
+    infusion.view.html5.Input = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -162,12 +162,12 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
     /**
      *
      */
-    cajeta.view.html5.TextInput = cajeta.view.html5.Input.extend({
+    infusion.view.html5.TextInput = infusion.view.html5.Input.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
-            properties.dsid = properties.dsid || cajeta.ds.LOCAL;
+            properties.dsid = properties.dsid || infusion.ds.LOCAL;
             self.super.initialize.call(this, properties);
         },
         getComponentValue: function() {
@@ -188,9 +188,9 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
 
     /**
      * Manages an HTML4 RadioInput control
-     * State handling should be provided by cajeta.View.ComponentGroup.
+     * State handling should be provided by infusion.View.ComponentGroup.
      */
-    cajeta.view.html5.RadioInput = cajeta.view.html5.Input.extend({
+    infusion.view.html5.RadioInput = infusion.view.html5.Input.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -216,13 +216,13 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
     /**
      * Manages an HTML5 CheckboxInput control
      */
-    cajeta.view.html5.CheckboxInput = cajeta.view.html5.Input.extend({
+    infusion.view.html5.CheckboxInput = infusion.view.html5.Input.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
             properties.modelEncoding = 'prop:checked';
-            properties.dsid = properties.dsid || cajeta.ds.LOCAL;
+            properties.dsid = properties.dsid || infusion.ds.LOCAL;
             self.super.initialize.call(this, properties);
         }
     });
@@ -230,14 +230,14 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
     /**
      *
      */
-    cajeta.view.html5.TextArea = cajeta.view.Component.extend({
+    infusion.view.html5.TextArea = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
             properties.elementType = 'textarea';
             properties.modelEncoding = 'text';
-            properties.dsid = properties.dsid || cajeta.ds.LOCAL;
+            properties.dsid = properties.dsid || infusion.ds.LOCAL;
             self.super.initialize.call(this, properties);
         },
         _onHtmlChange: function(event) {
@@ -263,7 +263,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
      *
      *
      */
-    cajeta.view.html5.Legend = cajeta.view.Component.extend({
+    infusion.view.html5.Legend = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -277,17 +277,17 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
     /**
      * Given that forms really no longer play a role in the processing of server submission (there's nothing stopping
      * you from using forms), the practice of choosing a shared 'name' attribute for elements is not the most
-     * practical method of assuring exclusive checked-state.  cajeta.View.Html5.RadioGroup provides a container
+     * practical method of assuring exclusive checked-state.  infusion.View.Html5.RadioGroup provides a container
      * for the
      *
      */
-    cajeta.view.html5.RadioGroup = cajeta.view.Component.extend({
+    infusion.view.html5.RadioGroup = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
             properties.self = self.super;
             properties.order = []; // A list of ids to track order (maps are not order preserving)
-            properties.dsid = properties.dsid || cajeta.ds.LOCAL;
+            properties.dsid = properties.dsid || infusion.ds.LOCAL;
             self.super.initialize.call(this, properties);
         },
 
@@ -356,8 +356,8 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
                 }
 
                 // Bind the component to the model
-                cajeta.message.dispatch.subscribe('model:publish', this, {
-                    id: cajeta.message.MESSAGE_MODEL_NODEADDED,
+                infusion.message.dispatch.subscribe('model:publish', this, {
+                    id: infusion.message.MESSAGE_MODEL_NODEADDED,
                     modelPath: this.modelPath,
                     dsid: this.dsid
                 });
@@ -369,13 +369,13 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
      *
      *
      */
-    cajeta.view.html5.Select = cajeta.view.Component.extend({
+    infusion.view.html5.Select = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = (properties.self === undefined) ? this : properties.self;
             properties.self = self.super;
             properties.elementType = 'select';
-            properties.dsid = properties.dsid || cajeta.ds.LOCAL;
+            properties.dsid = properties.dsid || infusion.ds.LOCAL;
             properties.selectedType = properties.selectedType || 'index'; // value || index
             self.super.initialize.call(this, properties);
             if (this.factory !== undefined) {
@@ -423,7 +423,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
     /**
      *
      */
-    cajeta.view.html5.Image = cajeta.view.Component.extend({
+    infusion.view.html5.Image = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = (properties.self === undefined) ? this : properties.self;
@@ -441,7 +441,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         }
     });
 
-    cajeta.view.html5.TabList = cajeta.view.html5.UnorderedList.extend({
+    infusion.view.html5.TabList = infusion.view.html5.UnorderedList.extend({
         initialize: function(properties) {
             properties = properties || {};
             var self = properties.self || this;
@@ -450,7 +450,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
                 properties.content = properties['content'];
             } else {
                 var contentId = properties['contentId'] || 'content';
-                properties.content = new cajeta.view.html5.Div({ cid: contentId });
+                properties.content = new infusion.view.html5.Div({ cid: contentId });
             }
             properties.tabEntries = new Array();
             properties.selectedIndex = 0;
@@ -489,7 +489,7 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
                     eventData['that'] = this;
                     eventData['fnName'] = '_onTabClick';
                     eventData['index'] = i;
-                    listItem.click(eventData, cajeta.view.Component.htmlEventDispatch);
+                    listItem.click(eventData, infusion.view.Component.htmlEventDispatch);
                     this.dom.append(listItem);
                     this.tabEntries[i].component.css("display", i == 0 ? "" : "none");
                     this.content.dom.append(this.tabEntries[i].component.template);
@@ -506,10 +506,10 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
          */
         addChild: function(tabEntry) {
             if (tabEntry.component === undefined || tabEntry.title === undefined)
-                throw new Error(cajeta.view.html5.ERROR_TABLIST_INVALID_TABENTRY.format(this.cid));
+                throw new Error(infusion.view.html5.ERROR_TABLIST_INVALID_TABENTRY.format(this.getCanonicalId()));
             if (tabEntry.component.template === undefined)
-                throw new Error(cajeta.view.html5.ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED.format(
-                    tabEntry.component.id, this.cid));
+                throw new Error(infusion.view.html5.ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED.format(
+                    tabEntry.component.cid, this.getCanonicalId()));
 
             if (this.page !== undefined)
                 tabEntry.component.page = this.page;
@@ -555,6 +555,116 @@ define(['jquery', 'cajeta.view', 'model'], function($, cajeta, model) {
         }
     });
 
+    infusion.view.html5.Calendar = infusion.view.Component.extend({
+        initialize: function(properties) {
+            properties = properties || {};
+            var self = (properties.self === undefined) ? this : properties.self;
+            properties.self = self.super;
+            properties.elementType = 'section';
+            properties.modelEncoding = 'attr:selection';
+            self.super.initialize.call(this, properties);
 
-    return cajeta;
+            if (this.dsid !== undefined) {
+                this.ds = ds[this.dsid];
+            }
+            this.navigation = this.navigation || 'fixed';
+        },
+        daysInMonth: function(year, month) {
+            // January, March, May, July, August, October, and December
+            if (month == 4 || month == 6 || month == 9) {
+                return 30;
+            } else if (month == 2) {
+                if (year % 4) {
+                    return 28;
+                } else {
+                    return 29;
+                }
+            } else {
+                return 31;
+            }
+        },
+        dock: function() {
+            if (!this.isDocked()) {
+                // First, dock to our target element
+                var self = (arguments.length > 0) ? arguments[0] : this;
+                self.super.dock.call(this, self.super);
+
+                if (this.date === undefined)
+                    this.date = Date.now();
+
+                var year = this.date.getYear();
+                var month = this.date.getMonth();
+                var canvas = this.generateTable(year, month);
+                this.dom.empty();
+                this.dom.html(canvas[0].outerHTML);
+            }
+        },
+
+        _onResponse: function() {
+
+        },
+
+        generateTable: function(year, month) {
+            var row = 0;
+
+            // If we have a datasource defined, invoke it with our month and year to get the list of
+            // events and links
+            var dates = null;
+            if (this.ds !== undefined) {
+                dates = ds.get({
+                    year: year,
+                    month: month,
+                    async: false
+                });
+            }
+
+            var canvas = $('<div class="calendar-canvas" />');
+            var table = $('<table class="calendar"/>');
+            canvas.append(table);
+
+            var array = ['<thead><tr>'];
+            for (var i = 0; i < 7; i++) {
+                array.push('<th scope="col" title="' + strings.weekdays[i] + '">' + strings.abbrWeekdays[i] + '</th>');
+            }
+            array.push('</tr>');
+            if (this.navigation != 'fixed') {
+                array.push('<tr><td> << </td><td> < </td><td colspan="3" /><td> > </td><td> >> </td></tr>');
+            }
+            table.append($('<caption>' + strings.months[month] + ' ' + year + '</caption>'));
+            table.append($(array.join('')));
+
+            var tbody = $('<tbody />');
+            var tr, date;
+            for (var i = 1; i <= this.daysInMonth(year, month); i++) {
+                date = new Date(year, month, i, 0, 0, 0);
+                var td;
+                if (date.getDay() == 0) {
+                    tr = $('<tr />');
+                    tbody.append(tr);
+                }
+
+                // Pad the first row for days, starting with Sunday
+                if (row == 0 && i == 1) {
+                    td = $('<td colspan="' + date.getDay() + '" class="pad"><span>&nbsp;</span></td>');
+                } else {
+                    if (dates != null) {
+                        if (dates[date.getMonth() + ':' + date.getFullYear()] !== undefined) {
+                            td = $('<td><a href="#">' + date.getDate() + '</a></td>');
+                        } else {
+                            td = $('<td><span>' + date.getDate() + '</span></td>');
+                        }
+                    }
+                    td = $('<td><span>' + date.getDate() + '</span></td>');
+                }
+                tr.append(td);
+            }
+            if (date.getDay() < 6)
+                tr.append($('<td colspan="' + (6 - date.getDay()) + '" />'))
+
+            return canvas;
+        }
+    });
+
+
+    return infusion;
 });

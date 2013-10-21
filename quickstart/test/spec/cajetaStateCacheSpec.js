@@ -1,8 +1,8 @@
 define(
-    ['jquery', 'cajeta.model', 'ds'],
-    function($, cajeta, ds) {
+    ['jquery', 'infusion.model', 'ds'],
+    function($, infusion, ds) {
         // First test classes and extend functionality
-        return describe('cajeta.model.State', function() {
+        return describe('infusion.model.State', function() {
 
             var state = null;
             var data00 = {
@@ -49,7 +49,7 @@ define(
             }
 
             it('instantiates with no arguments', function() {
-                state = new cajeta.model.State({
+                state = new infusion.model.State({
                     applicationId: 'stateCacheSpec'
                 });
                 expect(state).not.toBeNull();
@@ -130,7 +130,7 @@ define(
             });
 
             it('throws an exception when invalid state IDs are submitted', function() {
-                expect(function() { state.load(1000); }).toThrow(cajeta.ERROR_STATECACHE_LOADFAILURE);
+                expect(function() { state.load(1000); }).toThrow(infusion.ERROR_STATECACHE_LOADFAILURE);
             });
         });
     }

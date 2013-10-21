@@ -1,5 +1,5 @@
 define(
-    ['jquery', 'cajeta', 'application', 'model'],
+    ['jquery', 'infusion', 'application', 'model'],
     function(Cajeta, $, app, model) {
         // First test classes and extend functionality
         return describe('Cajeta.model.Model', function() {

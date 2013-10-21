@@ -1,24 +1,24 @@
 define([
-    'cajeta',
+    'infusion',
     'text!app/view/home/homePage.html',
     'model'
-], function(cajeta, template, model) {
+], function(infusion, template, model) {
         // First test classes and extend functionality
-        return describe('cajeta.view.Component', function() {
-            var component = new cajeta.view.Component({
+        return describe('infusion.view.Component', function() {
+            var component = new infusion.view.Component({
                 cid: 'test',
                 modelPath: 'testForm.data',
                 modelValue: 'forests'
             });
 
-            var component2 = new cajeta.view.Component({
+            var component2 = new infusion.view.Component({
                 cid: 'test2',
                 modelPath: 'testForm.data2',
                 modelValue: 'super'
             });
 
             it('throws an exception on instantiation without a cid', function() {
-                expect(function() { new cajeta.view.Component(); }).toThrow(cajeta.ERROR_COMPONENT_CID_UNDEFINED);
+                expect(function() { new infusion.view.Component(); }).toThrow(infusion.ERROR_COMPONENT_CID_UNDEFINED);
             });
 
             it('accepts attribute changes before attaching a template, or docking', function() {
@@ -30,9 +30,9 @@ define([
 
             // TODO: These all need to be rewritten to support the new messaging API
 //            it('can be bound to the model', function() {
-//                model.subscribe(component, cajeta.message.MESSAGE_MODEL_NODEADDED);
+//                model.subscribe(component, infusion.message.MESSAGE_MODEL_NODEADDED);
 //                expect(function() { component.onComponentChanged() }).not.toThrow();
-//                model.subscribe(component2, cajeta.message.MESSAGE_MODEL_NODEADDED);
+//                model.subscribe(component2, infusion.message.MESSAGE_MODEL_NODEADDED);
 //                expect(function() { component2.setComponentValue('delicious') }).not.toThrow();
 //            });
 //
@@ -55,7 +55,7 @@ define([
 //            // TODO: integrate this test
 //            it('can be unbound from a component', function() {
 //                component.modelChanged = false;
-//                model.removeListener(component, cajeta.Events.EVENT_MODELCACHE_CHANGED,
+//                model.removeListener(component, infusion.Events.EVENT_MODELCACHE_CHANGED,
 //                    component.getEventOperand());
 //                model.set('graphData.childTwo.ten', 'ten');
 //                expect(component.modelChanged).toBeFalsy();

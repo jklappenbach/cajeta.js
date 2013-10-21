@@ -1,5 +1,5 @@
-define(['jquery', 'cajeta', 'homePage', 'model'], function($, cajeta, homePage, model) {
-    var app = new cajeta.Application({
+define(['jquery', 'infusion', 'homePage'], function($, infusion, homePage) {
+    var app = new infusion.Application({
         id: 'demoApplication'
     });
 
