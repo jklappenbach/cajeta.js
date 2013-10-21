@@ -555,6 +555,10 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'strings'], function($, infusi
         }
     });
 
+    /**
+     *
+     * @type {void|Object|child.extend|*|jQuery.extend}
+     */
     infusion.view.html5.Calendar = infusion.view.Component.extend({
         initialize: function(properties) {
             properties = properties || {};
@@ -567,8 +571,20 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'strings'], function($, infusi
             if (this.dsid !== undefined) {
                 this.ds = ds[this.dsid];
             }
+
+            if (this.date === undefined) {
+                this.date = new Date();
+            }
+
             this.navigation = this.navigation || 'fixed';
         },
+
+        /**
+         *
+         * @param year
+         * @param month
+         * @returns {number}
+         */
         daysInMonth: function(year, month) {
             // January, March, May, July, August, October, and December
             if (month == 4 || month == 6 || month == 9) {
@@ -583,14 +599,15 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'strings'], function($, infusi
                 return 31;
             }
         },
+
+        /**
+         *
+         */
         dock: function() {
             if (!this.isDocked()) {
                 // First, dock to our target element
                 var self = (arguments.length > 0) ? arguments[0] : this;
                 self.super.dock.call(this, self.super);
-
-                if (this.date === undefined)
-                    this.date = Date.now();
 
                 var year = this.date.getYear();
                 var month = this.date.getMonth();
@@ -600,10 +617,49 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'strings'], function($, infusi
             }
         },
 
-        _onResponse: function() {
-
+        /**
+         *
+         * @param months
+         */
+        addMonth: function(months) {
+            var canvas = this.generateTable(this.date.getFullYear(), this.date.getMonth() + months);
+            this.dom.empty();
+            this.dom.html(canvas[0].outerHTML);
         },
 
+        /**
+         *
+         * @param years
+         */
+        addYear: function(years) {
+            var canvas = this.generateTable(this.date.getFullYear() + years, this.date.getMonth());
+            this.dom.empty();
+            this.dom.html(canvas[0].outerHTML);
+        },
+
+        /**
+         *
+         */
+        currentDate: function() {
+            this.date = new Date();
+            var canvas = this.generateTable(this.date.getFullYear(), this.date.getMonth());
+            this.dom.html(canvas[0].outerHTML);
+        },
+
+        /**
+         *
+         * @param date
+         */
+        onDayClicked: function(date) {
+            // Override / mixin to provide your own handler
+        },
+
+        /**
+         *
+         * @param year
+         * @param month
+         * @returns {*|HTMLElement}
+         */
         generateTable: function(year, month) {
             var row = 0;
 
@@ -622,14 +678,37 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'strings'], function($, infusi
             var table = $('<table class="calendar"/>');
             canvas.append(table);
 
-            var array = ['<thead><tr>'];
+            var thead = $('<thead/>');
+            canvas.append(thead);
+
+            var self = this;
+            if (this.navigation != 'fixed') {
+                var tr = $('<tr class="navigation"/>');
+                thead.append(tr);
+                var td = $('<td class="prevYear">&lt;&lt;</td>');
+                td.click(function() { self.addYear(-1); });
+                tr.append(td);
+                td = $('<td class="prevMonth">&lt;</td>');
+                td.click(function() { self.addMonth(-1); });
+                tr.append(td);
+                td = $('<td />');
+                tr.append(td);
+                td = $('<td class="today">*</td>');
+                td.click(function() { self.currentDate(); });
+                tr.append(td);
+                td = $('<td class="nextMonth">&gt;</td>');
+                td.click(function() { self.addMonth(1); });
+                tr.append(td);
+                td = $('<td class="nextYear">&gt;&gt;</td>');
+                td.click(function() { self.addYear(1); });
+                tr.append(td);
+            }
+
+            var array = ['<tr class="weekdays">'];
             for (var i = 0; i < 7; i++) {
                 array.push('<th scope="col" title="' + strings.weekdays[i] + '">' + strings.abbrWeekdays[i] + '</th>');
             }
             array.push('</tr>');
-            if (this.navigation != 'fixed') {
-                array.push('<tr><td> << </td><td> < </td><td colspan="3" /><td> > </td><td> >> </td></tr>');
-            }
             table.append($('<caption>' + strings.months[month] + ' ' + year + '</caption>'));
             table.append($(array.join('')));
 
@@ -640,6 +719,8 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'strings'], function($, infusi
                 var td;
                 if (date.getDay() == 0) {
                     tr = $('<tr />');
+                    if (i % 2)
+                        tr.addClass('odd');
                     tbody.append(tr);
                 }
 
@@ -647,19 +728,20 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'strings'], function($, infusi
                 if (row == 0 && i == 1) {
                     td = $('<td colspan="' + date.getDay() + '" class="pad"><span>&nbsp;</span></td>');
                 } else {
-                    if (dates != null) {
-                        if (dates[date.getMonth() + ':' + date.getFullYear()] !== undefined) {
-                            td = $('<td><a href="#">' + date.getDate() + '</a></td>');
+                    if (this.events != null) {
+                        if (this.events[date.toDateString()] !== undefined) {
+                            td = $('<td class="event-day">' + date.getDate() + '</td>');
                         } else {
-                            td = $('<td><span>' + date.getDate() + '</span></td>');
+                            td = $('<td class="day"><span>' + date.getDate() + '</span></td>');
                         }
                     }
+                    td.click(self.onDayClicked(date));
                     td = $('<td><span>' + date.getDate() + '</span></td>');
                 }
                 tr.append(td);
             }
             if (date.getDay() < 6)
-                tr.append($('<td colspan="' + (6 - date.getDay()) + '" />'))
+                tr.append($('<td colspan="' + (6 - date.getDay()) + '" class="pad" />'))
 
             return canvas;
         }

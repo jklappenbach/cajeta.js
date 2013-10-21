@@ -12,6 +12,7 @@ requirejs.config({
     baseUrl: '/base',
 
     paths: {
+        // library files
         'jquery': 'lib/jquery/jquery',
         'vcdiff': 'lib/vcdiff/vcdiff',
         'jcookies': 'lib/jquery/jquery.cookies.amd',
@@ -29,6 +30,7 @@ requirejs.config({
         'application': 'app/application',
         'model': 'app/model',
         'ds': 'app/ds',
+        'strings': 'app/strings.en.us',
 
         // Components
         'homePage': 'app/view/home/homePage',
