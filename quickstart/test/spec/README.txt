@@ -1,0 +1,1 @@
+Please test files here.  The quickstart has been configured to use Karma, and through it, Jasmine.  You may prefer to run only Mocha, and use its autorun instead of Karma.  At this point, mocha probably has been reporting and debugging functionality than Karma.  Karma was chosen, however, for its out-of-the-box support for AMD and Require.js

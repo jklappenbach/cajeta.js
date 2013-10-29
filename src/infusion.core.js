@@ -47,6 +47,7 @@ define([
         ERROR_COMPONENT_CID_UNDEFINED: 'infusion.view.Component.cid must be defined',
         ERROR_COMPONENT_INVALIDTEMPLATE: 'Invalid template for "{0}"; must contain an element with a tid of "{1}"',
         ERROR_COMPONENT_DOCK_UNDEFINED: 'Dock failed, unable to resolve an element with cid "{0}" in target HTML',
+        ERROR_TEMPLATE_DOCK_UNDEFINED: 'Dock failed, unable to resolve an element with tid "{0}" in target HTML',
         ERROR_COMPONENT_DOCK_MULTIPLE: 'Dock failed, more than one element was found with cid "{0}" in target HTML',
         ERROR_MODELADAPTOR_COMPONENT_UNDEFINED: 'infusion.view.ComponentModelAdaptor.component must be defined',
         ERROR_APPLICATION_PAGE_UNDEFINED: 'Page "{0}" undefined',

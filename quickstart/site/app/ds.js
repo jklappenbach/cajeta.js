@@ -13,18 +13,7 @@ define(['infusion.ds'], function(infusion) {
         applicationId: 'defaultAppId'
     });
 
-    /**
-     * Add the application dependencies for release.  These can be substituted for debug / testing with mocked versions
-     * using require.js
-     */
-    ds['formExampleDS'] = new infusion.ds.AjaxDS({
-        id: 'formExampleDS',
-        headers: {
-            'Accept': "application/json; charset=UTF-8",
-            'Content-Type': "application/json; charset=UTF-8"
-        },
-        uriTemplate: 'http://localhost:8888/formExample/selectSet'
-    });
+    // TODO: Add your own datasource populations here
 
     return ds;
 });

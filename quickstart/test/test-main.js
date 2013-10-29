@@ -34,16 +34,6 @@ requirejs.config({
 
         // Components
         'homePage': 'app/view/home/homePage',
-        'about.tabs': 'app/view/home/about/tabs',
-        'api.tabs': 'app/view/home/api/tabs',
-        'blog.tabs': 'app/view/home/blog/tabs',
-        'community.tabs': 'app/view/home/community/tabs',
-        'download.tabs': 'app/view/home/download/tabs',
-        'examples.tabs': 'app/view/home/examples/tabs',
-        'guide.tabs': 'app/view/home/guide/tabs',
-        'examples.formExampleDiv': 'app/view/home/examples/formExampleDiv',
-        'examples.uiExampleDiv': 'app/view/home/examples/uiExampleDiv',
-        'examples.serverInteractionDiv': 'app/view/home/examples/serverInteractionDiv'
     },
 
     // ask Require.js to load these files (all our tests)

@@ -1,6 +1,6 @@
 define(['jquery', 'infusion', 'homePage'], function($, infusion, homePage) {
     var app = new infusion.Application({
-        id: 'demoApplication'
+        id: 'quickstartApp'
     });
 
     app.addPage(homePage);

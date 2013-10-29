@@ -26,7 +26,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.'
  */
 
-define(['jquery', 'infusion.view', 'model', 'ds', 'strings'], function($, infusion, model, ds, strings) {
+define(['jquery', 'infusion.view', 'model', 'ds', 'l10n'], function($, infusion, model, ds, l10n) {
     infusion.view.html5 = {
         author: 'Julian Klappenbach',
         version: '0.0.1',
@@ -491,7 +491,12 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'strings'], function($, infusi
                     eventData['index'] = i;
                     listItem.click(eventData, infusion.view.Component.htmlEventDispatch);
                     this.dom.append(listItem);
-                    this.tabEntries[i].component.css("display", i == 0 ? "" : "none");
+                    this.tabEntries[i].listItem = listItem;
+                    if (i == 0) {
+                        this.tabEntries[i].listItem.addClass('selected');
+                    } else {
+                        this.tabEntries[i].component.css('display', 'none');
+                    }
                     this.content.dom.append(this.tabEntries[i].component.template);
                 }
             }
@@ -507,7 +512,7 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'strings'], function($, infusi
         addChild: function(tabEntry) {
             if (tabEntry.component === undefined || tabEntry.title === undefined)
                 throw new Error(infusion.view.html5.ERROR_TABLIST_INVALID_TABENTRY.format(this.getCanonicalId()));
-            if (tabEntry.component.template === undefined)
+            if (!(tabEntry.component instanceof infusion.view.html5.TabList)  && tabEntry.component.template === undefined)
                 throw new Error(infusion.view.html5.ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED.format(
                     tabEntry.component.cid, this.getCanonicalId()));
 
@@ -545,12 +550,12 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'strings'], function($, infusi
          */
         _onTabClick: function(event) {
             var index = event.data['index'];
-            //console.log("Selected index was " + index);
-            if (index !== undefined && index != this.selectedIndex) {
+            if (index != this.selectedIndex) {
                 this.tabEntries[this.selectedIndex].component.css('display', 'none');
+                this.tabEntries[this.selectedIndex].listItem.removeClass('selected');
+                this.tabEntries[index].component.css('display', '');
+                this.tabEntries[index].listItem.addClass('selected');
                 this.selectedIndex = index;
-                this.tabEntries[this.selectedIndex].component.css('display', '');
-                this.tabEntries[this.selectedIndex].component.render(this, self.super);
             }
         }
     });
@@ -706,10 +711,10 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'strings'], function($, infusi
 
             var array = ['<tr class="weekdays">'];
             for (var i = 0; i < 7; i++) {
-                array.push('<th scope="col" title="' + strings.weekdays[i] + '">' + strings.abbrWeekdays[i] + '</th>');
+                array.push('<th scope="col" title="' + l10n.weekdays[i] + '">' + l10n.abbrWeekdays[i] + '</th>');
             }
             array.push('</tr>');
-            table.append($('<caption>' + strings.months[month] + ' ' + year + '</caption>'));
+            table.append($('<caption>' + l10n.months[month] + ' ' + year + '</caption>'));
             table.append($(array.join('')));
 
             var tbody = $('<tbody />');

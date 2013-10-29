@@ -9,8 +9,9 @@ define([
     'jquery',
     'infusion.core',
     'model',
-    'ds'
-], function($, infusion, model, ds) {
+    'ds',
+    'l10n'
+], function($, infusion, model, ds, l10n) {
     infusion.view = {
         author: 'Julian Klappenbach',
         version: '0.0.1',
@@ -47,6 +48,11 @@ define([
             if (properties === undefined || (properties.cid === undefined && properties.tid === undefined))
                 throw new Error(infusion.ERROR_COMPONENT_CID_UNDEFINED);
 
+            if (properties.template !== undefined) {
+                this.setTemplate(properties.cid, properties.template);
+                delete properties.template;
+            }
+
             if (properties.dsid !== undefined) {
                 if (properties.modelAdaptor === undefined) {
                     this.mixin(new infusion.view.ComponentModelAdaptor({
@@ -59,6 +65,7 @@ define([
                     delete properties.modelAdaptor;
                 }
             }
+
             $.extend(true, this, properties);
 
             this.attributes = this.attributes || {};
@@ -121,15 +128,22 @@ define([
          *
          */
         getComponentValue: function() {
+            var value;
             var params = this.modelEncoding.split(':');
             switch (params[0]) {
                 case 'attr':
-                    return this.attr(params[1]);
+                    value = this.attr(params[1]);
                 case 'prop':
-                    return this.prop(params[1]);
+                    value = this.prop(params[1]);
                 case 'text':
-                    return this.text();
+                    value = this.text();
             }
+
+            if (typeof value == "String") {
+                if (l10n.hasOwnProperty(value))
+                    return l10n[value];
+            }
+            return value;
         },
 
         /**
@@ -142,6 +156,12 @@ define([
          * @param internal (optional) If true, call is coming from a model update
          */
         setComponentValue: function(value, internal) {
+            if (typeof value == "String") {
+                if (l10n.hasOwnProperty(value)) {
+                    value = l10n[value];
+                }
+            }
+
             var params = this.modelEncoding.split(':');
             switch (params[0]) {
                 case 'attr':
@@ -223,6 +243,21 @@ define([
                 this.template.removeAttr(name);
             }
             delete this.attributes[name];
+        },
+
+        addClass: function(name) {
+            if (this.isDocked()) {
+                this.dom.addClass(name);
+            }
+            if (this.template !== undefined) {
+                this.template.addClass(name);
+            }
+        },
+
+        removeClass: function(name) {
+            if (this.isDocked()) {
+                this.dom.removeClass(name);
+            }
         },
 
         /**
@@ -433,8 +468,6 @@ define([
 
                         if (attrValue != undefined && attrValue.value == tid) {
                             this.template = $(temp[i]);
-                            this.template.attr('cid', this.cid);
-
                             this._synchElementState(this.template);
                             break;
                         }
@@ -444,6 +477,8 @@ define([
             if (this.template === undefined) {
                 throw new Error(infusion.ERROR_COMPONENT_INVALIDTEMPLATE.format(this.getCanonicalId(), tid));
             }
+            this.template.attr('cid', tid);
+            this.removeAttr('tid');
         },
         getTemplate: function() {
             return this.template;
@@ -473,9 +508,9 @@ define([
                 if (this.tid !== undefined) {
                     this.template = $('*[tid = "' + this.tid + '"]');
                     if (this.template.length == 0) {
-                        throw new Error(infusion.ERROR_COMPONENT_DOCK_UNDEFINED.format(this.tid));
+                        throw new Error(infusion.ERROR_TEMPLATE_DOCK_UNDEFINED.format(this.tid));
                     } else if (this.template.length > 1) {
-                        throw new Error(infusion.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.tid));
+                        throw new Error(infusion.ERROR_TEMPLATE_DOCK_MULTIPLE.format(this.tid));
                     }
                 } else {
                     this.dom = $('*[cid = "' + this.cid + '"]');
@@ -490,9 +525,6 @@ define([
                     if (this.template !== undefined) {
                         // Insert our template into the dom...
                         this.dom.html(this.template.html());
-
-                        // Ensure we have assigned the component ID to the fragment
-                        this.attr('cid', this.cid);
                     }
                 }
 
@@ -926,8 +958,11 @@ define([
             // Set the styles
             var styles = this.template[0].style;
             for (var style in styles) {
-                var parts = style.split(':');
-                this.dom.css(parts[0], parts[1]);
+                if (style !== undefined) {
+                    var parts = style.split(':');
+                    if (parts[0] !== undefined && parts[0] !== '' & parts[1] !== undefined && parts[1] != '')
+                        this.dom.css(parts[0], parts[1]);
+                }
             }
 
             // And the class
