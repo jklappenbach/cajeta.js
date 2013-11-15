@@ -63,7 +63,7 @@ define([
 
         /**
          * Async method, returning a boolean to indicate whether or not the method was
-         * executed sucessfully.  Any result will be dispatched to onComplete.  If no parameters are provided,
+         * executed sucessfully.  Any result will be dispatched to onSuccess.  If no parameters are provided,
          * the method should assume that the uriTemplate is a member property, and any parameters are to be
          * derived from the application modelCache.
          *
@@ -94,7 +94,7 @@ define([
         },
         /**
          * Async method, returning a boolean to indicate whether or not the method was
-         * executed sucessfully.  Any result will be dispatched to onComplete.  If no parameters are provided,
+         * executed sucessfully.  Any result will be dispatched to onSuccess.  If no parameters are provided,
          * the method should assume that the uriTemplate is a member property, and any parameters are to be
          * derived from the application modelCache.
          *
@@ -130,16 +130,22 @@ define([
          * @access public
          * @param msg The message, to be published on the topic for this datasource
          */
-        onComplete: function(msg) {
-            infusion.message.dispatch.publish('ds:publish', msg);
+        onSuccess: function(parameters) {
+            infusion.message.dispatch.publish({
+                topic: 'ds:publish',
+                msg: parameters.msg
+            });
         },
 
         /**
          *
          * @param event
          */
-        onError: function(event) {
-
+        onError: function(parameters) {
+            infusion.message.dispatch.publish({
+                topic: 'ds:publish',
+                msg: parameters.msg
+            });
         },
 
         /**
@@ -181,7 +187,7 @@ define([
                 data: data
             });
             if (this.async == true || parameters.async == true) {
-                var callback = parameters.onComplete || this.onComplete;
+                var callback = parameters.onSuccess || this.onSuccess;
                 window.setTimeout(function() {
                     callback(msg);
                 }, 1);
@@ -203,7 +209,7 @@ define([
 
         /**
          * Async method, returning a boolean to indicate whether or not the method was
-         * executed sucessfully.  Any result will be dispatched to onComplete.  If no parameters are provided,
+         * executed sucessfully.  Any result will be dispatched to onSuccess.  If no parameters are provided,
          * the method should assume that the uriTemplate is a member property, and any parameters are to be
          * derived from the application modelCache.
          *
@@ -265,7 +271,7 @@ define([
 
         /**
          * Async method, returning a boolean to indicate whether or not the method was
-         * executed sucessfully.  Any result will be dispatched to onComplete.  If no parameters are provided,
+         * executed sucessfully.  Any result will be dispatched to onSuccess.  If no parameters are provided,
          * the method should assume that the uriTemplate is a member property, and any parameters are to be
          * derived from the application modelCache.
          *
@@ -332,7 +338,7 @@ define([
 
         /**
          * Async method, returning a boolean to indicate whether or not the method was
-         * executed sucessfully.  Any result will be dispatched to onComplete.  If no parameters are provided,
+         * executed sucessfully.  Any result will be dispatched to onSuccess.  If no parameters are provided,
          * the method should assume that the uriTemplate is a member property, and any parameters are to be
          * derived from the application modelCache.
          *
@@ -347,7 +353,7 @@ define([
                 function (tx) {
                     tx.executeSql('SELECT * FROM properties', [],
                         function (tx, results) {
-                            var callback = parameters.onComplete || this.onComplete;
+                            var callback = parameters.onSuccess || this.onSuccess;
                             callback(results.rows.item(0), requestId);
                         },
                     null)
@@ -445,21 +451,7 @@ define([
             parameters.type = 'DELETE';
             return $.ajax(uri, parameters);
         },
-        onComplete: function(data, textStatus, xhr, parameters) {
-            var self = (arguments.length > 4) ? arguments[4] : this;
-            var msg = new infusion.message.Message({
-                id: parameters.requestId || '0',
-                dsid: this.id,
-                method: this.method,
-                modelPath: this.modelPath || parameters.modelPath,
-                data: data,
-                status: textStatus
-            });
-            self.super.onComplete.call(this, msg);
-        },
-        onError: function(jqXHR, textStatus, errorThrown, parameters) {
-            alert('ERROR');
-        },
+
         /**
          * Normalizes parameters into those expected by jQuery's Ajax implementation.
          *
@@ -468,16 +460,39 @@ define([
          */
         params: function(parameters) {
             var headers = parameters.headers || this.headers;
-            var ds = this;
-            var success = function(data, textStatus, xhr) {
-                ds.onComplete(data, textStatus, xhr, parameters);
+            var self = this;
+            var success = function (data, textStatus, xhr) {
+                var msg = new infusion.message.Message({
+                    id: parameters.requestId || '0',
+                    dsid: self.id,
+                    method: self.method,
+                    modelPath: self.modelPath || parameters.modelPath,
+                    xhr: xhr,
+                    data: data,
+                    status: textStatus
+                });
+                (parameters.onSuccess || self.onSuccess)({
+                    msg: msg
+                });
             };
 
             var error = function(xhr, textStatus, errorThrown) {
-                ds.onError(xhr, textStatus, errorThrown, parameters);
+                var msg = new infusion.message.Message({
+                    id: parameters.requestId || '0',
+                    dsid: self.id,
+                    method: self.method,
+                    modelPath: self.modelPath || parameters.modelPath,
+                    xhr: xhr,
+                    error: errorThrown,
+                    status: textStatus
+                });
+                (parameters.onError || self.onError)({
+                    msg: msg
+                });
             }
+
             return $.extend(parameters, {
-                success: parameters.onComplete || success,
+                success: parameters.onSuccess || success,
                 error:  parameters.onError || error,
                 processData: false,
                 headers: headers,

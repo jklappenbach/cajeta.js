@@ -29,7 +29,7 @@ define(
                 ds.get({
                     key: '00',
                     async: true,
-                    onComplete: complete
+                    onSuccess: complete
                 });
 
                 waitsFor(function() {
@@ -64,7 +64,7 @@ define(
                 ds.get({
                     key: '00',
                     async: true,
-                    onComplete: complete
+                    onSuccess: complete
                 });
 
                 waitsFor(function() {
@@ -101,7 +101,7 @@ define(
 //                ds.get({
 //                    key: '00',
 //                    async: true,
-//                    onComplete: complete
+//                    onSuccess: complete
 //                });
 //
 //                waitsFor(function() {
@@ -157,7 +157,7 @@ define(
 //                ds.get({
 //                    key: '00',
 //                    async: true,
-//                    onComplete: complete
+//                    onSuccess: complete
 //                });
 //
 //                waitsFor(function() {

@@ -12129,7 +12129,7 @@ function squeeze_1(ast, options) {
     // 1. discard useless blocks
     // 2. join consecutive var declarations
     // 3. remove obviously dead code
-    // 4. transform consecutive statements using the comma operator
+    // 4. transformRow consecutive statements using the comma operator
     // 5. if block_type == "lambda" and it detects constructs like if(foo) return ... - rewrite like if (!foo) { ... }
     function tighten(statements, block_type) {
         statements = MAP(statements, walk);
@@ -15259,7 +15259,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
             });
             var wrapped_tl = "(function(" + parameters.join(",") + "){ '$ORIG'; })(" + args.join(",") + ")";
             wrapped_tl = parse(wrapped_tl);
-            wrapped_tl = wrapped_tl.transform(new TreeTransformer(function before(node) {
+            wrapped_tl = wrapped_tl.transformRow(new TreeTransformer(function before(node) {
                 if (node instanceof AST_Directive && node.value == "$ORIG") {
                     return MAP.splice(self.body);
                 }
@@ -15281,7 +15281,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
             }
             var wrapped_tl = "(function(exports, global){ global['" + name + "'] = exports; '$ORIG'; '$EXPORTS'; }({}, (function(){return this}())))";
             wrapped_tl = parse(wrapped_tl);
-            wrapped_tl = wrapped_tl.transform(new TreeTransformer(function before(node) {
+            wrapped_tl = wrapped_tl.transformRow(new TreeTransformer(function before(node) {
                 if (node instanceof AST_SimpleStatement) {
                     node = node.body;
                     if (node instanceof AST_String) switch (node.getValue()) {
@@ -17059,7 +17059,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
     TreeTransformer.prototype = new TreeWalker();
     (function(undefined) {
         function _(node, descend) {
-            node.DEFMETHOD("transform", function(tw, in_list) {
+            node.DEFMETHOD("transformRow", function(tw, in_list) {
                 var x, y;
                 tw.push(this);
                 if (tw.before) x = tw.before(this, descend, in_list);
@@ -17080,104 +17080,104 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
         }
         function do_list(list, tw) {
             return MAP(list, function(node) {
-                return node.transform(tw, true);
+                return node.transformRow(tw, true);
             });
         }
         _(AST_Node, noop);
         _(AST_LabeledStatement, function(self, tw) {
-            self.label = self.label.transform(tw);
-            self.body = self.body.transform(tw);
+            self.label = self.label.transformRow(tw);
+            self.body = self.body.transformRow(tw);
         });
         _(AST_SimpleStatement, function(self, tw) {
-            self.body = self.body.transform(tw);
+            self.body = self.body.transformRow(tw);
         });
         _(AST_Block, function(self, tw) {
             self.body = do_list(self.body, tw);
         });
         _(AST_DWLoop, function(self, tw) {
-            self.condition = self.condition.transform(tw);
-            self.body = self.body.transform(tw);
+            self.condition = self.condition.transformRow(tw);
+            self.body = self.body.transformRow(tw);
         });
         _(AST_For, function(self, tw) {
-            if (self.init) self.init = self.init.transform(tw);
-            if (self.condition) self.condition = self.condition.transform(tw);
-            if (self.step) self.step = self.step.transform(tw);
-            self.body = self.body.transform(tw);
+            if (self.init) self.init = self.init.transformRow(tw);
+            if (self.condition) self.condition = self.condition.transformRow(tw);
+            if (self.step) self.step = self.step.transformRow(tw);
+            self.body = self.body.transformRow(tw);
         });
         _(AST_ForIn, function(self, tw) {
-            self.init = self.init.transform(tw);
-            self.object = self.object.transform(tw);
-            self.body = self.body.transform(tw);
+            self.init = self.init.transformRow(tw);
+            self.object = self.object.transformRow(tw);
+            self.body = self.body.transformRow(tw);
         });
         _(AST_With, function(self, tw) {
-            self.expression = self.expression.transform(tw);
-            self.body = self.body.transform(tw);
+            self.expression = self.expression.transformRow(tw);
+            self.body = self.body.transformRow(tw);
         });
         _(AST_Exit, function(self, tw) {
-            if (self.value) self.value = self.value.transform(tw);
+            if (self.value) self.value = self.value.transformRow(tw);
         });
         _(AST_LoopControl, function(self, tw) {
-            if (self.label) self.label = self.label.transform(tw);
+            if (self.label) self.label = self.label.transformRow(tw);
         });
         _(AST_If, function(self, tw) {
-            self.condition = self.condition.transform(tw);
-            self.body = self.body.transform(tw);
-            if (self.alternative) self.alternative = self.alternative.transform(tw);
+            self.condition = self.condition.transformRow(tw);
+            self.body = self.body.transformRow(tw);
+            if (self.alternative) self.alternative = self.alternative.transformRow(tw);
         });
         _(AST_Switch, function(self, tw) {
-            self.expression = self.expression.transform(tw);
+            self.expression = self.expression.transformRow(tw);
             self.body = do_list(self.body, tw);
         });
         _(AST_Case, function(self, tw) {
-            self.expression = self.expression.transform(tw);
+            self.expression = self.expression.transformRow(tw);
             self.body = do_list(self.body, tw);
         });
         _(AST_Try, function(self, tw) {
             self.body = do_list(self.body, tw);
-            if (self.bcatch) self.bcatch = self.bcatch.transform(tw);
-            if (self.bfinally) self.bfinally = self.bfinally.transform(tw);
+            if (self.bcatch) self.bcatch = self.bcatch.transformRow(tw);
+            if (self.bfinally) self.bfinally = self.bfinally.transformRow(tw);
         });
         _(AST_Catch, function(self, tw) {
-            self.argname = self.argname.transform(tw);
+            self.argname = self.argname.transformRow(tw);
             self.body = do_list(self.body, tw);
         });
         _(AST_Definitions, function(self, tw) {
             self.definitions = do_list(self.definitions, tw);
         });
         _(AST_VarDef, function(self, tw) {
-            if (self.value) self.value = self.value.transform(tw);
+            if (self.value) self.value = self.value.transformRow(tw);
         });
         _(AST_Lambda, function(self, tw) {
-            if (self.name) self.name = self.name.transform(tw);
+            if (self.name) self.name = self.name.transformRow(tw);
             self.argnames = do_list(self.argnames, tw);
             self.body = do_list(self.body, tw);
         });
         _(AST_Call, function(self, tw) {
-            self.expression = self.expression.transform(tw);
+            self.expression = self.expression.transformRow(tw);
             self.args = do_list(self.args, tw);
         });
         _(AST_Seq, function(self, tw) {
-            self.car = self.car.transform(tw);
-            self.cdr = self.cdr.transform(tw);
+            self.car = self.car.transformRow(tw);
+            self.cdr = self.cdr.transformRow(tw);
         });
         _(AST_Dot, function(self, tw) {
-            self.expression = self.expression.transform(tw);
+            self.expression = self.expression.transformRow(tw);
         });
         _(AST_Sub, function(self, tw) {
-            self.expression = self.expression.transform(tw);
-            self.property = self.property.transform(tw);
+            self.expression = self.expression.transformRow(tw);
+            self.property = self.property.transformRow(tw);
         });
         _(AST_Unary, function(self, tw) {
-            self.expression = self.expression.transform(tw);
+            self.expression = self.expression.transformRow(tw);
         });
         _(AST_Binary, function(self, tw) {
-            self.left = self.left.transform(tw);
-            self.right = self.right.transform(tw);
+            self.left = self.left.transformRow(tw);
+            self.right = self.right.transformRow(tw);
         });
         _(AST_Conditional, function(self, tw) {
-            self.condition = self.condition.transform(tw);
-            self.consequent = self.consequent.transform(tw);
-            self.alternative = self.alternative.transform(tw);
+            self.condition = self.condition.transformRow(tw);
+            self.consequent = self.consequent.transformRow(tw);
+            self.alternative = self.alternative.transformRow(tw);
         });
         _(AST_Array, function(self, tw) {
             self.elements = do_list(self.elements, tw);
@@ -17186,7 +17186,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
             self.properties = do_list(self.properties, tw);
         });
         _(AST_ObjectProperty, function(self, tw) {
-            self.value = self.value.transform(tw);
+            self.value = self.value.transformRow(tw);
         });
     })();
     "use strict";
@@ -18644,7 +18644,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                 var opt = optimizer(self, compressor);
                 opt._optimized = true;
                 if (opt === self) return opt;
-                return opt.transform(compressor);
+                return opt.transformRow(compressor);
             });
         }
         OPT(AST_Node, function(self, compressor) {
@@ -18662,7 +18662,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
             return new ctor(props);
         }
         function make_node_from_constant(compressor, val, orig) {
-            if (val instanceof AST_Node) return val.transform(compressor);
+            if (val instanceof AST_Node) return val.transformRow(compressor);
             switch (typeof val) {
               case "string":
                 return make_node(AST_String, orig, {
@@ -18777,7 +18777,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                                 CHANGED = true;
                                 stat = stat.clone();
                                 stat.alternative = ret[0];
-                                ret[0] = stat.transform(compressor);
+                                ret[0] = stat.transformRow(compressor);
                                 continue loop;
                             }
                             if ((ret.length == 0 || ret[0] instanceof AST_Return) && stat.body.value && !stat.alternative && in_lambda) {
@@ -18786,7 +18786,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                                 stat.alternative = ret[0] || make_node(AST_Return, stat, {
                                     value: make_node(AST_Undefined, stat)
                                 });
-                                ret[0] = stat.transform(compressor);
+                                ret[0] = stat.transformRow(compressor);
                                 continue loop;
                             }
                             if (!stat.body.value && in_lambda) {
@@ -18797,14 +18797,14 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                                     body: as_statement_array(stat.alternative).concat(ret)
                                 });
                                 stat.alternative = null;
-                                ret = [ stat.transform(compressor) ];
+                                ret = [ stat.transformRow(compressor) ];
                                 continue loop;
                             }
                             if (ret.length == 1 && in_lambda && ret[0] instanceof AST_SimpleStatement && (!stat.alternative || stat.alternative instanceof AST_SimpleStatement)) {
                                 CHANGED = true;
                                 ret.push(make_node(AST_Return, ret[0], {
                                     value: make_node(AST_Undefined, ret[0])
-                                }).transform(compressor));
+                                }).transformRow(compressor));
                                 ret = as_statement_array(stat.alternative).concat(ret);
                                 ret.unshift(stat);
                                 continue loop;
@@ -18826,7 +18826,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                             stat.alternative = make_node(AST_BlockStatement, stat, {
                                 body: body
                             });
-                            ret = [ stat.transform(compressor) ];
+                            ret = [ stat.transformRow(compressor) ];
                             continue loop;
                         }
                         var ab = aborts(stat.alternative);
@@ -18843,7 +18843,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                             stat.alternative = make_node(AST_BlockStatement, stat.alternative, {
                                 body: as_statement_array(stat.alternative).slice(0, -1)
                             });
-                            ret = [ stat.transform(compressor) ];
+                            ret = [ stat.transformRow(compressor) ];
                             continue loop;
                         }
                         ret.unshift(stat);
@@ -18910,7 +18910,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                     } else {
                         left = AST_Seq.cons(left, right);
                     }
-                    return left.transform(compressor);
+                    return left.transformRow(compressor);
                 }
                 var ret = [], prev = null;
                 statements.forEach(function(stat) {
@@ -19540,7 +19540,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                     }
                     if (node instanceof AST_Scope && node !== self) return node;
                 });
-                self.transform(tt);
+                self.transformRow(tt);
             }
         });
         AST_Scope.DEFMETHOD("hoist_declarations", function(compressor) {
@@ -19591,7 +19591,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                         if (node instanceof AST_Scope) return node;
                     }
                 });
-                self = self.transform(tt);
+                self = self.transformRow(tt);
                 if (vars_found > 0) {
                     var defs = [];
                     vars.each(function(def, name) {
@@ -19686,11 +19686,11 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                 if (self.body instanceof AST_BlockStatement) {
                     self.body = self.body.clone();
                     self.body.body = rest.concat(self.body.body.slice(1));
-                    self.body = self.body.transform(compressor);
+                    self.body = self.body.transformRow(compressor);
                 } else {
                     self.body = make_node(AST_BlockStatement, self.body, {
                         body: rest
-                    }).transform(compressor);
+                    }).transformRow(compressor);
                 }
                 if_break_in_loop(self, compressor);
             }
@@ -19726,7 +19726,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
             self = AST_DWLoop.prototype.optimize.call(self, compressor);
             if (self instanceof AST_While) {
                 if_break_in_loop(self, compressor);
-                self = make_node(AST_For, self, self).transform(compressor);
+                self = make_node(AST_For, self, self).transformRow(compressor);
             }
             return self;
         });
@@ -19773,7 +19773,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                         a.push(self.body);
                         return make_node(AST_BlockStatement, self, {
                             body: a
-                        }).transform(compressor);
+                        }).transformRow(compressor);
                     }
                 } else {
                     compressor.warn("Condition always false [{file}:{line},{col}]", self.condition.start);
@@ -19783,7 +19783,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                         if (self.alternative) a.push(self.alternative);
                         return make_node(AST_BlockStatement, self, {
                             body: a
-                        }).transform(compressor);
+                        }).transformRow(compressor);
                     }
                 }
             }
@@ -19800,7 +19800,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
             if (is_empty(self.body) && is_empty(self.alternative)) {
                 return make_node(AST_SimpleStatement, self.condition, {
                     body: self.condition
-                }).transform(compressor);
+                }).transformRow(compressor);
             }
             if (self.body instanceof AST_SimpleStatement && self.alternative instanceof AST_SimpleStatement) {
                 return make_node(AST_SimpleStatement, self, {
@@ -19809,7 +19809,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                         consequent: self.body.body,
                         alternative: self.alternative.body
                     })
-                }).transform(compressor);
+                }).transformRow(compressor);
             }
             if (is_empty(self.alternative) && self.body instanceof AST_SimpleStatement) {
                 if (negated_is_best) return make_node(AST_SimpleStatement, self, {
@@ -19818,14 +19818,14 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                         left: negated,
                         right: self.body.body
                     })
-                }).transform(compressor);
+                }).transformRow(compressor);
                 return make_node(AST_SimpleStatement, self, {
                     body: make_node(AST_Binary, self, {
                         operator: "&&",
                         left: self.condition,
                         right: self.body.body
                     })
-                }).transform(compressor);
+                }).transformRow(compressor);
             }
             if (self.body instanceof AST_EmptyStatement && self.alternative && self.alternative instanceof AST_SimpleStatement) {
                 return make_node(AST_SimpleStatement, self, {
@@ -19834,7 +19834,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                         left: self.condition,
                         right: self.alternative.body
                     })
-                }).transform(compressor);
+                }).transformRow(compressor);
             }
             if (self.body instanceof AST_Exit && self.alternative instanceof AST_Exit && self.body.TYPE == self.alternative.TYPE) {
                 return make_node(self.body.CTOR, self, {
@@ -19843,14 +19843,14 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                         consequent: self.body.value || make_node(AST_Undefined, self.body).optimize(compressor),
                         alternative: self.alternative.value || make_node(AST_Undefined, self.alternative).optimize(compressor)
                     })
-                }).transform(compressor);
+                }).transformRow(compressor);
             }
             if (self.body instanceof AST_If && !self.body.alternative && !self.alternative) {
                 self.condition = make_node(AST_Binary, self.condition, {
                     operator: "&&",
                     left: self.condition,
                     right: self.body.condition
-                }).transform(compressor);
+                }).transformRow(compressor);
                 self.body = self.body.body;
             }
             if (aborts(self.body)) {
@@ -19859,7 +19859,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                     self.alternative = null;
                     return make_node(AST_BlockStatement, self, {
                         body: [ self, alt ]
-                    }).transform(compressor);
+                    }).transformRow(compressor);
                 }
             }
             if (aborts(self.alternative)) {
@@ -19869,7 +19869,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                 self.alternative = null;
                 return make_node(AST_BlockStatement, self, {
                     body: [ self, body ]
-                }).transform(compressor);
+                }).transformRow(compressor);
             }
             return self;
         });
@@ -19877,7 +19877,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
             if (self.body.length == 0 && compressor.option("conditionals")) {
                 return make_node(AST_SimpleStatement, self, {
                     body: self.expression
-                }).transform(compressor);
+                }).transformRow(compressor);
             }
             for (;;) {
                 var last_branch = self.body[self.body.length - 1];
@@ -19911,7 +19911,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                             body: node.body.reduce(function(a, branch) {
                                 return a.concat(branch.body);
                             }, [])
-                        }).transform(compressor);
+                        }).transformRow(compressor);
                     } else if (node instanceof AST_If || node instanceof AST_Try) {
                         var save = in_if;
                         in_if = !in_block;
@@ -19952,7 +19952,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                     }
                 });
                 tt.stack = compressor.stack.slice();
-                self = self.transform(tt);
+                self = self.transformRow(tt);
             } catch (ex) {
                 if (ex !== self) throw ex;
             }
@@ -20043,7 +20043,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                                 var ast = parse(code);
                                 ast.figure_out_scope();
                                 var comp = new Compressor(compressor.options);
-                                ast = ast.transform(comp);
+                                ast = ast.transformRow(comp);
                                 ast.figure_out_scope();
                                 ast.mangle_names();
                                 var fun = ast.body[0].body.expression;
@@ -20078,12 +20078,12 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                         }),
                         operator: "+",
                         right: exp.expression
-                    }).transform(compressor);
+                    }).transformRow(compressor);
                 }
             }
             if (compressor.option("side_effects")) {
                 if (self.expression instanceof AST_Function && self.args.length == 0 && !AST_Block.prototype.has_side_effects.call(self.expression)) {
-                    return make_node(AST_Undefined, self).transform(compressor);
+                    return make_node(AST_Undefined, self).transformRow(compressor);
                 }
             }
             return self;
@@ -20098,7 +20098,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                       case "Function":
                       case "Error":
                       case "Array":
-                        return make_node(AST_Call, self, self).transform(compressor);
+                        return make_node(AST_Call, self, self).transformRow(compressor);
                     }
                 }
             }
@@ -20129,7 +20129,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                     var x = seq.to_array();
                     this.expression = x.pop();
                     x.push(this);
-                    seq = AST_Seq.from_array(x).transform(compressor);
+                    seq = AST_Seq.from_array(x).transformRow(compressor);
                     return seq;
                 }
             }
@@ -20166,7 +20166,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                     var x = seq.to_array();
                     this.left = x.pop();
                     x.push(this);
-                    seq = AST_Seq.from_array(x).transform(compressor);
+                    seq = AST_Seq.from_array(x).transformRow(compressor);
                     return seq;
                 }
                 if (this.right instanceof AST_Seq && !(this.operator == "||" || this.operator == "&&") && !this.left.has_side_effects()) {
@@ -20174,7 +20174,7 @@ define('uglifyjs2', ['exports', 'source-map', 'logger', 'env!env/file'], functio
                     var x = seq.to_array();
                     this.right = x.pop();
                     x.push(this);
-                    seq = AST_Seq.from_array(x).transform(compressor);
+                    seq = AST_Seq.from_array(x).transformRow(compressor);
                     return seq;
                 }
             }
@@ -20850,7 +20850,7 @@ exports.minify = function(files, options, name) {
         UglifyJS.merge(compress, options.compress);
         toplevel.figure_out_scope();
         var sq = UglifyJS.Compressor(compress);
-        toplevel = toplevel.transform(sq);
+        toplevel = toplevel.transformRow(sq);
     }
 
     // 3. mangle
@@ -21355,7 +21355,7 @@ define('parse', ['./esprimaAdapter', 'lang'], function (esprima, lang) {
      * set of namespace transforms. This function is used because require calls
      * inside a define() call should not be renamed, so a simple regexp is not
      * good enough.
-     * @param  {String} fileContents the contents to transform.
+     * @param  {String} fileContents the contents to transformRow.
      * @param  {String} ns the namespace, *not* including trailing dot.
      * @return {String} the fileContents with the namespace applied
      */
@@ -21860,7 +21860,7 @@ define('parse', ['./esprimaAdapter', 'lang'], function (esprima, lang) {
 
 /*global define */
 
-define('transform', [ './esprimaAdapter', './parse', 'logger', 'lang'],
+define('transformRow', [ './esprimaAdapter', './parse', 'logger', 'lang'],
 function (esprima, parse, logger, lang) {
     'use strict';
     var transform,
@@ -21994,7 +21994,7 @@ function (esprima, parse, logger, lang) {
                         sourceUrlData: sourceUrlData
                     };
 
-                    //Only transform ones that do not have IDs. If it has an
+                    //Only transformRow ones that do not have IDs. If it has an
                     //ID but no dependency array, assume it is something like
                     //a phonegap implementation, that has its own internal
                     //define that cannot handle dependency array constructs,
@@ -23779,7 +23779,7 @@ define('build', function (require) {
         parse = require('parse'),
         optimize = require('optimize'),
         pragma = require('pragma'),
-        transform = require('transform'),
+        transform = require('transformRow'),
         requirePatch = require('requirePatch'),
         env = require('env'),
         commonJs = require('commonJs'),

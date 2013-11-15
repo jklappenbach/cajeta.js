@@ -66,6 +66,13 @@ define([
                 }
             }
 
+            // If we have a template assigned to this component, then inject it, replacing the
+            // existing html
+            if (properties.tid !== undefined) {
+                this.template = model.templates[properties.tid];
+            }
+
+
             $.extend(true, this, properties);
 
             this.attributes = this.attributes || {};
@@ -93,9 +100,16 @@ define([
          * @param id
          */
         setId: function(id) {
-            if (id !== undefined) {
-                this.cid = id;
-            }
+            this.cid = id;
+            this.attr('cid', id);
+        },
+
+        getDom: function() {
+            return this.dom;
+        },
+
+        setDom: function(dom) {
+            this.dom = dom;
         },
 
         /**
@@ -118,8 +132,8 @@ define([
             for (var cid in this.children) {
                 this.children[cid].setPage(page);
             }
-            if (this.factory !== undefined) {
-                this.factory.page = page;
+            if (this.transform !== undefined) {
+                this.transform.page = page;
             }
         },
 
@@ -157,8 +171,8 @@ define([
          */
         setComponentValue: function(value, internal) {
             if (typeof value == "String") {
-                if (l10n.hasOwnProperty(value)) {
-                    value = l10n[value];
+                if (l10n.translate(value) !== undefined) {
+                    value = l10n.translate[value];
                 }
             }
 
@@ -385,9 +399,9 @@ define([
          * @param child
          */
         addChild: function(child) {
-            if (child instanceof infusion.view.Factory) {
-                this.factory = child;
-                this.factory.parent = this;
+            if (child instanceof infusion.view.Transform) {
+                this.transform = child;
+                this.transform.parent = this;
             } else {
                 var cid = child.cid;
                 if (cid == undefined || cid == '') {
@@ -485,10 +499,7 @@ define([
         },
 
         /**
-         * We tell if the component is docked (referring to live HTML in the DOM) by first checking to
-         * see if the template is non-null.  Since templates can be provided for substitution, we need
-         * to further check to see if the html parentNode is a valid DOM element, or if it's a DocumentFragment or
-         * even undefined.
+         * The component is docked if the dom property is initialized.
          *
          * @return {Boolean}
          */
@@ -501,11 +512,10 @@ define([
          * will throw an exception.
          */
         dock: function() {
-            var type = this.getElementType();
             if (!this.isDocked()) {
                 // We've defined the dock element as a template.  Grab the element from the DOM
                 // store it as a template, and remove it from the markup
-                if (this.tid !== undefined) {
+                if (this.tid !== undefined && this.cid === undefined) {
                     this.template = $('*[tid = "' + this.tid + '"]');
                     if (this.template.length == 0) {
                         throw new Error(infusion.ERROR_TEMPLATE_DOCK_UNDEFINED.format(this.tid));
@@ -520,8 +530,6 @@ define([
                         throw new Error(infusion.ERROR_COMPONENT_DOCK_MULTIPLE.format(this.cid));
                     }
 
-                    // If we have a template assigned to this component, then inject it, replacing the
-                    // existing html
                     if (this.template !== undefined) {
                         // Insert our template into the dom...
                         this.dom.html(this.template.html());
@@ -538,8 +546,8 @@ define([
                 model.components[this.getCanonicalId()] = this;
 
                 // Dock any factories we may have
-                if (this.factory !== undefined)
-                    this.factory.dock();
+                if (this.transform !== undefined)
+                    this.transform.dock();
             }
         },
 
@@ -560,25 +568,38 @@ define([
         },
 
         /**
-         * Adds a new element based on either the component template, or it's internal state if the template
-         * has not been set.  This provides the ability to add templates programmatically, without having to draw upon
-         * resources defined in static html.
+         * Adds a new element to existing DOM, without the need for an existing cid attribute for an element. A template,
+         * if defined, will be used.  Otherwise, a new element will be created using the existing state of the componenet.
          */
         inject: function() {
             if (this.parent === undefined)
                 throw new Error('infusion.view.Component.parent must be defined in order to inject');
 
             if (this.template !== undefined) {
-                this.template.removeAttr('tid');
-                this.parent.dom.append(this.template);
-                delete this.template;
+                // Clone the template, and use its state to create a new component
+                this.dom = $(this.template).clone();
+                this.dom.removeAttr('tid');
+                this.dom.attr('cid', this.cid);
+                this.parent.getDom().append(this.dom);
             } else {
+                // No template defined, so use the element type provided.
                 var element = '<' + this.elementType + ' cid="' + this.cid + '" />';
                 var template = $(element);
-                this.parent.dom.append(template);
+                this.parent.getDom().append(template);
             }
-            delete this.tid;
-            this.dock();
+
+            // Apply any cached element state properties that were made before we docked
+            this._synchElementState(this.dom);
+
+            // Add listeners for our own datamodel, as well as jQuery based hooks
+            this.bindHtmlEvents();
+
+            // Add to the application component map at this point.
+            model.components[this.getCanonicalId()] = this;
+
+            // Dock any factories we may have
+            if (this.transform !== undefined)
+                this.transform.dock();
         },
 
         /**
@@ -613,10 +634,14 @@ define([
                 if (this.modelPath === undefined)
                     this.populateModelPath();
 
-                infusion.message.dispatch.subscribe(this, 'model:publish', {
-                    id: infusion.message.MESSAGE_MODEL_NODEADDED,
-                    dsid: this.dsid,
-                    modelPath: this.modelPath
+                infusion.message.dispatch.subscribe({
+                    subscriber: this,
+                    topic: 'model:publish',
+                    criteria: {
+                        id: infusion.message.MESSAGE_MODEL_NODEADDED,
+                        dsid: this.dsid,
+                        modelPath: this.modelPath
+                    }
                 });
 
                 // We may observe the following priorities for setting state:
@@ -724,12 +749,8 @@ define([
          */
         clone: function(idSuffix) {
             var updateIds = function(component, idSuffix) {
+                idSuffix = idSuffix || '';
                 component.setId(component.cid + idSuffix);
-                if (component.dom !== undefined) {
-                    component.dom.attr('cid', component.cid);
-                } else if (component.template !== undefined) {
-                    component.template.attr('cid', component.cid);
-                }
                 for (var cid in component.children) {
                     if (cid !== undefined) {
                         updateIds(component.children[cid], idSuffix);
@@ -767,10 +788,10 @@ define([
      * create an additional copy of its docked component (complete with all of its children), update the IDs
      * (appending with a 0-based index), and add these copies to the Repeater's component.
      */
-    infusion.view.Factory = infusion.message.Subscriber.extend({
+    infusion.view.Transform = infusion.message.Subscriber.extend({
         initialize: function(properties) {
             if (properties.dsid === undefined)
-                throw new Error("infusion.view.Factory.dsid must be defined");
+                throw new Error("infusion.view.Transform.dsid must be defined");
             $.extend(true, this, properties);
             this.templates = this.templates || {};
             this.rules = this.rules || [];
@@ -787,7 +808,7 @@ define([
 
             var templates = this.templates;
             var list = [];
-            this.parent.dom.find('*[tid]').each(function() {
+            this.parent.getDom().find('*[tid]').each(function() {
                 var htmlTemplate = $(this);
                 var tid = htmlTemplate.attr('tid');
                 if (tid !== undefined && tid != '') {
@@ -805,18 +826,26 @@ define([
             }
 
             if (this.empty == true) {
-                this.parent.dom.empty();
+                this.parent.getDom().empty();
             }
 
             if (this.modelPath !== undefined) {
-                infusion.message.dispatch.subscribe(this, 'model:publish', {
-                    dsid: this.dsid,
-                    modelPath: this.modelPath
+                infusion.message.dispatch.subscribe({
+                    subscriber: this,
+                    topic: 'model:publish',
+                    criteria: {
+                        dsid: this.dsid,
+                        modelPath: this.modelPath
+                    }
                 });
             } else {
-                infusion.message.subscribe(this, 'ds:publish', {
-                    dsid: this.dsid,
-                    status: 'success'
+                infusion.message.subscribe({
+                    subscriber: this,
+                    topic: 'ds:publish',
+                    criteria: {
+                        dsid: this.dsid,
+                        status: 'success'
+                    }
                 });
             }
             ds[this.dsid].get({
@@ -849,15 +878,15 @@ define([
             var dataset = msg.data;
 
             for (var row in dataset) {
-                this.transform(this.parent, dataset[row], this.nextId(dataset[row].tid));
+                this.transformRow(this.parent, dataset[row], this.nextId(dataset[row].tid));
             }
         },
 
         nextId: function(tid) {
-            var index = this.page.factoryIds[tid];
+            var index = this.page.transformIds[tid];
             if (index === undefined)
                 index = 0;
-            this.page.factoryIds[tid] = index + 1;
+            this.page.transformIds[tid] = index + 1;
             return index;
         },
 
@@ -865,37 +894,37 @@ define([
          * Transform a dataset result row into a component graph
          *
          * @param parent The parent component, target for injection of new elements
-         * @param dataset The dataset
+         * @param row The data row to transform
          * @param index The index of the row in the iterated dataset
          * @return {*}
          */
-        transform: function(parent, dataset, index) {
-            if (dataset.tid === undefined)
+        transformRow: function(parent, row, index) {
+            if (row.tid === undefined)
                 return null;
 
-            if (this.templates[dataset.tid] === undefined)
-                throw new Error('tid ' + dataset.tid + ' was not found in the available templates');
+            if (this.templates[row.tid] === undefined)
+                throw new Error('tid ' + row.tid + ' was not found in the available templates');
 
-            var child = this.templates[dataset.tid].clone(index);
+            var child = this.templates[row.tid].clone(index);
             child.parent = parent;
 
-            if (dataset.value !== undefined)
-                child.setComponentValue(dataset.value);
+            if (row.value !== undefined)
+                child.setComponentValue(row.value);
 
-            for (var key in dataset.attr) {
-                child.attr(key, dataset.attr[key]);
+            for (var key in row.attr) {
+                child.attr(key, row.attr[key]);
             }
 
-            for (var key in dataset.prop) {
-                child.prop(key, dataset.prop[key]);
+            for (var key in row.prop) {
+                child.prop(key, row.prop[key]);
             }
 
-            for (var key in dataset.css) {
-                child.css(key, dataset.css[key]);
+            for (var key in row.css) {
+                child.css(key, row.css[key]);
             }
 
-            if (dataset.text !== undefined) {
-                child.text(dataset.text);
+            if (row.text !== undefined) {
+                child.text(row.text);
             }
             for (var rule in this.rules) {
                 rule.do(child, index);
@@ -903,8 +932,8 @@ define([
             child.inject();
 
             var subindex = 0;
-            for (var childId in dataset.children) {
-                this.transform(child, dataset.children[childId], index + '_' + subindex++);
+            for (var childId in row.children) {
+                this.transformRow(child, row.children[childId], index + '_' + subindex++);
             }
 
             return child;
@@ -934,7 +963,7 @@ define([
             if (this.title === undefined)
                 this.title = infusion.DEFAULT_PAGETITLE;
             this.setElementType('body');
-            this.factoryIds = {};
+            this.transformIds = {};
         },
         setTitle: function(title) {
             this.title = title;
@@ -1001,7 +1030,6 @@ define([
             this.viewStateId = this.viewStateId || '';
             this.modelStateId = this.modelStateId || '';
 
-            this.stringResourceMap = this.stringResourceMap || {};
             this.currentPage = this.currentPage || null;
             this.executing = this.executing || false;
         },

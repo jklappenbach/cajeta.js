@@ -1,0 +1,30 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<script type="javascript">
+    define('app/view/home/examples/examplesDiv', [
+        'jquery',
+        'infusion.html5',
+        'component!app/view/home/examples/formExamplesDiv',
+    ], function($, infusion, formExamplesDiv) {
+
+        // Create an alias for namespace brevity.
+        var html5 = infusion.view.html5;
+
+        var div = new html5.Div({ cid: 'examplesDiv', tid: 'examplesTemplate' });
+        var tabs = new html5.TabList({ cid: 'examplesTabs', contentId: 'examplesContent' });
+        tabs.addChild({ title: 'Html5 Form Example', component: formExamplesDiv });
+        div.addChild(tabs);
+
+        return div;
+    });
+</script>
+
+<div tid="examplesTemplate">
+    <div id="sidebar">
+        <nav>
+            <ul cid="examplesTabs" />
+        </nav>
+    </div>
+    <div cid="examplesContent" />
+</div>
+

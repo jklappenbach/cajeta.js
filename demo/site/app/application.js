@@ -1,8 +1,5 @@
-define(['jquery', 'infusion', 'homePage'], function($, infusion, homePage) {
-    var app = new infusion.Application({
+define(['infusion'], function(infusion) {
+    return new infusion.Application({
         id: 'demoApplication'
     });
-
-    app.addPage(homePage);
-    return app;
 });

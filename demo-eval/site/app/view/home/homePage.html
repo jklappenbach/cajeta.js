@@ -1,0 +1,54 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<script type="javascript">
+    define('app/view/home/homePage',
+//    [
+//        'jquery',
+//        'infusion.html5'
+//        'component!app/view/home/about/aboutDiv',
+//        'component!app/view/home/api/apiDiv',
+//        'component!app/view/home/blog/blogDiv',
+//        'component!app/view/home/download/downloadDiv',
+//        'component!app/view/home/examples/examplesDiv',
+//        'component!app/view/home/guide/guideDiv',
+//        'component!app/view/home/community/communityDiv'
+//    ],
+    function() { // $, infusion) { //}, about, api, blog, download, examples, guide, community) {
+        // Create an alias for shortening namespace.
+//        var html5 = infusion.view.html5;
+//
+//        var homePage = new infusion.view.Page({ cid: infusion.homePage, tid: 'homePage' });
+//
+//        var tabs = new html5.TabList({ cid: 'tabs', contentId: 'content' });
+//        tabs.addChild({ title: 'About', component: about });
+//        tabs.addChild({ title: 'Guide', component: guide });
+//        tabs.addChild({ title: 'API', component: api });
+//        tabs.addChild({ title: 'Examples', component: examples });
+//        tabs.addChild({ title: 'Community', component: community });
+//        tabs.addChild({ title: 'Download', component: download });
+//        homePage.addChild(tabs);
+
+        return 'Hello World!'; //homePage;
+    });
+</script>
+
+<div tid="homePage">
+    <div id="canvas">
+        <div id="main-menu">
+            <section id="logo">
+                <span>Infusion</span>
+            </section>
+            <nav id="nav">
+                <ul cid="tabs" />
+            </nav>
+            <section id="search">
+                <form method="post" action="#">
+                    <input type="text" class="text" name="search" placeholder="Search" />
+                </form>
+            </section>
+        </div>
+        <div id="content" cid="content">
+        </div>
+    </div>
+</div>
+

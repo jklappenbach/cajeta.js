@@ -356,10 +356,14 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'l10n'], function($, infusion,
                 }
 
                 // Bind the component to the model
-                infusion.message.dispatch.subscribe('model:publish', this, {
-                    id: infusion.message.MESSAGE_MODEL_NODEADDED,
-                    modelPath: this.modelPath,
-                    dsid: this.dsid
+                infusion.message.dispatch.subscribe({
+                    topic: 'model:publish',
+                    subscriber: this,
+                    criteria: {
+                        id: infusion.model.MESSAGE_MODEL_NODEADDED,
+                        modelPath: this.modelPath,
+                        dsid: this.dsid
+                    }
                 });
             }
         }
@@ -431,13 +435,6 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'l10n'], function($, infusion,
             properties.elementType = 'img';
             properties.modelEncoding = 'attr:src';
             self.super.initialize.call(this, properties);
-        },
-        dock: function() {
-            if (!this.isDocked()) {
-                var self = (arguments.length > 0) ? arguments[0] : this;
-                self.super.dock.call(this, self.super);
-
-            }
         }
     });
 
@@ -465,6 +462,10 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'l10n'], function($, infusion,
             }
         },
 
+        getDom: function() {
+            return this.content.dom;
+        },
+
         /**
          * Custom override for dock.  The child components are rendered in series to the content div. CSS tags
          * are then used to show only one child at a time.
@@ -484,7 +485,7 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'l10n'], function($, infusion,
 
                 for (var i = 0; i < this.tabEntries.length; i++) {
                     var listItem = this.listItemHtml.clone();
-                    listItem.text(this.tabEntries[i].title);
+                    listItem.text(l10n.translate(this.tabEntries[i].title));
                     var eventData = new Object();
                     eventData['that'] = this;
                     eventData['fnName'] = '_onTabClick';
@@ -497,7 +498,7 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'l10n'], function($, infusion,
                     } else {
                         this.tabEntries[i].component.css('display', 'none');
                     }
-                    this.content.dom.append(this.tabEntries[i].component.template);
+                    this.tabEntries[i].component.inject();
                 }
             }
         },
@@ -510,14 +511,18 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'l10n'], function($, infusion,
          * @param tabEntry
          */
         addChild: function(tabEntry) {
-            if (tabEntry.component === undefined || tabEntry.title === undefined)
-                throw new Error(infusion.view.html5.ERROR_TABLIST_INVALID_TABENTRY.format(this.getCanonicalId()));
-            if (!(tabEntry.component instanceof infusion.view.html5.TabList)  && tabEntry.component.template === undefined)
-                throw new Error(infusion.view.html5.ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED.format(
-                    tabEntry.component.cid, this.getCanonicalId()));
+            if (!(tabEntry.component instanceof infusion.view.html5.TabList)) {
+                if (tabEntry.component === undefined || tabEntry.title === undefined)
+                    throw new Error(infusion.view.html5.ERROR_TABLIST_INVALID_TABENTRY.format(this.getCanonicalId()));
+                if (tabEntry.component.template === undefined && tabEntry.component.tid === undefined)
+                    throw new Error(infusion.view.html5.ERROR_TABLIST_TABENTRYTEMPLATE_UNDEFINED.format(
+                        tabEntry.component.cid, this.getCanonicalId()));
+            }
 
             if (this.page !== undefined)
                 tabEntry.component.page = this.page;
+
+            tabEntry.component.parent = this;
 
             // We set the contentId to dock using existing logic
             this.tabEntries.push(tabEntry);
@@ -538,7 +543,8 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'l10n'], function($, infusion,
          */
         setCss: function(cssClassMap) {
             if (cssClassMap.selected === undefined)
-                throw new Error('Argument must contain map entry for "selected".  See documentation for more on supported states');
+                throw new Error('Argument must contain map entry for "selected".  ' +
+                    'See documentation for more on supported states');
 
             this.cssClassMap = cssClassMap;
         },

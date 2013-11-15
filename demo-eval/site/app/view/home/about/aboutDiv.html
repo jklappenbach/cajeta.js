@@ -1,0 +1,27 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<script type="javascript">
+    define('app/view/home/about/aboutDiv',
+            [ 'jquery', 'infusion.html5' ], function($, infusion) {
+
+        // Create an alias for namespace brevity.
+        var html5 = infusion.view.html5;
+
+        var div = new html5.Div({ cid: 'aboutDiv', tid: 'aboutTemplate' });
+
+//    var tabs = new html5.TabList({ cid: 'examples', contentId: 'examples-content' });
+//    tabs.addChild({ title: 'Html5 Form Example', component: formExampleDiv });
+//    tabs.addChild({ title: 'UI Examples', component: uiExampleDiv });
+//    tabs.addChild({ title: 'Server Interaction Example', component: serverInteractionDiv });
+//    div.addChild(tabs);
+
+        return div;
+    });
+</script>
+
+<div tid="aboutTemplate">
+    <div id="sidebar">
+        <ul cid="aboutTabs" />
+    </div>
+    <div cid="aboutContent"/>
+</div>
+

@@ -173,6 +173,7 @@ define([
             self.super.initialize.call(this, properties);
 
             this.components = this.components || {};
+            this.templates = this.templates || {};
             this.nodes = this.nodes || {};
             this.state = this.state || new infusion.model.State();
 
@@ -186,7 +187,11 @@ define([
                 this.autoSnapshot = false;
 
             // Add our subscriptions
-            infusion.message.dispatch.subscribe(this, infusion.ds.TOPIC_PUBLISH, { status: 'success' });
+            infusion.message.dispatch.subscribe({
+                subscriber: this,
+                topic: infusion.ds.TOPIC_PUBLISH,
+                criteria: { status: 'success' }
+            });
         },
 
         /**
@@ -208,7 +213,6 @@ define([
             var index = modelPath.lastIndexOf('.');
             var key = null, node = null, parentPath = null;
             if (index >= 0) {
-                parentPath = modelPath.substring(0, index);
                 key = modelPath.substring(index + 1);
                 var paths = modelPath.substring(0, index).split('.');
                 node = this.nodes;
@@ -233,10 +237,13 @@ define([
                 this.state.add(this.state);
 
             // And send out a general notification on model changed.
-            infusion.message.dispatch.publish('model:publish', new infusion.message.Message({
-                id: infusion.model.MESSAGE_MODEL_NODEADDED,
-                source: source
-            }));
+            infusion.message.dispatch.publish({
+                topic: 'model:publish',
+                msg: new infusion.message.Message({
+                    id: infusion.model.MESSAGE_MODEL_NODEADDED,
+                    source: source
+                })
+            });
         },
 
         /**
@@ -297,7 +304,9 @@ define([
                 id: infusion.model.MESSAGE_MODEL_NODEADDED,
                 source: source
             });
-            infusion.message.dispatch.publish('model:publish', msg);
+            infusion.message.dispatch.publish({
+                topic: 'model:publish',
+                msg: msg });
         },
 
         /**
@@ -400,13 +409,16 @@ define([
 
             // And notify any components bound to this modelPath...
             var temp = modelPath.split(':');
-            infusion.message.dispatch.publish('model:publish', new infusion.message.Message({
-                id: infusion.model.MESSAGE_MODEL_NODEADDED,
-                dsid: temp[0],
-                modelPath: temp[1],
-                data: value,
-                source: source
-            }));
+            infusion.message.dispatch.publish({
+                topic: 'model:publish',
+                msg: new infusion.message.Message({
+                    id: infusion.model.MESSAGE_MODEL_NODEADDED,
+                    dsid: temp[0],
+                    modelPath: temp[1],
+                    data: value,
+                    source: source
+                })
+            });
         }
     });
 

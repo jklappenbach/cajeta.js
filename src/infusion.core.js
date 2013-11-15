@@ -25,10 +25,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.'
  */
 
-define([
-    'jquery'
-], function($) {
-
+define(['jquery'], function($) {
     /**
      * Runtime info, including author, verison, and license information.
      */
@@ -48,6 +45,7 @@ define([
         ERROR_COMPONENT_INVALIDTEMPLATE: 'Invalid template for "{0}"; must contain an element with a tid of "{1}"',
         ERROR_COMPONENT_DOCK_UNDEFINED: 'Dock failed, unable to resolve an element with cid "{0}" in target HTML',
         ERROR_TEMPLATE_DOCK_UNDEFINED: 'Dock failed, unable to resolve an element with tid "{0}" in target HTML',
+        ERROR_TEMPLATE_DOCK_MULTIPLE: 'Dock failed, multiple entries were resolved with tid "{0}" in target HTML',
         ERROR_COMPONENT_DOCK_MULTIPLE: 'Dock failed, more than one element was found with cid "{0}" in target HTML',
         ERROR_MODELADAPTOR_COMPONENT_UNDEFINED: 'infusion.view.ComponentModelAdaptor.component must be defined',
         ERROR_APPLICATION_PAGE_UNDEFINED: 'Page "{0}" undefined',
@@ -199,26 +197,34 @@ define([
         },
         /**
          * Dispatch an message to a topic
-         * @param topic
-         * @param msg
-         * @param queue (optional) True, if the message is to be queued if undelivered
+         * topic: The topic under which the message is to be published
+         * msg: The message to publish
+         * transient: A boolean, defaulting to true.  Transient messages are only delivered to current subscribers
+         * delivery: A string, values may be OnlyOne, Everyone,
+         * @param parameters
          */
-        publish: function(topic, msg, queue) {
-            var subscribers = this.topics[topic];
+        publish: function(parameters) {
+            if (parameters.topic === undefined)
+                throw new Error("parameters.topic is undefined");
+            if (parameters.msg === undefined)
+                throw new Error("parameters.msg is undefined");
+
+            var subscribers = this.topics[parameters.topic];
             var sent = false;
             if (subscribers !== undefined) {
                 for (var subscriberId in subscribers) {
                     if (subscriberId !== undefined) {
                         var entry = subscribers[subscriberId];
-                        if (entry.subscriber !== msg.source) {
-                            this._sendMessage(msg, entry.subscriber, entry.criteria);
+                        if (entry.subscriber !== parameters.msg.source) {
+                            this._sendMessage(parameters.msg, entry.subscriber, entry.criteria);
                             sent = true;
                         }
                     }
                 }
             }
-            if (!sent && queue) {
-                infusion.safeArray(topic, this.queued).push(msg);
+
+            if (!sent && parameters.queue) {
+                infusion.safeArray(parameters.topic, this.queued).push(parameters.msg);
             }
         },
 
@@ -265,39 +271,46 @@ define([
         /**
          * Subscribe to receive notifications on events
          *
-         * @param subscriber The entity to receive events, must implement onEvent
-         * @param topic A string naming the topic for the events
-         * @param criteria The criteria for filtering events
+         * The parameter object must contain entries for the following:
+         *
+         * subscriber: The entity to receive events, must implement onEvent
+         * topic: A string naming the topic for the events
+         * criteria: The criteria for filtering events
+         *
+         * @param parameters
          */
-        subscribe: function(subscriber, topic, criteria) {
-            if (subscriber === undefined || topic === undefined)
+        subscribe: function(parameters) {
+            if (parameters.subscriber === undefined || parameters.topic === undefined)
                 throw new Error('invalid registration parameters for infusion.message.MessageDispatch.subscribe');
-            var subscribers = infusion.safeProperty(topic, this.topics);
+            var subscribers = infusion.safeProperty(parameters.topic, this.topics);
 
-            var id = subscriber.cid || subscriber.id;
-            subscribers[id] = { subscriber: subscriber, criteria: criteria };
+            var id = parameters.subscriber.cid || parameters.subscriber.id;
+            subscribers[id] = { subscriber: parameters.subscriber, criteria: parameters.criteria };
 
             // If, in the rare case, a message has been sent before a subcriber is available, we queue it.
             // When the subscriber is available, we hand them the message, and delete it from queued.
-            if (this.queued.hasOwnProperty(topic)) {
-                for (var msg in this.queued[topic])
+            if (this.queued.hasOwnProperty(parameters.topic)) {
+                for (var msg in this.queued[parameters.topic])
                     this._sendMessage(msg);
-                delete this.queued[topic];
+                delete this.queued[parameters.topic];
             }
         },
 
         /**
          * Call this method to unsubscribe from a topic
          *
-         * @param subscriber The
-         * @param topic
+         * The parameters object must have entries for the following:
+         * subscriber: The subscriber to remove
+         * topic: The topic under which the subscriber is enlisted
+         *
+         * @param parameters
          */
-        unsubscribe: function(subscriber, topic) {
-            if (subscriber === undefined || topic === undefined)
+        unsubscribe: function(parameters) {
+            if (parameters.subscriber === undefined || parameters.topic === undefined)
                 throw new Error('invalid parameters to unsubscribe, subscriber and topic must be defined');
-            var subscribers = this.topics[topic];
+            var subscribers = this.topics[parameters.topic];
             if (subscribers !== undefined) {
-                delete subscribers[subscriber.id];
+                delete subscribers[parameters.subscriber.id];
             }
         }
     });

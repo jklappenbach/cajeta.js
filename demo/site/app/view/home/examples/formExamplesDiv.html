@@ -1,0 +1,194 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<script type="javascript">
+    define('app/view/home/examples/formExamplesDiv'[
+        'jquery',
+        'infusion.html5',
+        'model'
+    ], function($, infusion, model) {
+
+        // Create an alias for namespace brevity.
+        var html5 = infusion.view.html5;
+
+        var div = new html5.Div({ cid: 'formExampleDiv', tid: 'formExampleTemplate' });
+
+        var form = new infusion.view.Form({
+            cid: 'testForm',
+            modelPath: 'testForm',
+            onSubmit: function() {
+                var myData = model.getByComponent(this);
+//            var ds = infusion.Datasource.get('dsApp');
+//            ds.post(myData);
+                return false;
+            }
+        });
+
+        form.addChild(new html5.Label({
+            cid: 'firstLabel',
+            modelValue: 'My Label Text'
+        }));
+
+        form.addChild(new html5.TextInput({
+            cid: 'firstTextField',
+            modelValue: 'First Example Text'
+        }));
+
+        form.addChild(new html5.TextInput({
+            cid: 'secondTextField',
+            modelValue: 'Second Example Text'
+        }));
+
+        // Add Checkboxes
+        form.addChild(new html5.CheckboxInput({
+            cid: 'greenColor',
+            modelValue: 'true'
+        }));
+
+        form.addChild(new html5.CheckboxInput({ cid: 'blueColor' }));
+
+        form.addChild(new html5.CheckboxInput({
+            cid: 'redColor',
+            modelValue: 'true'
+        }));
+
+        // Add RadioGroup
+        var radioGroup = new html5.RadioGroup({
+            cid: 'dietGroup',
+            modelValue: 'omnivore'
+        });
+
+        radioGroup.addChild(new html5.RadioInput({ cid: 'vegetarian', properties: { checked: true } }));
+        radioGroup.addChild(new html5.RadioInput({ cid: 'pescatarian' }));
+        radioGroup.addChild(new html5.RadioInput({ cid: 'omnivore' }));
+
+        // TextArea, example of how to have a default value that doesn't get committed
+        form.addChild(new html5.TextArea({
+            cid: 'textArea',
+            modelPath: 'testForm.description',
+            attributes: { cols: 100, rows: 5 },
+            promptValue: 'Enter a description here'
+        }));
+
+        form.addChild(new html5.Select({
+            cid: 'selectStatic'
+        }));
+
+        form.addChild(new html5.Select({
+            cid: 'selectDynamic',
+            factory: new infusion.view.Transform({
+                dsid: 'formExampleDS',
+                uri: '/formExample/selectDynamic',
+                modelPath: 'ui.selectDynamic'
+            }),
+            modelValue: 1
+        }));
+
+        form.addChild(new html5.Select({
+            cid: 'selectDynamicGroup',
+            factory: new infusion.view.Transform({
+                dsid: 'formExampleDS',
+                uri: '/formExample/selectDynamicGroup',
+                modelPath: 'ui.selectDynamicGroup'
+            }),
+            modelValue: 2
+        }));
+
+        form.addChild(new html5.Select({
+            cid: 'selectDynamicMulti',
+            factory: new infusion.view.Transform({
+                dsid: 'formExampleDS',
+                uri: '/formExample/selectDynamicMulti',
+                modelPath: 'ui.selectDynamicMulti'
+            })
+        }));
+
+        form.addChild(new html5.Select({
+            cid: 'selectDynamicAlt',
+            factory: new infusion.view.Transform({
+                dsid: 'formExampleDS',
+                uri: '/formExample/selectDynamicAlt',
+                modelPath: 'ui.selectDynamicAlt',
+                templates: {
+                    optgroup: new infusion.view.Component({
+                        elementType: 'optgroup',
+                        tid: 'optgroup',
+                        modelEncoding: 'attr:value'
+                    }),
+                    option: new infusion.view.Component({
+                        elementType: 'option',
+                        tid: 'option',
+                        modelEncoding: 'attr:value'
+                    })
+                }
+            })
+        }));
+
+        form.addChild(radioGroup);
+
+        form.addChild(new html5.Button({
+            cid: 'submitButton',
+            onHtmlClick: function() {
+                form.onSubmit();
+            }
+        }));
+        div.addChild(form);
+        return div;
+    });
+
+</script>
+<div tid="formExampleTemplate">
+	Experiment with the undo functionality built in to the framework -- modify a few fields, and then press the
+	back button.
+	<form cid="testForm">
+		<fieldset>
+			<legend>Text Input Fields</legend>
+			<label cid="firstLabel"></label><br />
+			First Field: <input type="text" cid="firstTextField" /><br />
+			Second Field: <input type="text" cid="secondTextField" /><br />
+		</fieldset>
+		<fieldset>
+			<legend>Checkbox</legend>
+			<input type="checkbox" name="green" cid="greenColor" />Green<br />
+			<input type="checkbox" name="blue" cid="blueColor" />Blue<br />
+			<input type="checkbox" name="red" cid="redColor" />Red<br />
+		</fieldset>
+		<fieldset>
+			<legend>Radio</legend>
+			<input type="radio" name="diet" cid="vegetarian" />Vegetarian<br />
+			<input type="radio" name="diet" cid="pescatarian" />Pescatarian<br />
+			<input type="radio" name="diet" cid="omnivore" />Omnivore<br />
+		</fieldset>
+		<fieldset>
+			<legend>TextArea</legend>
+			<textarea rows="4" cols="10" cid="textArea" />
+		</fieldset>
+		<fieldset>
+			<legend>Select</legend>
+			Static:
+            <select cid="selectStatic">
+                <option value="firstChoice">First Choice</option>
+                <option value="secondChoice">Second Choice</option>
+                <option value="thirdChoice">Third Choice</option>
+	    	</select>
+            <br />
+            Programmatic:
+            <select cid="selectDynamic">
+                <option value="option" tid="option-a" class="option">Option</option>
+            </select>
+            <br />
+			Programmatic With OptGroups:
+            <select cid="selectDynamicGroup">
+                <optgroup label="optgroup" tid="optgroup" class="optgroup">
+                    <option value="option" tid="option-b">Option</option>
+                </optgroup>
+            </select>
+            <br />
+			Programmatic Multiple:
+            <select cid="selectDynamicMulti" multiple>
+                <option value="option" tid="option-c" class="option">Option</option>
+			</select><br />
+            Programmatic With Dynamic Templates: <select cid="selectDynamicAlt" /><br />
+		</fieldset>
+        <button cid="submitButton" type="button">Submit</button>
+    </form>
+</div>
+
