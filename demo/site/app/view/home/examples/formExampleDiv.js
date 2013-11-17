@@ -3,13 +3,13 @@ define([
     'infusion.html5',
     'text!app/view/home/examples/formExampleDiv.html',
     'model'
-], function($, infusion, formExampleDiv, model) {
+], function($, infusion, template, model) {
 
     // Create an alias for namespace brevity.
     var html5 = infusion.view.html5;
 
     var div = new html5.Div({ cid: 'formExampleDiv' });
-    div.setTemplate('formExampleDiv', formExampleDiv);
+    div.setTemplate('formExampleDiv', template);
 
     var form = new infusion.view.Form({
         cid: 'testForm',
@@ -74,7 +74,7 @@ define([
 
     form.addChild(new html5.Select({
         cid: 'selectDynamic',
-        factory: new infusion.view.Factory({
+        transform: new infusion.view.Transform({
             dsid: 'formExampleDS',
             uri: '/formExample/selectDynamic',
             modelPath: 'ui.selectDynamic'
@@ -84,7 +84,7 @@ define([
 
     form.addChild(new html5.Select({
         cid: 'selectDynamicGroup',
-        factory: new infusion.view.Factory({
+        transform: new infusion.view.Transform({
             dsid: 'formExampleDS',
             uri: '/formExample/selectDynamicGroup',
             modelPath: 'ui.selectDynamicGroup'
@@ -94,7 +94,7 @@ define([
 
     form.addChild(new html5.Select({
         cid: 'selectDynamicMulti',
-        factory: new infusion.view.Factory({
+        transform: new infusion.view.Transform({
             dsid: 'formExampleDS',
             uri: '/formExample/selectDynamicMulti',
             modelPath: 'ui.selectDynamicMulti'
@@ -103,7 +103,7 @@ define([
 
     form.addChild(new html5.Select({
         cid: 'selectDynamicAlt',
-        factory: new infusion.view.Factory({
+        transform: new infusion.view.Transform({
             dsid: 'formExampleDS',
             uri: '/formExample/selectDynamicAlt',
             modelPath: 'ui.selectDynamicAlt',

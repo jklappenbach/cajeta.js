@@ -1,6 +1,6 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <script type="javascript">
-    define('app/view/home/examples/formExamplesDiv'[
+    define('app/view/home/examples/formExamplesDiv', [
         'jquery',
         'infusion.html5',
         'model'
@@ -9,15 +9,14 @@
         // Create an alias for namespace brevity.
         var html5 = infusion.view.html5;
 
-        var div = new html5.Div({ cid: 'formExampleDiv', tid: 'formExampleTemplate' });
+        var div = new html5.Div({ cid: 'formExampleDiv', tid: 'formExamplesTemplate' });
 
         var form = new infusion.view.Form({
             cid: 'testForm',
             modelPath: 'testForm',
             onSubmit: function() {
                 var myData = model.getByComponent(this);
-//            var ds = infusion.Datasource.get('dsApp');
-//            ds.post(myData);
+                // TODO: Do something with the data!
                 return false;
             }
         });
@@ -74,7 +73,7 @@
 
         form.addChild(new html5.Select({
             cid: 'selectDynamic',
-            factory: new infusion.view.Transform({
+            transform: new infusion.view.Transform({
                 dsid: 'formExampleDS',
                 uri: '/formExample/selectDynamic',
                 modelPath: 'ui.selectDynamic'
@@ -84,7 +83,7 @@
 
         form.addChild(new html5.Select({
             cid: 'selectDynamicGroup',
-            factory: new infusion.view.Transform({
+            transform: new infusion.view.Transform({
                 dsid: 'formExampleDS',
                 uri: '/formExample/selectDynamicGroup',
                 modelPath: 'ui.selectDynamicGroup'
@@ -94,7 +93,7 @@
 
         form.addChild(new html5.Select({
             cid: 'selectDynamicMulti',
-            factory: new infusion.view.Transform({
+            transform: new infusion.view.Transform({
                 dsid: 'formExampleDS',
                 uri: '/formExample/selectDynamicMulti',
                 modelPath: 'ui.selectDynamicMulti'
@@ -103,7 +102,7 @@
 
         form.addChild(new html5.Select({
             cid: 'selectDynamicAlt',
-            factory: new infusion.view.Transform({
+            transform: new infusion.view.Transform({
                 dsid: 'formExampleDS',
                 uri: '/formExample/selectDynamicAlt',
                 modelPath: 'ui.selectDynamicAlt',
@@ -131,11 +130,12 @@
             }
         }));
         div.addChild(form);
+
         return div;
     });
 
 </script>
-<div tid="formExampleTemplate">
+<div tid="formExamplesTemplate">
 	Experiment with the undo functionality built in to the framework -- modify a few fields, and then press the
 	back button.
 	<form cid="testForm">

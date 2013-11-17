@@ -41,9 +41,7 @@ requirejs.config({
         'download.div': 'app/view/home/download/downloadDiv',
         'examples.div': 'app/view/home/examples/examplesDiv',
         'guide.div': 'app/view/home/guide/guideDiv',
-        'examples.formExampleDiv': 'app/view/home/examples/formExampleDiv',
-        'examples.uiExampleDiv': 'app/view/home/examples/uiExampleDiv',
-        'examples.serverInteractionDiv': 'app/view/home/examples/serverInteractionDiv'
+        'examples.formExampleDiv': 'app/view/home/examples/formExampleDiv'
     },
 
     // ask Require.js to load these files (all our tests)

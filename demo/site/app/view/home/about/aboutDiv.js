@@ -9,11 +9,5 @@ define([
 
     var div = new html5.Div({ cid: 'aboutDiv', template: template });
 
-//    var tabs = new html5.TabList({ cid: 'examples', contentId: 'examples-content' });
-//    tabs.addChild({ title: 'Html5 Form Example', component: formExampleDiv });
-//    tabs.addChild({ title: 'UI Examples', component: uiExampleDiv });
-//    tabs.addChild({ title: 'Server Interaction Example', component: serverInteractionDiv });
-//    div.addChild(tabs);
-
     return div;
 });

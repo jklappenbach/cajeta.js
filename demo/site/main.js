@@ -9,17 +9,17 @@ requirejs.config({
         'infusion.ds': 'lib/infusion/infusion.ds',
         'infusion.model': 'lib/infusion/infusion.model',
         'infusion.view': 'lib/infusion/infusion.view',
-        'infusion': 'lib/infusion/infusion',
-        'infusion.html4': 'lib/infusion/infusion.html4',
         'infusion.html5': 'lib/infusion/infusion.html5',
+        'infusion.resource': 'lib/infusion/infusion.resource',
         'infusion.svg': 'lib/infusion/infusion.html5.svg',
+        'infusion': 'lib/infusion/infusion',
         'text': 'lib/require/plugin/text',
 
         // DI
         'application': 'app/application',
         'model': 'app/model',
         'ds': 'app/ds',
-        'l10n': 'app/l10n.en.us',
+        'l10n': 'app/l10n',
 
         // Components
         'homePage': 'app/view/home/homePage',
@@ -30,12 +30,11 @@ requirejs.config({
         'download.div': 'app/view/home/download/downloadDiv',
         'examples.div': 'app/view/home/examples/examplesDiv',
         'guide.div': 'app/view/home/guide/guideDiv',
-        'examples.formExampleDiv': 'app/view/home/examples/formExampleDiv',
-        'examples.uiExampleDiv': 'app/view/home/examples/uiExampleDiv',
-        'examples.serverInteractionDiv': 'app/view/home/examples/serverInteractionDiv'
+        'examples.formExampleDiv': 'app/view/home/examples/formExampleDiv'
     }
 });
 
-define(['application'], function(app) {
+define(['application', 'homePage'], function(app, homePage) {
+    app.addPage(homePage);
     app.execute();
 });

@@ -382,9 +382,6 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'l10n'], function($, infusion,
             properties.dsid = properties.dsid || infusion.ds.LOCAL;
             properties.selectedType = properties.selectedType || 'index'; // value || index
             self.super.initialize.call(this, properties);
-            if (this.factory !== undefined) {
-                this.factory.parent = this;
-            }
         },
 
         selectedIndex: function(value) {
@@ -481,16 +478,12 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'l10n'], function($, infusion,
 
                 // Create the tabs and populate the view
                 this.dom.empty();
-                this.content.dom.empty();
+                this.content.getDom().empty();
 
                 for (var i = 0; i < this.tabEntries.length; i++) {
                     var listItem = this.listItemHtml.clone();
                     listItem.text(l10n.translate(this.tabEntries[i].title));
-                    var eventData = new Object();
-                    eventData['that'] = this;
-                    eventData['fnName'] = '_onTabClick';
-                    eventData['index'] = i;
-                    listItem.click(eventData, infusion.view.Component.htmlEventDispatch);
+                    listItem.click({ self: this, index: i }, this._onTabClick);
                     this.dom.append(listItem);
                     this.tabEntries[i].listItem = listItem;
                     if (i == 0) {
@@ -556,12 +549,13 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'l10n'], function($, infusion,
          */
         _onTabClick: function(event) {
             var index = event.data['index'];
-            if (index != this.selectedIndex) {
-                this.tabEntries[this.selectedIndex].component.css('display', 'none');
-                this.tabEntries[this.selectedIndex].listItem.removeClass('selected');
-                this.tabEntries[index].component.css('display', '');
-                this.tabEntries[index].listItem.addClass('selected');
-                this.selectedIndex = index;
+            var self = event.data['self'];
+            if (index != self.selectedIndex) {
+                self.tabEntries[self.selectedIndex].component.css('display', 'none');
+                self.tabEntries[self.selectedIndex].listItem.removeClass('selected');
+                self.tabEntries[index].component.css('display', '');
+                self.tabEntries[index].listItem.addClass('selected');
+                self.selectedIndex = index;
             }
         }
     });

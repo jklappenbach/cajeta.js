@@ -3,7 +3,7 @@
  define: false, window: false, process: false, Packages: false,
  java: false, location: false */
 
-define(['module', 'jquery'], function (module, $) {
+define(['module', 'jquery', 'model'], function (module, $, model) {
     'use strict';
 
     var text, fs,
@@ -126,7 +126,6 @@ define(['module', 'jquery'], function (module, $) {
         },
 
         finishLoad: function (name, strip, content, onLoad, req) {
-            var result = null;
             content = strip ? text.strip(content) : content;
             if (masterConfig.isBuild) {
                 buildMap[name] = content;
@@ -142,18 +141,13 @@ define(['module', 'jquery'], function (module, $) {
                 } else {
                     for (var j in parsed[i].attributes) {
                         if (parsed[i].attributes[j].localName == 'tid') {
-                           // model.templates[parsed[i].attributes[j].value] = parsed[i];
+                           model.templates[parsed[i].attributes[j].value] = $(parsed[i]);
                         }
                     }
                 }
             }
 
-            //document.write(script.outerHTML);
-
-            result = (script == null ? content : script.innerHTML);
-
-
-            onLoad.fromText(result);
+            onLoad.fromText(script.innerHTML);
         },
 
         /**

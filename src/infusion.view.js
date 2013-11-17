@@ -18,10 +18,6 @@ define([
         license: 'MIT 2013'
     };
 
-    infusion.view.EventCallback = $.extend(true, Function.prototype, {
-        setInstance: function(instance) { this.instance = instance; }
-    });
-
     /**
      * Component, the base for all infusion view classes.  Components feature an API for child management,
      * rendering and state management.
@@ -66,12 +62,10 @@ define([
                 }
             }
 
-            // If we have a template assigned to this component, then inject it, replacing the
-            // existing html
+            // If we have a template assigned to this component by tid, load it up
             if (properties.tid !== undefined) {
                 this.template = model.templates[properties.tid];
             }
-
 
             $.extend(true, this, properties);
 
@@ -85,6 +79,11 @@ define([
 
             // Default setting for valueTarget, ould be attr:*, prop:*, text (element text)
             this.modelEncoding = this.modelEncoding || "attr:value";
+
+            // Handle transforms
+            if (this.transform !== undefined) {
+                this.transform.parent = this;
+            }
         },
 
         /**
@@ -440,7 +439,12 @@ define([
             }
         },
 
-        _synchElementState: function(dom) {
+        _synchElementState: function() {
+            var dom = this.dom || this.template;
+
+            if (dom === undefined || dom == null)
+                throw new Error('dom is undefined or null');
+
             for (var name in this.attributes) {
                 if (name !== undefined)
                     dom.attr(name, this.attributes[name]);
@@ -480,7 +484,7 @@ define([
                     if (temp[i].attributes != undefined) {
                         var attrValue = temp[i].attributes['tid'];
 
-                        if (attrValue != undefined && attrValue.value == tid) {
+                        if (attrValue !== undefined && attrValue.value == tid) {
                             this.template = $(temp[i]);
                             this._synchElementState(this.template);
                             break;
@@ -513,6 +517,9 @@ define([
          */
         dock: function() {
             if (!this.isDocked()) {
+                if (this.tid === undefined && this.cid === undefined)
+                    throw new Error('Either a template or component ID must be provided.');
+
                 // We've defined the dock element as a template.  Grab the element from the DOM
                 // store it as a template, and remove it from the markup
                 if (this.tid !== undefined && this.cid === undefined) {
@@ -537,17 +544,26 @@ define([
                 }
 
                 // Apply any cached element state properties that were made before we docked
-                this._synchElementState(this.dom);
+                this._synchElementState();
+
+                // Attempt to bind the model to our component
+                this.bindModel();
 
                 // Add listeners for our own datamodel, as well as jQuery based hooks
                 this.bindHtmlEvents();
 
+
                 // Add to the application component map at this point.
                 model.components[this.getCanonicalId()] = this;
 
-                // Dock any factories we may have
+                // Dock any transforms we may have
                 if (this.transform !== undefined)
                     this.transform.dock();
+
+                // Attempt to recursively dock children
+                for (var cid in this.children) {
+                    this.children[cid].dock();
+                }
             }
         },
 
@@ -584,12 +600,17 @@ define([
             } else {
                 // No template defined, so use the element type provided.
                 var element = '<' + this.elementType + ' cid="' + this.cid + '" />';
-                var template = $(element);
-                this.parent.getDom().append(template);
+                this.dom = $(element);
+                this.parent.getDom().append(this.dom);
             }
 
+            for (var cid in this.children) {
+                this.children[cid].dock();
+            }
+
+
             // Apply any cached element state properties that were made before we docked
-            this._synchElementState(this.dom);
+            this._synchElementState(); 
 
             // Add listeners for our own datamodel, as well as jQuery based hooks
             this.bindHtmlEvents();
@@ -678,10 +699,8 @@ define([
                     var index = name.indexOf('onHtml');
                     if (index >= 0) {
                         var eventName = name.substring(index + 6).toLocaleLowerCase();
-                        var eventData = new Object();
-                        eventData['that'] = this;
-                        eventData['fnName'] = name;
-                        this.dom.bind(eventName, eventData, infusion.view.Component.htmlEventDispatch);
+                        var self = this;
+                        this.dom.bind(eventName, { self: self }, this[name]);
                     }
                 }
             }
@@ -702,22 +721,7 @@ define([
          *
          */
         render: function() {
-            if (this.visible == true) {
-                // Dock starting from the top of the hierarchy down, then render children...
-                if (!this.isDocked()) {
-                    this.dock.call(this);
-                    this.bindModel();
-                }
-
-                for (var cid in this.children) {
-                    if (cid !== undefined)
-                        this.children[cid].render();
-                }
-            } else {
-                if (this.template != undefined) {
-                    this.dom.hide();
-                }
-            }
+            this.dock();
         },
 
         /**
@@ -750,7 +754,7 @@ define([
         clone: function(idSuffix) {
             var updateIds = function(component, idSuffix) {
                 idSuffix = idSuffix || '';
-                component.setId(component.cid + idSuffix);
+                component.setId(component.cid + ':' + idSuffix);
                 for (var cid in component.children) {
                     if (cid !== undefined) {
                         updateIds(component.children[cid], idSuffix);
@@ -792,6 +796,7 @@ define([
         initialize: function(properties) {
             if (properties.dsid === undefined)
                 throw new Error("infusion.view.Transform.dsid must be defined");
+
             $.extend(true, this, properties);
             this.templates = this.templates || {};
             this.rules = this.rules || [];
@@ -902,7 +907,7 @@ define([
             if (row.tid === undefined)
                 return null;
 
-            if (this.templates[row.tid] === undefined)
+            if (!this.templates.hasOwnProperty(row.tid))
                 throw new Error('tid ' + row.tid + ' was not found in the available templates');
 
             var child = this.templates[row.tid].clone(index);
@@ -933,22 +938,12 @@ define([
 
             var subindex = 0;
             for (var childId in row.children) {
-                this.transformRow(child, row.children[childId], index + '_' + subindex++);
+                this.transformRow(child, row.children[childId], index + ':' + subindex++);
             }
 
             return child;
         }
     });
-
-
-    /**
-     *
-     * @param event
-     * @return {*}
-     */
-    infusion.view.Component.htmlEventDispatch = function(event) {
-        return event.data.that[event.data.fnName].call(event.data.that, event);
-    };
 
     /**
      *
@@ -998,6 +993,10 @@ define([
             this.dom.attr('class', this.template.attr('class'));
 
             this.setPage(this);
+
+            for (var cid in this.children) {
+                this.children[cid].dock();
+            }
         },
 
         getViewState: function() {
