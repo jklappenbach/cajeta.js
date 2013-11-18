@@ -64,7 +64,7 @@ define([
     form.addChild(new html5.TextArea({
         cid: 'textArea',
         modelPath: 'testForm.description',
-        attributes: { cols: 100, rows: 5 },
+        attributes: { cols: 30, rows: 5 },
         promptValue: 'Enter a description here'
     }));
 

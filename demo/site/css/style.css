@@ -52,7 +52,7 @@ h1
 
 #main-menu nav
 {
-    float: left;
+    // float: left;
 }
 
 #main-menu nav ul
@@ -60,10 +60,21 @@ h1
     list-style-type: disc;
 }
 
+#main-menu ul
+{
+    margin: 0em;
+    padding: 0em;
+    display: inline;
+    list-style-type: none;
+    text-align: center;
+}
+
 #main-menu nav li
 {
-    font-size: 30pt;
+    font-size: 12pt;
     list-style: none;
+    display: inline;
+    padding: 1em 1em 1em 1em;
 /*    border-top: solid 1px rgba(0,0,0,0.25);
     box-shadow: inset 0px 1px 0px 0px rgba(255,255,255,0.075);
     padding: 0.5em 0 0.5em 0; */
@@ -78,6 +89,8 @@ h1
 {
     clear: both;
     width: 75%;
+    height: auto;
+    background-color: aquamarine;
 }
 
 #sidebar
@@ -85,12 +98,15 @@ h1
     float: left;
     width: 25%;
     height: 100%;
+    background-color: antiquewhite;
 }
+
+
 
 #sidebar nav ul li
 {
     border-top: solid 1px rgba(0,0,0,0.25);
-    font-size: 20pt;
+    font-size: 12pt;
     list-style: none;
 }
 
