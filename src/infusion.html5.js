@@ -360,7 +360,7 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'l10n'], function($, infusion,
                     topic: 'model:publish',
                     subscriber: this,
                     criteria: {
-                        id: infusion.model.MESSAGE_MODEL_NODEADDED,
+                        id: infusion.model.MESSAGE_MODEL_SETNODE,
                         modelPath: this.modelPath,
                         dsid: this.dsid
                     }
@@ -483,9 +483,14 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'l10n'], function($, infusion,
                 for (var i = 0; i < this.tabEntries.length; i++) {
                     var listItem = this.listItemHtml.clone();
                     listItem.text(l10n.translate(this.tabEntries[i].title));
-                    listItem.click({ self: this, index: i }, this._onTabClick);
+                    var eventData = { index: i };
+
+                    listItem.click(eventData, function(data) {
+                        self._onTabClick(data);
+                    });
                     this.dom.append(listItem);
                     this.tabEntries[i].listItem = listItem;
+
                     if (i == 0) {
                         this.tabEntries[i].listItem.addClass('selected');
                     } else {
@@ -522,40 +527,54 @@ define(['jquery', 'infusion.view', 'model', 'ds', 'l10n'], function($, infusion,
         },
 
         /**
-         * Override render here to extend the call to the content div.
-         */
-        render: function() {
-            var self = arguments.length > 0 ? arguments[0] : this;
-            self.super.render.call(this, self.super);
-            this.tabEntries[this.selectedIndex].component.render(this, self.super);
-        },
-
-        /**
-         *
-         * @param cssClassMap
-         */
-        setCss: function(cssClassMap) {
-            if (cssClassMap.selected === undefined)
-                throw new Error('Argument must contain map entry for "selected".  ' +
-                    'See documentation for more on supported states');
-
-            this.cssClassMap = cssClassMap;
-        },
-
-        /**
          *
          * @param event
          * @private
          */
         _onTabClick: function(event) {
             var index = event.data['index'];
-            var self = event.data['self'];
-            if (index != self.selectedIndex) {
-                self.tabEntries[self.selectedIndex].component.css('display', 'none');
-                self.tabEntries[self.selectedIndex].listItem.removeClass('selected');
-                self.tabEntries[index].component.css('display', '');
-                self.tabEntries[index].listItem.addClass('selected');
-                self.selectedIndex = index;
+            this.setSelectedIndex(index);
+        },
+
+        setSelectedIndex: function(index) {
+            if (index != this.selectedIndex) {
+                this.tabEntries[this.selectedIndex].component.css('display', 'none');
+                this.tabEntries[this.selectedIndex].listItem.removeClass('selected');
+                this.tabEntries[index].component.css('display', '');
+                this.tabEntries[index].listItem.addClass('selected');
+                this.selectedIndex = index;
+            }
+        },
+
+        /**
+         * Returns the viewstate of this tab, which is the component Id and the
+         * selected index of the tab.  The format for the viewstate must be uri compliant,
+         * and not exceed common browser limitations on length.
+         *
+         * In the case of tabs, the index is indicated using array brackets.
+         *
+         * @return {String}
+         */
+        getViewState: function() {
+            var viewState = this.cid + '[' + this.selectedIndex + ']';
+            for (var cid in this.children) {
+                var childState = this.children[cid].getViewState();
+                if (childState != '')
+                    viewState += '/' + childState;
+            }
+            return viewStateId;
+        },
+
+        setViewState: function(parameters) {
+            if (parameters.viewState === undefined)
+                throw new Error('arugments.viewState is undefined');
+            var states = parameters.viewState.split('/');
+            var index = states[0].indexOf(this.cid);
+            if (index >= 0) {
+                index = states[0].indexOf('[');
+                this.setSelectedIndex(new Number(states[0].substring(index, states[0].indexOf(']'))));
+
+                parameters.viewState = parameters.viewState
             }
         }
     });

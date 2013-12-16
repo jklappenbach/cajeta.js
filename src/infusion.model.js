@@ -20,7 +20,7 @@ define([
         author: 'Julian Klappenbach',
         version: '0.0.1',
         license: 'MIT 2013',
-        MESSAGE_MODEL_NODEADDED: 'MESSAGE_MODEL_NODEADDED',
+        MESSAGE_MODEL_SETNODE: 'MESSAGE_MODEL_SETNODE',
         MESSAGE_MODEL_NODEREMOVED: 'MESSAGE_MODEL_NODEREMOVED',
         ERROR_MODEL_NOSTATECONFIGIURED: 'StateCache datasource incorrectly configured'
     };
@@ -72,6 +72,12 @@ define([
             }
             this.modelJson = '{ }';
         },
+
+        /**
+         * Returns the current monotonic ID for the application state.
+         *
+         * @returns {stateId|*}
+         */
         getStateId: function() {
             return this.settings.stateId;
         },
@@ -198,20 +204,27 @@ define([
          * Sets a node in the model cache.  If dsid is ommitted, it will default to LOCAL_DATASOURCE.  If
          * component is present, it will prevent the notification of an update to the issuing component.
          *
-         * @param modelPath The path to the node in the model cache
-         * @param value The value to set
-         * @param dsid (optional) The ID of the datasource, defaults to 'local'
-         * @param source (optional) The issuing component, prevent cyclical updates.
+         * The properties of parameters must contain a 'modelPath' property, defining the path to the node to update.
+         * The modelPath may contain a DataSourceID (dsid), prepended at the begining of the string, and deliniated with a ':'.
+         * If none exists, the method will attempt to look up the ID in a property named 'dsid'.  If none is found, the default of
+         * infusion.ds.LOCAL will be used.
+         *
+         * @param parameters
          */
 
-        set: function(modelPath, value, dsid, source) {
-            dsid = dsid || infusion.ds.LOCAL;
-            modelPath = dsid + ':' + modelPath;
+        set: function(parameters) {
+            var modelPath;
+            // The developer may have included the dsid in the modelPath.  If not, add it (defaulting to LOCAL)
+            if (!parameters.modelPath.contains(':')) {
+                modelPath = (parameters.dsid || infusion.ds.LOCAL) + ':' + parameters.modelPath;
+            } else {
+                modelPath = parameters.modelPath;
+            }
 
             // Find out if we have a single key, or a walk, and populate the map
             // if necessary to support the parent
             var index = modelPath.lastIndexOf('.');
-            var key = null, node = null, parentPath = null;
+            var key = null, node = null;
             if (index >= 0) {
                 key = modelPath.substring(index + 1);
                 var paths = modelPath.substring(0, index).split('.');
@@ -227,10 +240,10 @@ define([
             // Then remove the indexes on child nodes of the element to be replaced
             this._removeNodeMapEntries(modelPath, node);
 
-            node[key] = value;
+            node[key] = parameters.value;
 
             // And index the children of the new value
-            this._addNodeMapEntries(modelPath, value, source);
+            this._setNodeMapEntries(modelPath, parameters.value, parameters.source);
 
             // Take a snapshot if we have auto set
             if (this.autoSnapshot == true)
@@ -240,8 +253,8 @@ define([
             infusion.message.dispatch.publish({
                 topic: 'model:publish',
                 msg: new infusion.message.Message({
-                    id: infusion.model.MESSAGE_MODEL_NODEADDED,
-                    source: source
+                    id: infusion.model.MESSAGE_MODEL_SETNODE,
+                    source: parameters.source
                 })
             });
         },
@@ -251,18 +264,29 @@ define([
          * @param component
          */
         setByComponent: function(component) {
-            this.set(component.modelPath, component.getComponentValue(), component.dsid, component);
+            this.set({ modelPath: component.dsid + ':' + component.modelPath, value: component.getComponentValue(),
+                    source: component });
         },
 
         /**
-         * Returns a node from the object graph
-         * @param modelPath
-         * @param dsid
+         * Returns a node from the object graph.
+         *
+         * The argument object must contain a property for 'modelPath'.  Optionally, the developer can
+         * include the DataSourceID in the modelPath, prefixed and deliminiated with a ':'.  If not found,
+         * an attempt to resolve the ID will be made through a 'dsid' property.  The dsid will default to
+         * infusion.ds.LOCAL.
+         *
+         * @param parameters
          * @return {*}
          */
-        get: function(modelPath, dsid) {
-            var path = (dsid || infusion.ds.LOCAL) + ':' + modelPath;
-            return this.nodes[path];
+        get: function(parameters) {
+            var modelPath;
+            if (!parameters.modelPath.contains(':')) {
+                modelPath = (parameters.dsid || infusion.ds.LOCAL) + parameters.modelPath;
+            } else {
+                modelPath = parameters.modelPath;
+            }
+            return this.nodes[modelPath];
         },
 
         /**
@@ -271,19 +295,22 @@ define([
          * @return {*}
          */
         getByComponent: function(component) {
-            return this.get(component.modelPath, component.dsid);
+            return this.get( { modelPath: component.dsid + ':' + component.modelPath });
         },
 
         /**
          * Removes a node from the model.
          *
-         * @param modelPath The path to the parent node for removal
-         * @param dsid (optional) The ID of the datasource, defaults to 'local'
-         * @param source (optional) The source of the call, used to prevent cycles on notification
+         * @param parameters The set of properties defining the node to remove
          */
-        remove: function(modelPath, dsid, source) {
-            dsid = dsid || infusion.ds.LOCAL;
-            modelPath = dsid + ':' + modelPath;
+        remove: function(parameters) {
+            var modelPath;
+
+            if (!parameters.modelPath.contains(':')) {
+                modelPath = (parameters.dsid || infusion.ds.LOCAL) + ':' + parameters.modelPath;
+            } else {
+                modelPath = parameters.modelPath;
+            }
 
             if (this.nodes[modelPath] !== undefined) {
                 var index = modelPath.lastIndexOf('.');
@@ -301,9 +328,10 @@ define([
             }
 
             var msg = new infusion.message.Message({
-                id: infusion.model.MESSAGE_MODEL_NODEADDED,
-                source: source
+                id: infusion.model.MESSAGE_MODEL_SETNODE,
+                source: parameters.source
             });
+
             infusion.message.dispatch.publish({
                 topic: 'model:publish',
                 msg: msg });
@@ -348,7 +376,7 @@ define([
             for (var eventKey in this.topics) {
                 if (eventKey !== undefined) {
                     var event = new infusion.message.Message({
-                        id: infusion.model.MESSAGE_MODEL_NODEADDED,
+                        id: infusion.model.MESSAGE_MODEL_SETNODE,
                         op: eventKey
                     });
                     var listeners = this.topics[eventKey];
@@ -361,13 +389,19 @@ define([
             }
         },
 
+        /**
+         * Called by the topic message system for updates to bound components, objects, etc.
+         * @param msg
+         */
         onMessage: function(msg) {
-            if (msg.data !== undefined && msg.modelPath !== undefined &&
-                msg.dsid !== undefined) {
-                if (msg.method == 'delete')
-                    this.remove(msg.modelPath, msg.dsid);
-                else
-                    this.set(msg.modelPath, msg.data, msg.dsid);
+            if (msg.method !== undefined && msg.modelPath !== undefined &&
+                    msg.dsid !== undefined) {
+                var fn = this[msg.method];
+                if (fn !== undefined) {
+                    fn(msg);
+                } else {
+                    throw new Error('The function "' + msg.method + '" was not defined for this model implementation');
+                }
             }
         },
 
@@ -396,23 +430,24 @@ define([
          * @param value A node in the object graph to add, algorithm will recurse to all leaves.
          * @param source Used to prevent cycles in notification
          */
-        _addNodeMapEntries: function(modelPath, value, source) {
+        _setNodeMapEntries: function(modelPath, value, source) {
             this.nodes[modelPath] = value;
             if (typeof value == "object" && !(value instanceof Array)) {
                 for (var name in value) {
                     if (name !== undefined) {
                         this.nodes[modelPath + '.' + name] = value[name];
-                        this._addNodeMapEntries(modelPath + '.' + name, value[name], source);
+                        this._setNodeMapEntries(modelPath + '.' + name, value[name], source);
                     }
                 }
             }
 
             // And notify any components bound to this modelPath...
             var temp = modelPath.split(':');
+
             infusion.message.dispatch.publish({
                 topic: 'model:publish',
                 msg: new infusion.message.Message({
-                    id: infusion.model.MESSAGE_MODEL_NODEADDED,
+                    id: infusion.model.MESSAGE_MODEL_SETNODE,
                     dsid: temp[0],
                     modelPath: temp[1],
                     data: value,

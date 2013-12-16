@@ -13,19 +13,21 @@
     -o-box-sizing: border-box;
     -ms-box-sizing: border-box;
     font-family: 'Carme';
-    font-size: 12pt;
+    font-size: 10pt;
 }
 
 h1
 {
-    font-size: 40pt;
+    font-size: 10pt;
 }
 
 #canvas
 {
     width: 100%;
     height: 100%;
-/*    background: #000000  url('images/infusion.jpg'); */
+    font-size: 10pt;
+
+    /*    background: #000000  url('images/infusion.jpg'); */
 }
 
 #main-menu
@@ -33,12 +35,13 @@ h1
     width: 100%;
     height: 100px;
     background: #DDD;
+    font-size: 10pt;
 }
 
 #logo span
 {
     text-shadow: 4px 4px 4px #aaa;
-    font-size: 40pt;
+    font-size: 10pt;
     float: left;
     height: 100%;
     padding-top: .3em;
@@ -52,29 +55,21 @@ h1
 
 #main-menu nav
 {
-    // float: left;
+    float: left;
 }
 
 #main-menu nav ul
 {
     list-style-type: disc;
+    font-size: 10pt;
 }
 
-#main-menu ul
+#main-menu nav ul li
 {
-    margin: 0em;
-    padding: 0em;
-    display: inline;
-    list-style-type: none;
-    text-align: center;
-}
-
-#main-menu nav li
-{
-    font-size: 12pt;
+    font-size: 10pt;
     list-style: none;
-    display: inline;
-    padding: 1em 1em 1em 1em;
+    float: left;
+    padding: 0.5em 0.5em 0.5em 0.5em;
 /*    border-top: solid 1px rgba(0,0,0,0.25);
     box-shadow: inset 0px 1px 0px 0px rgba(255,255,255,0.075);
     padding: 0.5em 0 0.5em 0; */
@@ -89,8 +84,6 @@ h1
 {
     clear: both;
     width: 75%;
-    height: auto;
-    background-color: aquamarine;
 }
 
 #sidebar
@@ -98,15 +91,12 @@ h1
     float: left;
     width: 25%;
     height: 100%;
-    background-color: antiquewhite;
 }
-
-
 
 #sidebar nav ul li
 {
     border-top: solid 1px rgba(0,0,0,0.25);
-    font-size: 12pt;
+    font-size: 10pt;
     list-style: none;
 }
 

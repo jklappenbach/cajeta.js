@@ -30,9 +30,9 @@ define([
 
             // TODO: These all need to be rewritten to support the new messaging API
 //            it('can be bound to the model', function() {
-//                model.subscribe(component, infusion.message.MESSAGE_MODEL_NODEADDED);
+//                model.subscribe(component, infusion.message.MESSAGE_MODEL_SETNODE);
 //                expect(function() { component.onComponentChanged() }).not.toThrow();
-//                model.subscribe(component2, infusion.message.MESSAGE_MODEL_NODEADDED);
+//                model.subscribe(component2, infusion.message.MESSAGE_MODEL_SETNODE);
 //                expect(function() { component2.setComponentValue('delicious') }).not.toThrow();
 //            });
 //
